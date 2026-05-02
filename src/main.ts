@@ -2,6 +2,8 @@ import './style.css';
 import { AllClasses } from './classes';
 import { Feats } from './feats';
 import { Races } from './races';
+import { Spells } from './spells';
+import { SrdWeapons } from './weapons';
 
 type Screen = 'Collections' | 'CharacterBuilder' | 'Compendium' | 'CharacterSheet';
 type CatalogKey = 'classes' | 'feats' | 'weapons' | 'spells' | 'races';
@@ -10,6 +12,8 @@ type CatalogItem = {
     id: string;
     name: string;
     description: string;
+  level?: number;
+  classes?: string[];
 };
 
 type ClassLevel = {
@@ -73,21 +77,57 @@ type AppState = {
 
 const STORAGE_KEY = 'NpcEasy.AppState.v1';
 
-const DEFAULT_WEAPONS: CatalogItem[] = [
-    { id: 'weapon-longsword', name: 'Longsword', description: '1d8 slashing, versatile (1d10).' },
-    { id: 'weapon-shortbow', name: 'Shortbow', description: '1d6 piercing, range 80/320, two-handed.' },
-    { id: 'weapon-warhammer', name: 'Warhammer', description: '1d8 bludgeoning, versatile (1d10).' },
-    { id: 'weapon-dagger', name: 'Dagger', description: '1d4 piercing, finesse, light, thrown (20/60).' },
-    { id: 'weapon-quarterstaff', name: 'Quarterstaff', description: '1d6 bludgeoning, versatile (1d8).' }
-];
+const DEFAULT_WEAPONS: CatalogItem[] = SrdWeapons.map((item) => ({
+  id: `weapon-${item.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
+  name: item.name,
+  description: `${item.group}: ${item.description}`
+}));
 
-const DEFAULT_SPELLS: CatalogItem[] = [
-    { id: 'spell-fireball', name: 'Fireball', description: 'Level 3 evocation, 8d6 fire in 20ft radius.' },
-    { id: 'spell-shield', name: 'Shield', description: 'Level 1 abjuration, +5 AC until your next turn.' },
-    { id: 'spell-magic-missile', name: 'Magic Missile', description: 'Level 1 evocation, 3 automatic force darts.' },
-    { id: 'spell-healing-word', name: 'Healing Word', description: 'Level 1 evocation, bonus action heal at range.' },
-    { id: 'spell-misty-step', name: 'Misty Step', description: 'Level 2 conjuration, teleport up to 30 feet.' }
-];
+const DEFAULT_SPELLS: CatalogItem[] = Spells.map((item) => ({
+  id: `spell-${item.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
+  name: item.name,
+  description: item.description,
+  level: item.level,
+  classes: item.classes
+}));
+
+function NormalizeSpellCatalog(items: CatalogItem[]): CatalogItem[] {
+  return items.map((item) => {
+    const canonical = Spells.find((spell) => spell.name.toLowerCase() === item.name.toLowerCase());
+
+    const inferredLevelFromDescription = (() => {
+      const cantripMatch = item.description.match(/\bcantrip\b/i);
+      if (cantripMatch) {
+        return 0;
+      }
+
+      const levelMatch = item.description.match(/\blevel\s+(\d+)\b/i);
+      if (levelMatch) {
+        return Number(levelMatch[1]);
+      }
+
+      return undefined;
+    })();
+
+    const inferredClassesFromDescription = (() => {
+      const classesMatch = item.description.match(/\bclasses:\s*([^.]*)/i);
+      if (!classesMatch) {
+        return undefined;
+      }
+
+      return classesMatch[1]
+        .split(',')
+        .map((value) => value.trim())
+        .filter((value) => value.length > 0);
+    })();
+
+    return {
+      ...item,
+      level: item.level ?? canonical?.level ?? inferredLevelFromDescription ?? 0,
+      classes: item.classes ?? canonical?.classes ?? inferredClassesFromDescription ?? []
+    };
+  });
+}
 
 function NewId(prefix: string): string {
     return `${prefix}-${crypto.randomUUID()}`;
@@ -165,12 +205,23 @@ function LoadState(): AppState {
 
     try {
         const parsed = JSON.parse(raw) as AppState;
+        const isLegacyWeaponCatalog =
+            Array.isArray(parsed.catalogs?.weapons)
+            && parsed.catalogs.weapons.length === 5
+            && parsed.catalogs.weapons.some((item) => item.id === 'weapon-longsword');
+        const isLegacySpellCatalog =
+            Array.isArray(parsed.catalogs?.spells)
+            && parsed.catalogs.spells.length === 5
+            && parsed.catalogs.spells.some((item) => item.id === 'spell-fireball');
+
         return {
             ...BuildDefaultState(),
             ...parsed,
             catalogs: {
                 ...BuildDefaultState().catalogs,
-                ...parsed.catalogs
+                ...parsed.catalogs,
+                weapons: isLegacyWeaponCatalog ? DEFAULT_WEAPONS : (parsed.catalogs?.weapons ?? BuildDefaultState().catalogs.weapons),
+            spells: NormalizeSpellCatalog(isLegacySpellCatalog ? DEFAULT_SPELLS : (parsed.catalogs?.spells ?? BuildDefaultState().catalogs.spells))
             }
         };
     } catch {
@@ -433,9 +484,28 @@ app.innerHTML = `
 
           <div class="space-y-2" @input.debounce.300ms="SaveAll()">
             <template x-for="item in catalogs[group.key]" :key="item.id">
-              <div class="grid gap-2 rounded-xl border border-amber-200 p-3 md:grid-cols-[220px_1fr_auto]">
+              <div
+                class="grid gap-2 rounded-xl border border-amber-200 p-3"
+                :class="group.key === 'spells' ? 'md:grid-cols-[180px_1fr_90px_260px_auto]' : 'md:grid-cols-[220px_1fr_auto]'"
+              >
                 <input x-model="item.name" type="text" class="input-base" placeholder="Name" />
                 <input x-model="item.description" type="text" class="input-base" placeholder="Description" />
+                <input
+                  x-show="group.key === 'spells'"
+                  x-model.number="item.level"
+                  type="number"
+                  min="0"
+                  class="input-base"
+                  placeholder="Level"
+                />
+                <input
+                  x-show="group.key === 'spells'"
+                  :value="(item.classes ?? []).join(', ')"
+                  @input="SetSpellClasses(item, $event.target.value)"
+                  type="text"
+                  class="input-base"
+                  placeholder="Classes (comma-separated)"
+                />
                 <button class="btn-danger" @click="RemoveCompendiumItem(group.key, item.id)">Remove</button>
               </div>
             </template>
@@ -701,13 +771,29 @@ const NpcEasyApp = (): any => {
         },
 
         AddCompendiumItem(key: CatalogKey) {
-            this.catalogs[key].push({
+          const item: CatalogItem = {
                 id: NewId(key.slice(0, -1)),
                 name: `New ${key.slice(0, -1)}`,
                 description: ''
-            });
+          };
+
+          if (key === 'spells') {
+            item.level = 0;
+            item.classes = [];
+          }
+
+          this.catalogs[key].unshift(item);
 
             this.SaveAll();
+        },
+
+        SetSpellClasses(item: CatalogItem, value: string) {
+          item.classes = value
+            .split(',')
+            .map((className: string) => className.trim())
+            .filter((className: string) => className.length > 0);
+
+          this.SaveAll();
         },
 
         RemoveCompendiumItem(key: CatalogKey, id: string) {
