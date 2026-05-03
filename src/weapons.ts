@@ -38,24 +38,35 @@ export abstract class Weapon {
     category: WeaponCategory;
     attack: AttackRoll;
     damage: Damage;
+    magicalBonus: number;
 
-    constructor(name: string, category: WeaponCategory, attack: AttackRoll, damage: Damage) {
+    constructor(name: string, category: WeaponCategory, attack: AttackRoll, damage: Damage, magicalBonus: number = 0) {
         this.name = name;
         this.category = category;
         this.attack = attack;
         this.damage = damage;
+        this.magicalBonus = magicalBonus;
+    }
+
+    getAttackBonus(): number {
+        return this.attack.bonus + this.magicalBonus;
+    }
+
+    getDamageBonus(): number {
+        return (this.damage.bonus ?? 0) + this.magicalBonus;
     }
 
     getDescription(): string {
-        return `${this.name} (${this.category})`;
+        const magicalText = this.magicalBonus > 0 ? ` +${this.magicalBonus}` : '';
+        return `${this.name}${magicalText} (${this.category})`;
     }
 }
 
 export class MeleeWeapon extends Weapon {
     range: number; // in feet
 
-    constructor(name: string, attack: AttackRoll, damage: Damage, range: number = 5) {
-        super(name, WeaponCategory.Melee, attack, damage);
+    constructor(name: string, attack: AttackRoll, damage: Damage, range: number = 5, magicalBonus: number = 0) {
+        super(name, WeaponCategory.Melee, attack, damage, magicalBonus);
         this.range = range;
     }
 
@@ -69,8 +80,8 @@ export class RangedWeapon extends Weapon {
     longRange: number; // in feet
     ammunition?: string;
 
-    constructor(name: string, attack: AttackRoll, damage: Damage, normalRange: number, longRange: number, ammunition?: string) {
-        super(name, WeaponCategory.Ranged, attack, damage);
+    constructor(name: string, attack: AttackRoll, damage: Damage, normalRange: number, longRange: number, ammunition?: string, magicalBonus: number = 0) {
+        super(name, WeaponCategory.Ranged, attack, damage, magicalBonus);
         this.normalRange = normalRange;
         this.longRange = longRange;
         this.ammunition = ammunition;
@@ -86,8 +97,8 @@ export class SpellAttack extends Weapon {
     savingThrow?: string; // e.g., "DEX", "WIS"
     isSpell: boolean = true;
 
-    constructor(name: string, attack: AttackRoll, damage: Damage, spellLevel: number, savingThrow?: string) {
-        super(name, WeaponCategory.Spell, attack, damage);
+    constructor(name: string, attack: AttackRoll, damage: Damage, spellLevel: number, savingThrow?: string, magicalBonus: number = 0) {
+        super(name, WeaponCategory.Spell, attack, damage, magicalBonus);
         this.spellLevel = spellLevel;
         this.savingThrow = savingThrow;
     }
@@ -99,8 +110,8 @@ export class SpellAttack extends Weapon {
 }
 
 export class UnarmedAttack extends Weapon {
-    constructor(name: string = 'Unarmed Strike', attack: AttackRoll, damage: Damage = { dice: '1d4', type: DamageType.Bludgeoning }) {
-        super(name, WeaponCategory.Unarmed, attack, damage);
+    constructor(name: string = 'Unarmed Strike', attack: AttackRoll, damage: Damage = { dice: '1d4', type: DamageType.Bludgeoning }, magicalBonus: number = 0) {
+        super(name, WeaponCategory.Unarmed, attack, damage, magicalBonus);
     }
 
     getDescription(): string {

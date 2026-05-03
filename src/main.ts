@@ -24,6 +24,11 @@ type ClassLevel = {
     level: number;
 };
 
+type CharacterWeapon = {
+  weaponId: string;
+  magicalBonus: number;
+};
+
 type CharacterRecord = {
     id: string;
     name: string;
@@ -49,6 +54,8 @@ type CharacterRecord = {
     equipment: string;
     featIds: string[];
     weaponIds: string[];
+    characterWeapons?: CharacterWeapon[];
+    weaponMagicBonuses?: Record<string, number>;
     spellIds: string[];
     alignment: string;
     background: string;
@@ -155,6 +162,44 @@ function NormalizeWeaponCatalog(items: CatalogItem[]): CatalogItem[] {
   });
 }
 
+function NormalizeCharacterWeaponData(character: CharacterRecord): CharacterRecord {
+  const existingBonuses = character.weaponMagicBonuses ?? {};
+  const normalizedCharacterWeapons = (character.characterWeapons ?? []).map((entry) => ({
+    weaponId: entry.weaponId,
+    magicalBonus: Number.isFinite(entry.magicalBonus) ? entry.magicalBonus : 0
+  }));
+
+  const weaponIdsFromCharacterWeapons = normalizedCharacterWeapons.map((entry) => entry.weaponId);
+  const mergedWeaponIds = [...new Set([...character.weaponIds, ...weaponIdsFromCharacterWeapons])];
+
+  const normalizedBonuses: Record<string, number> = { ...existingBonuses };
+  for (const entry of normalizedCharacterWeapons) {
+    normalizedBonuses[entry.weaponId] = entry.magicalBonus;
+  }
+  for (const weaponId of mergedWeaponIds) {
+    if (!Number.isFinite(normalizedBonuses[weaponId])) {
+      normalizedBonuses[weaponId] = 0;
+    }
+  }
+
+  return {
+    ...character,
+    weaponIds: mergedWeaponIds,
+    weaponMagicBonuses: normalizedBonuses,
+    characterWeapons: mergedWeaponIds.map((weaponId) => ({
+      weaponId,
+      magicalBonus: normalizedBonuses[weaponId] ?? 0
+    }))
+  };
+}
+
+function NormalizeCollections(collections: Collection[]): Collection[] {
+  return collections.map((collection) => ({
+    ...collection,
+    characters: collection.characters.map((character) => NormalizeCharacterWeaponData(character))
+  }));
+}
+
 function NewId(prefix: string): string {
     return `${prefix}-${crypto.randomUUID()}`;
 }
@@ -213,6 +258,8 @@ function BuildNewCharacter(raceId: string): CharacterRecord {
         equipment: '',
         featIds: [],
         weaponIds: [],
+        characterWeapons: [],
+        weaponMagicBonuses: {},
         spellIds: [],
         alignment: '',
         background: '',
@@ -240,7 +287,7 @@ function LoadState(): AppState {
             && parsed.catalogs.spells.length === 5
             && parsed.catalogs.spells.some((item) => item.id === 'spell-fireball');
 
-        return {
+        const mergedState = {
             ...BuildDefaultState(),
             ...parsed,
             catalogs: {
@@ -249,6 +296,11 @@ function LoadState(): AppState {
                 weapons: NormalizeWeaponCatalog(isLegacyWeaponCatalog ? DEFAULT_WEAPONS : (parsed.catalogs?.weapons ?? BuildDefaultState().catalogs.weapons)),
                 spells: NormalizeSpellCatalog(isLegacySpellCatalog ? DEFAULT_SPELLS : (parsed.catalogs?.spells ?? BuildDefaultState().catalogs.spells))
             }
+        };
+
+        return {
+          ...mergedState,
+          collections: NormalizeCollections(mergedState.collections)
         };
     } catch {
         return BuildDefaultState();
@@ -455,6 +507,28 @@ app.innerHTML = `
               </label>
             </div>
 
+            <div>
+              <p class="field-heading">Weapon Magical Bonuses</p>
+              <p class="text-sm text-ink-soft">Set enhancement bonuses (for example +1, +2, +3) for selected weapons.</p>
+              <div class="mt-2 space-y-2" x-show="(editingCharacter?.weaponIds?.length ?? 0) > 0" x-cloak>
+                <template x-for="weaponId in editingCharacter?.weaponIds ?? []" :key="'magic-' + weaponId">
+                  <div class="grid grid-cols-[1fr_120px] gap-2 rounded-xl border border-amber-200 p-2">
+                    <p class="self-center text-sm font-semibold text-ink" x-text="GetCatalogName('weapons', weaponId)"></p>
+                    <label class="field-label !mb-0">Magic Bonus
+                      <input
+                        class="input-base"
+                        type="number"
+                        min="0"
+                        max="10"
+                        :value="GetWeaponMagicBonus(editingCharacter, weaponId)"
+                        @input="SetWeaponMagicBonus(editingCharacter, weaponId, $event.target.value)"
+                      />
+                    </label>
+                  </div>
+                </template>
+              </div>
+            </div>
+
             <div class="grid gap-3 md:grid-cols-2">
               <label class="field-label">Alignment
                 <input x-model="editingCharacter.alignment" type="text" class="input-base" />
@@ -607,7 +681,7 @@ app.innerHTML = `
             <ul class="list-base">
               <template x-for="id in editingCharacter?.weaponIds ?? []" :key="id">
                 <li>
-                  <span class="font-semibold" x-text="GetCatalogName('weapons', id)"></span>
+                  <span class="font-semibold" x-text="FormatWeaponName(editingCharacter, id)"></span>
                   <span class="block text-xs text-ink-soft" x-text="FormatWeaponAttack(editingCharacter, id)"></span>
                 </li>
               </template>
@@ -834,6 +908,12 @@ const NpcEasyApp = (): any => {
                 }
                 if (key === 'weapons') {
                     this.editingCharacter.weaponIds = this.editingCharacter.weaponIds.filter((value: string) => value !== id);
+                  if (this.editingCharacter.weaponMagicBonuses) {
+                    delete this.editingCharacter.weaponMagicBonuses[id];
+                  }
+                  if (this.editingCharacter.characterWeapons) {
+                    this.editingCharacter.characterWeapons = this.editingCharacter.characterWeapons.filter((entry: CharacterWeapon) => entry.weaponId !== id);
+                  }
                 }
                 if (key === 'spells') {
                     this.editingCharacter.spellIds = this.editingCharacter.spellIds.filter((value: string) => value !== id);
@@ -853,8 +933,65 @@ const NpcEasyApp = (): any => {
       return Math.floor((score - 10) / 2);
     },
 
+      GetWeaponMagicBonus(character: CharacterRecord, weaponId: string): number {
+        if (!character.weaponMagicBonuses) {
+          character.weaponMagicBonuses = {};
+        }
+
+        const current = Number(character.weaponMagicBonuses[weaponId] ?? 0);
+        const bonus = Number.isFinite(current) ? current : 0;
+        character.weaponMagicBonuses[weaponId] = bonus;
+
+        if (!character.characterWeapons) {
+          character.characterWeapons = [];
+        }
+
+        const existing = character.characterWeapons.find((entry: CharacterWeapon) => entry.weaponId === weaponId);
+        if (existing) {
+          existing.magicalBonus = bonus;
+        } else {
+          character.characterWeapons.push({ weaponId, magicalBonus: bonus });
+        }
+
+        return bonus;
+      },
+
+      SetWeaponMagicBonus(character: CharacterRecord, weaponId: string, value: string) {
+        const parsed = Number.parseInt(value, 10);
+        const safeBonus = Number.isFinite(parsed) ? Math.max(0, parsed) : 0;
+
+        if (!character.weaponMagicBonuses) {
+          character.weaponMagicBonuses = {};
+        }
+        character.weaponMagicBonuses[weaponId] = safeBonus;
+
+        if (!character.characterWeapons) {
+          character.characterWeapons = [];
+        }
+
+        const existing = character.characterWeapons.find((entry: CharacterWeapon) => entry.weaponId === weaponId);
+        if (existing) {
+          existing.magicalBonus = safeBonus;
+        } else {
+          character.characterWeapons.push({ weaponId, magicalBonus: safeBonus });
+        }
+
+        this.SaveAll();
+      },
+
         GetProficiencyBonus(level: number): number {
             return Math.ceil(level / 4) + 1;
+        },
+
+        FormatWeaponName(character: CharacterRecord, weaponId: string): string {
+          const weaponName = this.GetCatalogName('weapons', weaponId);
+          const magicBonus = this.GetWeaponMagicBonus(character, weaponId);
+
+          if (magicBonus <= 0) {
+            return weaponName;
+          }
+
+          return `${weaponName} +${magicBonus}`;
         },
 
         FormatWeaponAttack(character: CharacterRecord, weaponId: string): string {
@@ -880,14 +1017,16 @@ const NpcEasyApp = (): any => {
             }
 
             const profBonus = this.GetProficiencyBonus(character.level);
-            const toHit = abilityMod + profBonus;
+            const magicBonus = this.GetWeaponMagicBonus(character, weaponId);
+            const toHit = abilityMod + profBonus + magicBonus;
             const toHitText = toHit >= 0 ? `+${toHit}` : `${toHit}`;
 
             if (weapon.weaponDamage === '—') {
                 return `${toHitText} to hit | special`;
             }
 
-            const dmgBonus = abilityMod !== 0 ? (abilityMod > 0 ? `+${abilityMod}` : `${abilityMod}`) : '';
+            const totalDamageBonus = abilityMod + magicBonus;
+            const dmgBonus = totalDamageBonus !== 0 ? (totalDamageBonus > 0 ? `+${totalDamageBonus}` : `${totalDamageBonus}`) : '';
             return `${toHitText} to hit | ${weapon.weaponDamage}${dmgBonus} ${weapon.weaponDamageType}`;
         },
 
