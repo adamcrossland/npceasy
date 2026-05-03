@@ -2,7 +2,7 @@ import './style.css';
 import { AllClasses } from './classes';
 import { Feats } from './feats';
 import { Races } from './races';
-import { Spells } from './spells';
+import { Spells, GetSpellByName } from './spells';
 import { SrdWeapons } from './weapons';
 
 type Screen = 'Collections' | 'CharacterBuilder' | 'Compendium' | 'CharacterSheet';
@@ -1236,82 +1236,31 @@ const NpcEasyApp = (): any => {
               return [];
             }
 
+            // Use structured fields from the enriched spell catalog
+            const srcSpell = GetSpellByName(spell.name);
+            const castingTime = srcSpell?.castingTime ?? 'Action';
+            const range = srcSpell?.range ?? 'See description';
+            const duration = srcSpell?.duration ?? 'See description';
+            const components = srcSpell?.components ?? '';
+            const school = srcSpell?.school ?? '';
+            const ritual = srcSpell?.ritual ? ' (ritual)' : '';
+            const concentration = srcSpell?.concentration ? ' ★ Concentration' : '';
+
             const text = spell.description ?? '';
             const firstParagraph = text.split('\n\n')[0]?.trim() ?? '';
-
-            const castingTime = (() => {
-              if (/\bas a bonus action\b/i.test(text)) {
-                return 'Bonus Action';
-              }
-              if (/\breaction\b/i.test(text)) {
-                return 'Reaction';
-              }
-              if (/\b(as an action|use your action|you can use your action)\b/i.test(text)) {
-                return 'Action';
-              }
-
-              return 'Action (assumed)';
-            })();
-
-            const range = (() => {
-              if (/\byou touch\b/i.test(text)) {
-                return 'Touch';
-              }
-
-              const feetMatch = text.match(/\bwithin\s+(\d+)\s+feet\b/i);
-              if (feetMatch) {
-                return `${feetMatch[1]} feet`;
-              }
-
-              const areaMatch = text.match(/\b(\d+)-foot\s+(cone|cube|radius|line|sphere|square)\b/i);
-              if (areaMatch) {
-                return `Self (${areaMatch[1]}-foot ${areaMatch[2].toLowerCase()})`;
-              }
-
-              if (/\bfrom you\b/i.test(text)) {
-                return 'Self';
-              }
-
-              if (/\bwithin range\b/i.test(text)) {
-                return 'Range (see full text)';
-              }
-
-              return 'See full text';
-            })();
-
-            const duration = (() => {
-              const fixedDurationMatch = text.match(/\bfor\s+(up to\s+)?(\d+)\s+(round|minute|hour|day)s?\b/i);
-              if (fixedDurationMatch) {
-                const upTo = fixedDurationMatch[1] ? 'up to ' : '';
-                const amount = fixedDurationMatch[2];
-                const unit = fixedDurationMatch[3].toLowerCase();
-                return `${upTo}${amount} ${unit}${amount === '1' ? '' : 's'}`;
-              }
-
-              const untilMatch = text.match(/\buntil\s+(the\s+)?(start|end)\s+of\s+your\s+next\s+turn\b/i);
-              if (untilMatch) {
-                return `Until ${untilMatch[2].toLowerCase()} of your next turn`;
-              }
-
-              if (/\binstantaneous\b|\binstantly\b|\binstantaneously\b/i.test(text)) {
-                return 'Instantaneous';
-              }
-
-              if (/\buntil the spell ends\b|\bfor the duration\b/i.test(text)) {
-                return 'Until spell ends';
-              }
-
-              return 'See full text';
-            })();
-
             const effect = firstParagraph.length > 180
               ? `${firstParagraph.slice(0, 177).trim()}...`
               : firstParagraph;
 
+            const meta: string[] = [];
+            if (school) meta.push(school.charAt(0).toUpperCase() + school.slice(1));
+            if (components) meta.push(components);
+
             return [
-              `Casting Time: ${castingTime}`,
+              `Casting Time: ${castingTime}${ritual}${concentration}`,
               `Range: ${range}`,
               `Duration: ${duration}`,
+              ...(meta.length ? [`${meta.join(' · ')}`] : []),
               `Effects: ${effect || 'See full text'}`
             ];
           },
