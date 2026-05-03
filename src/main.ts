@@ -12,8 +12,11 @@ type CatalogItem = {
     id: string;
     name: string;
     description: string;
-  level?: number;
-  classes?: string[];
+    level?: number;
+    classes?: string[];
+    weaponDamage?: string;
+    weaponDamageType?: string;
+    weaponProperties?: string[];
 };
 
 type ClassLevel = {
@@ -78,9 +81,12 @@ type AppState = {
 const STORAGE_KEY = 'NpcEasy.AppState.v1';
 
 const DEFAULT_WEAPONS: CatalogItem[] = SrdWeapons.map((item) => ({
-  id: `weapon-${item.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
-  name: item.name,
-  description: `${item.group}: ${item.description}`
+    id: `weapon-${item.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
+    name: item.name,
+    description: `${item.group}: ${item.description}`,
+    weaponDamage: item.damage,
+    weaponDamageType: item.damageType,
+    weaponProperties: item.properties
 }));
 
 const DEFAULT_SPELLS: CatalogItem[] = Spells.map((item) => ({
@@ -126,6 +132,26 @@ function NormalizeSpellCatalog(items: CatalogItem[]): CatalogItem[] {
       level: item.level ?? canonical?.level ?? inferredLevelFromDescription ?? 0,
       classes: item.classes ?? canonical?.classes ?? inferredClassesFromDescription ?? []
     };
+  });
+}
+
+function NormalizeWeaponCatalog(items: CatalogItem[]): CatalogItem[] {
+  return items.map((item) => {
+    if (item.weaponDamage) {
+      return item;
+    }
+
+    const canonical = SrdWeapons.find((weapon) => weapon.name.toLowerCase() === item.name.toLowerCase());
+    if (canonical) {
+      return {
+        ...item,
+        weaponDamage: canonical.damage,
+        weaponDamageType: canonical.damageType,
+        weaponProperties: canonical.properties
+      };
+    }
+
+    return item;
   });
 }
 
@@ -220,8 +246,8 @@ function LoadState(): AppState {
             catalogs: {
                 ...BuildDefaultState().catalogs,
                 ...parsed.catalogs,
-                weapons: isLegacyWeaponCatalog ? DEFAULT_WEAPONS : (parsed.catalogs?.weapons ?? BuildDefaultState().catalogs.weapons),
-            spells: NormalizeSpellCatalog(isLegacySpellCatalog ? DEFAULT_SPELLS : (parsed.catalogs?.spells ?? BuildDefaultState().catalogs.spells))
+                weapons: NormalizeWeaponCatalog(isLegacyWeaponCatalog ? DEFAULT_WEAPONS : (parsed.catalogs?.weapons ?? BuildDefaultState().catalogs.weapons)),
+                spells: NormalizeSpellCatalog(isLegacySpellCatalog ? DEFAULT_SPELLS : (parsed.catalogs?.spells ?? BuildDefaultState().catalogs.spells))
             }
         };
     } catch {
@@ -580,7 +606,10 @@ app.innerHTML = `
             <h4>Weapons</h4>
             <ul class="list-base">
               <template x-for="id in editingCharacter?.weaponIds ?? []" :key="id">
-                <li x-text="GetCatalogName('weapons', id)"></li>
+                <li>
+                  <span class="font-semibold" x-text="GetCatalogName('weapons', id)"></span>
+                  <span class="block text-xs text-ink-soft" x-text="FormatWeaponAttack(editingCharacter, id)"></span>
+                </li>
               </template>
             </ul>
           </div>
@@ -824,11 +853,49 @@ const NpcEasyApp = (): any => {
       return Math.floor((score - 10) / 2);
     },
 
-    FormatAbilityScore(score: number): string {
-      const modifier = this.GetAbilityModifier(score);
-      const modifierText = modifier >= 0 ? `+${modifier}` : `${modifier}`;
-      return `${score} (${modifierText})`;
-    },
+        GetProficiencyBonus(level: number): number {
+            return Math.ceil(level / 4) + 1;
+        },
+
+        FormatWeaponAttack(character: CharacterRecord, weaponId: string): string {
+            const weapon = this.catalogs.weapons.find((item: CatalogItem) => item.id === weaponId);
+            if (!weapon?.weaponDamage) {
+                return '';
+            }
+
+            const props: string[] = weapon.weaponProperties ?? [];
+            const isRanged = props.includes('ammunition') || ['Simple Ranged', 'Martial Ranged'].some((g) => weapon.description.startsWith(g));
+            const isFinesse = props.includes('finesse');
+
+            const strMod = this.GetAbilityModifier(character.abilityScores.strength);
+            const dexMod = this.GetAbilityModifier(character.abilityScores.dexterity);
+
+            let abilityMod: number;
+            if (isFinesse) {
+                abilityMod = Math.max(strMod, dexMod);
+            } else if (isRanged) {
+                abilityMod = dexMod;
+            } else {
+                abilityMod = strMod;
+            }
+
+            const profBonus = this.GetProficiencyBonus(character.level);
+            const toHit = abilityMod + profBonus;
+            const toHitText = toHit >= 0 ? `+${toHit}` : `${toHit}`;
+
+            if (weapon.weaponDamage === '—') {
+                return `${toHitText} to hit | special`;
+            }
+
+            const dmgBonus = abilityMod !== 0 ? (abilityMod > 0 ? `+${abilityMod}` : `${abilityMod}`) : '';
+            return `${toHitText} to hit | ${weapon.weaponDamage}${dmgBonus} ${weapon.weaponDamageType}`;
+        },
+
+        FormatAbilityScore(score: number): string {
+            const modifier = this.GetAbilityModifier(score);
+            const modifierText = modifier >= 0 ? `+${modifier}` : `${modifier}`;
+            return `${score} (${modifierText})`;
+        },
 
         GetCatalogName(key: CatalogKey, id: string): string {
             return this.catalogs[key].find((item: CatalogItem) => item.id === id)?.name ?? 'Unknown';
