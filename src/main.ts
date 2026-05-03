@@ -766,16 +766,23 @@ app.innerHTML = `
             </ul>
           </div>
 
-          <div class="sheet-card">
+          <div class="sheet-card sheet-card-spells">
             <h4>Spells</h4>
             <div class="mb-2 space-y-1 text-xs text-ink-soft" x-show="GetSpellSlotSummary(editingCharacter).length > 0" x-cloak>
               <template x-for="line in GetSpellSlotSummary(editingCharacter)" :key="line">
                 <p x-text="line"></p>
               </template>
             </div>
-            <ul class="list-base">
+            <ul class="list-base spell-list-grid">
               <template x-for="id in editingCharacter?.spellIds ?? []" :key="id">
-                <li x-text="GetCatalogName('spells', id)"></li>
+                <li class="spell-list-item">
+                  <p class="font-semibold" x-text="GetCatalogName('spells', id)"></p>
+                  <div class="mt-1 space-y-1 text-xs text-ink-soft">
+                    <template x-for="line in GetSpellFacts(id)" :key="id + '-' + line">
+                      <p x-text="line"></p>
+                    </template>
+                  </div>
+                </li>
               </template>
             </ul>
           </div>
@@ -1221,6 +1228,92 @@ const NpcEasyApp = (): any => {
             }
 
             return spellSlotLines;
+          },
+
+          GetSpellFacts(spellId: string): string[] {
+            const spell = this.catalogs.spells.find((item: CatalogItem) => item.id === spellId);
+            if (!spell) {
+              return [];
+            }
+
+            const text = spell.description ?? '';
+            const firstParagraph = text.split('\n\n')[0]?.trim() ?? '';
+
+            const castingTime = (() => {
+              if (/\bas a bonus action\b/i.test(text)) {
+                return 'Bonus Action';
+              }
+              if (/\breaction\b/i.test(text)) {
+                return 'Reaction';
+              }
+              if (/\b(as an action|use your action|you can use your action)\b/i.test(text)) {
+                return 'Action';
+              }
+
+              return 'Action (assumed)';
+            })();
+
+            const range = (() => {
+              if (/\byou touch\b/i.test(text)) {
+                return 'Touch';
+              }
+
+              const feetMatch = text.match(/\bwithin\s+(\d+)\s+feet\b/i);
+              if (feetMatch) {
+                return `${feetMatch[1]} feet`;
+              }
+
+              const areaMatch = text.match(/\b(\d+)-foot\s+(cone|cube|radius|line|sphere|square)\b/i);
+              if (areaMatch) {
+                return `Self (${areaMatch[1]}-foot ${areaMatch[2].toLowerCase()})`;
+              }
+
+              if (/\bfrom you\b/i.test(text)) {
+                return 'Self';
+              }
+
+              if (/\bwithin range\b/i.test(text)) {
+                return 'Range (see full text)';
+              }
+
+              return 'See full text';
+            })();
+
+            const duration = (() => {
+              const fixedDurationMatch = text.match(/\bfor\s+(up to\s+)?(\d+)\s+(round|minute|hour|day)s?\b/i);
+              if (fixedDurationMatch) {
+                const upTo = fixedDurationMatch[1] ? 'up to ' : '';
+                const amount = fixedDurationMatch[2];
+                const unit = fixedDurationMatch[3].toLowerCase();
+                return `${upTo}${amount} ${unit}${amount === '1' ? '' : 's'}`;
+              }
+
+              const untilMatch = text.match(/\buntil\s+(the\s+)?(start|end)\s+of\s+your\s+next\s+turn\b/i);
+              if (untilMatch) {
+                return `Until ${untilMatch[2].toLowerCase()} of your next turn`;
+              }
+
+              if (/\binstantaneous\b|\binstantly\b|\binstantaneously\b/i.test(text)) {
+                return 'Instantaneous';
+              }
+
+              if (/\buntil the spell ends\b|\bfor the duration\b/i.test(text)) {
+                return 'Until spell ends';
+              }
+
+              return 'See full text';
+            })();
+
+            const effect = firstParagraph.length > 180
+              ? `${firstParagraph.slice(0, 177).trim()}...`
+              : firstParagraph;
+
+            return [
+              `Casting Time: ${castingTime}`,
+              `Range: ${range}`,
+              `Duration: ${duration}`,
+              `Effects: ${effect || 'See full text'}`
+            ];
           },
 
         FormatAbilityScore(score: number): string {

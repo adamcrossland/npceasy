@@ -226,6 +226,16 @@ body {
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
 }
 
+@media (min-width: 1024px) {
+  .sheet-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .sheet-card-spells {
+    grid-column: 1 / span 3;
+  }
+}
+
 .sheet-card {
   border: 1px solid #decead;
   border-radius: 0.9rem;
@@ -273,6 +283,33 @@ body {
   margin: 0;
   padding-left: 1rem;
   color: #3e4d43;
+}
+
+.spell-list-grid {
+  list-style: none;
+  padding-left: 0;
+  display: grid;
+  gap: 0.6rem;
+  grid-template-columns: 1fr;
+}
+
+.spell-list-item {
+  border: 1px solid #decead;
+  border-radius: 0.7rem;
+  background: rgba(255, 254, 248, 0.95);
+  padding: 0.55rem;
+}
+
+@media (min-width: 900px) {
+  .spell-list-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1280px) {
+  .spell-list-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 768px) {
