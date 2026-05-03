@@ -281,3 +281,11 @@ body {
     padding: 0.95rem;
   }
 }
+
+@media print
+{    
+    .no-print, .no-print *
+    {
+        display: none !important;
+    }
+}

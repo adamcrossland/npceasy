@@ -237,7 +237,7 @@ if (!app) {
 
 app.innerHTML = `
 <div x-data="NpcEasyApp()" x-init="Init()" class="min-h-screen">
-  <header class="sticky top-0 z-10 border-b border-amber-100/80 bg-sand/90 backdrop-blur">
+  <header class="sticky top-0 z-10 border-b border-amber-100/80 bg-sand/90 backdrop-blur no-print">
     <div class="mx-auto flex w-full max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3 md:px-8">
       <div>
         <p class="font-display text-xl tracking-wide text-ink md:text-2xl">NPC Easy</p>
@@ -515,7 +515,7 @@ app.innerHTML = `
     </section>
 
     <section x-show="screen === 'CharacterSheet'" class="space-y-5" x-cloak>
-      <div class="panel">
+      <div class="panel no-print">
         <h2 class="panel-title">Character Sheet</h2>
         <p class="panel-subtitle">A print-friendly summary for quick table reference.</p>
       </div>
