@@ -484,27 +484,56 @@ app.innerHTML = `
             </div>
 
             <div class="grid gap-4 md:grid-cols-3">
-              <label class="field-label">Feats
-                <select x-model="editingCharacter.featIds" multiple size="7" class="input-base min-h-[180px]">
+              <div>
+                <p class="field-label">Feats</p>
+                <div class="input-base min-h-[180px] max-h-[260px] space-y-2 overflow-y-auto">
                   <template x-for="entry in catalogs.feats" :key="entry.id">
-                    <option :value="entry.id" x-text="entry.name"></option>
+                    <label class="flex items-center gap-2 text-sm text-ink">
+                      <input
+                        type="checkbox"
+                        class="h-4 w-4"
+                        :checked="editingCharacter?.featIds?.includes(entry.id)"
+                        @change="ToggleCharacterListSelection('featIds', entry.id, $event.target.checked)"
+                      />
+                      <span x-text="entry.name"></span>
+                    </label>
                   </template>
-                </select>
-              </label>
-              <label class="field-label">Weapons
-                <select x-model="editingCharacter.weaponIds" multiple size="7" class="input-base min-h-[180px]">
+                </div>
+              </div>
+
+              <div>
+                <p class="field-label">Weapons</p>
+                <div class="input-base min-h-[180px] max-h-[260px] space-y-2 overflow-y-auto">
                   <template x-for="entry in catalogs.weapons" :key="entry.id">
-                    <option :value="entry.id" x-text="entry.name"></option>
+                    <label class="flex items-center gap-2 text-sm text-ink">
+                      <input
+                        type="checkbox"
+                        class="h-4 w-4"
+                        :checked="editingCharacter?.weaponIds?.includes(entry.id)"
+                        @change="ToggleWeaponSelection(entry.id, $event.target.checked)"
+                      />
+                      <span x-text="entry.name"></span>
+                    </label>
                   </template>
-                </select>
-              </label>
-              <label class="field-label">Spells
-                <select x-model="editingCharacter.spellIds" multiple size="7" class="input-base min-h-[180px]">
+                </div>
+              </div>
+
+              <div>
+                <p class="field-label">Spells</p>
+                <div class="input-base min-h-[180px] max-h-[260px] space-y-2 overflow-y-auto">
                   <template x-for="entry in catalogs.spells" :key="entry.id">
-                    <option :value="entry.id" x-text="entry.name"></option>
+                    <label class="flex items-center gap-2 text-sm text-ink">
+                      <input
+                        type="checkbox"
+                        class="h-4 w-4"
+                        :checked="editingCharacter?.spellIds?.includes(entry.id)"
+                        @change="ToggleCharacterListSelection('spellIds', entry.id, $event.target.checked)"
+                      />
+                      <span x-text="entry.name"></span>
+                    </label>
                   </template>
-                </select>
-              </label>
+                </div>
+              </div>
             </div>
 
             <div>
@@ -891,6 +920,40 @@ const NpcEasyApp = (): any => {
 
           this.SaveAll();
         },
+
+    ToggleCharacterListSelection(listKey: 'featIds' | 'spellIds', id: string, isChecked: boolean) {
+      if (!this.editingCharacter) {
+        return;
+      }
+
+      const existing = this.editingCharacter[listKey] ?? [];
+
+      if (isChecked) {
+        if (!existing.includes(id)) {
+          existing.push(id);
+        }
+      } else {
+        this.editingCharacter[listKey] = existing.filter((value: string) => value !== id);
+      }
+
+      this.SaveAll();
+    },
+
+    ToggleWeaponSelection(weaponId: string, isChecked: boolean) {
+      if (!this.editingCharacter) {
+        return;
+      }
+
+      if (isChecked) {
+        if (!this.editingCharacter.weaponIds.includes(weaponId)) {
+          this.editingCharacter.weaponIds.push(weaponId);
+        }
+        this.SaveAll();
+        return;
+      }
+
+      this.RemoveWeaponFromCharacter(weaponId);
+    },
 
         AddCompendiumItem(key: CatalogKey) {
           const item: CatalogItem = {
