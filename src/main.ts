@@ -87,6 +87,54 @@ type AppState = {
 
 const STORAGE_KEY = 'NpcEasy.AppState.v1';
 
+const SpellSlotsByCasterLevel: number[][] = [
+  [],
+  [2],
+  [3],
+  [4, 2],
+  [4, 3],
+  [4, 3, 2],
+  [4, 3, 3],
+  [4, 3, 3, 1],
+  [4, 3, 3, 2],
+  [4, 3, 3, 3, 1],
+  [4, 3, 3, 3, 2],
+  [4, 3, 3, 3, 2, 1],
+  [4, 3, 3, 3, 2, 1],
+  [4, 3, 3, 3, 2, 1, 1],
+  [4, 3, 3, 3, 2, 1, 1],
+  [4, 3, 3, 3, 2, 1, 1, 1],
+  [4, 3, 3, 3, 2, 1, 1, 1],
+  [4, 3, 3, 3, 2, 1, 1, 1, 1],
+  [4, 3, 3, 3, 3, 1, 1, 1, 1],
+  [4, 3, 3, 3, 3, 2, 1, 1, 1],
+  [4, 3, 3, 3, 3, 2, 2, 1, 1]
+];
+
+const WarlockPactSlotsByLevel: Array<{ slots: number; slotLevel: number }> = [
+  { slots: 0, slotLevel: 0 },
+  { slots: 1, slotLevel: 1 },
+  { slots: 2, slotLevel: 1 },
+  { slots: 2, slotLevel: 2 },
+  { slots: 2, slotLevel: 2 },
+  { slots: 2, slotLevel: 3 },
+  { slots: 2, slotLevel: 3 },
+  { slots: 2, slotLevel: 4 },
+  { slots: 2, slotLevel: 4 },
+  { slots: 2, slotLevel: 5 },
+  { slots: 2, slotLevel: 5 },
+  { slots: 3, slotLevel: 5 },
+  { slots: 3, slotLevel: 5 },
+  { slots: 3, slotLevel: 5 },
+  { slots: 3, slotLevel: 5 },
+  { slots: 3, slotLevel: 5 },
+  { slots: 3, slotLevel: 5 },
+  { slots: 4, slotLevel: 5 },
+  { slots: 4, slotLevel: 5 },
+  { slots: 4, slotLevel: 5 },
+  { slots: 4, slotLevel: 5 }
+];
+
 const DEFAULT_WEAPONS: CatalogItem[] = SrdWeapons.map((item) => ({
     id: `weapon-${item.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
     name: item.name,
@@ -720,6 +768,11 @@ app.innerHTML = `
 
           <div class="sheet-card">
             <h4>Spells</h4>
+            <div class="mb-2 space-y-1 text-xs text-ink-soft" x-show="GetSpellSlotSummary(editingCharacter).length > 0" x-cloak>
+              <template x-for="line in GetSpellSlotSummary(editingCharacter)" :key="line">
+                <p x-text="line"></p>
+              </template>
+            </div>
             <ul class="list-base">
               <template x-for="id in editingCharacter?.spellIds ?? []" :key="id">
                 <li x-text="GetCatalogName('spells', id)"></li>
@@ -1105,6 +1158,70 @@ const NpcEasyApp = (): any => {
             const dmgBonus = totalDamageBonus !== 0 ? (totalDamageBonus > 0 ? `+${totalDamageBonus}` : `${totalDamageBonus}`) : '';
             return `${toHitText} to hit | ${weapon.weaponDamage}${dmgBonus} ${weapon.weaponDamageType}`;
         },
+
+          FormatSpellLevel(level: number): string {
+            if (level === 1) {
+              return '1st';
+            }
+            if (level === 2) {
+              return '2nd';
+            }
+            if (level === 3) {
+              return '3rd';
+            }
+
+            return `${level}th`;
+          },
+
+          GetSpellSlotSummary(character: CharacterRecord | null): string[] {
+            if (!character) {
+              return [];
+            }
+
+            const classLevelsByName: Record<string, number> = {};
+            for (const entry of character.classLevels) {
+              const className = this.GetCatalogName('classes', entry.classId).toLowerCase();
+              if (className === 'unknown') {
+                continue;
+              }
+
+              classLevelsByName[className] = (classLevelsByName[className] ?? 0) + Math.max(0, entry.level);
+            }
+
+            const fullCasterClasses = new Set(['bard', 'cleric', 'druid', 'sorcerer', 'wizard']);
+            const halfCasterClasses = new Set(['paladin', 'ranger']);
+
+            let multiclassCasterLevel = 0;
+            for (const className in classLevelsByName) {
+              const classLevel = classLevelsByName[className];
+              if (fullCasterClasses.has(className)) {
+                multiclassCasterLevel += classLevel;
+              } else if (halfCasterClasses.has(className)) {
+                multiclassCasterLevel += Math.floor(classLevel / 2);
+              }
+            }
+
+            const spellSlotLines: string[] = [];
+            const boundedCasterLevel = Math.min(20, Math.max(0, multiclassCasterLevel));
+            const slots = SpellSlotsByCasterLevel[boundedCasterLevel] ?? [];
+            if (slots.length > 0) {
+              const slotText = slots
+                .map((count, index) => `${this.FormatSpellLevel(index + 1)}: ${count}`)
+                .join(', ');
+              spellSlotLines.push(`Spell Slots - ${slotText}`);
+            }
+
+            const warlockLevel = classLevelsByName.warlock ?? 0;
+            if (warlockLevel > 0) {
+              const pactSlots = WarlockPactSlotsByLevel[Math.min(20, warlockLevel)] ?? { slots: 0, slotLevel: 0 };
+              if (pactSlots.slots > 0 && pactSlots.slotLevel > 0) {
+                const slotLabel = pactSlots.slots === 1 ? 'slot' : 'slots';
+                spellSlotLines.push(`Pact Magic - ${pactSlots.slots} ${slotLabel} (${this.FormatSpellLevel(pactSlots.slotLevel)} level)`);
+              }
+            }
+
+            return spellSlotLines;
+          },
 
         FormatAbilityScore(score: number): string {
             const modifier = this.GetAbilityModifier(score);
