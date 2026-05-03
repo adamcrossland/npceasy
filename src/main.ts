@@ -546,12 +546,12 @@ app.innerHTML = `
           <div class="sheet-card">
             <h4>Ability Scores</h4>
             <dl class="score-grid">
-              <div><dt>STR</dt><dd x-text="editingCharacter?.abilityScores.strength"></dd></div>
-              <div><dt>DEX</dt><dd x-text="editingCharacter?.abilityScores.dexterity"></dd></div>
-              <div><dt>CON</dt><dd x-text="editingCharacter?.abilityScores.constitution"></dd></div>
-              <div><dt>INT</dt><dd x-text="editingCharacter?.abilityScores.intelligence"></dd></div>
-              <div><dt>WIS</dt><dd x-text="editingCharacter?.abilityScores.wisdom"></dd></div>
-              <div><dt>CHA</dt><dd x-text="editingCharacter?.abilityScores.charisma"></dd></div>
+              <div><dt>STR</dt><dd x-text="FormatAbilityScore(editingCharacter?.abilityScores.strength ?? 10)"></dd></div>
+              <div><dt>DEX</dt><dd x-text="FormatAbilityScore(editingCharacter?.abilityScores.dexterity ?? 10)"></dd></div>
+              <div><dt>CON</dt><dd x-text="FormatAbilityScore(editingCharacter?.abilityScores.constitution ?? 10)"></dd></div>
+              <div><dt>INT</dt><dd x-text="FormatAbilityScore(editingCharacter?.abilityScores.intelligence ?? 10)"></dd></div>
+              <div><dt>WIS</dt><dd x-text="FormatAbilityScore(editingCharacter?.abilityScores.wisdom ?? 10)"></dd></div>
+              <div><dt>CHA</dt><dd x-text="FormatAbilityScore(editingCharacter?.abilityScores.charisma ?? 10)"></dd></div>
             </dl>
           </div>
 
@@ -819,6 +819,16 @@ const NpcEasyApp = (): any => {
 
             this.SaveAll();
         },
+
+    GetAbilityModifier(score: number): number {
+      return Math.floor((score - 10) / 2);
+    },
+
+    FormatAbilityScore(score: number): string {
+      const modifier = this.GetAbilityModifier(score);
+      const modifierText = modifier >= 0 ? `+${modifier}` : `${modifier}`;
+      return `${score} (${modifierText})`;
+    },
 
         GetCatalogName(key: CatalogKey, id: string): string {
             return this.catalogs[key].find((item: CatalogItem) => item.id === id)?.name ?? 'Unknown';
