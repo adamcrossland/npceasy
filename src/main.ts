@@ -512,7 +512,7 @@ app.innerHTML = `
               <p class="text-sm text-ink-soft">Set enhancement bonuses (for example +1, +2, +3) for selected weapons.</p>
               <div class="mt-2 space-y-2" x-show="(editingCharacter?.weaponIds?.length ?? 0) > 0" x-cloak>
                 <template x-for="weaponId in editingCharacter?.weaponIds ?? []" :key="'magic-' + weaponId">
-                  <div class="grid grid-cols-[1fr_120px] gap-2 rounded-xl border border-amber-200 p-2">
+                  <div class="grid grid-cols-[1fr_120px_auto] gap-2 rounded-xl border border-amber-200 p-2">
                     <p class="self-center text-sm font-semibold text-ink" x-text="GetCatalogName('weapons', weaponId)"></p>
                     <label class="field-label !mb-0">Magic Bonus
                       <input
@@ -524,6 +524,7 @@ app.innerHTML = `
                         @input="SetWeaponMagicBonus(editingCharacter, weaponId, $event.target.value)"
                       />
                     </label>
+                    <button type="button" class="btn-danger self-end" @click="RemoveWeaponFromCharacter(weaponId)">Remove</button>
                   </div>
                 </template>
               </div>
@@ -873,6 +874,24 @@ const NpcEasyApp = (): any => {
             this.SaveAll();
         },
 
+        RemoveWeaponFromCharacter(weaponId: string) {
+          if (!this.editingCharacter) {
+            return;
+          }
+
+          this.editingCharacter.weaponIds = this.editingCharacter.weaponIds.filter((value: string) => value !== weaponId);
+
+          if (this.editingCharacter.weaponMagicBonuses) {
+            delete this.editingCharacter.weaponMagicBonuses[weaponId];
+          }
+
+          if (this.editingCharacter.characterWeapons) {
+            this.editingCharacter.characterWeapons = this.editingCharacter.characterWeapons.filter((entry: CharacterWeapon) => entry.weaponId !== weaponId);
+          }
+
+          this.SaveAll();
+        },
+
         AddCompendiumItem(key: CatalogKey) {
           const item: CatalogItem = {
                 id: NewId(key.slice(0, -1)),
@@ -907,13 +926,7 @@ const NpcEasyApp = (): any => {
                     this.editingCharacter.featIds = this.editingCharacter.featIds.filter((value: string) => value !== id);
                 }
                 if (key === 'weapons') {
-                    this.editingCharacter.weaponIds = this.editingCharacter.weaponIds.filter((value: string) => value !== id);
-                  if (this.editingCharacter.weaponMagicBonuses) {
-                    delete this.editingCharacter.weaponMagicBonuses[id];
-                  }
-                  if (this.editingCharacter.characterWeapons) {
-                    this.editingCharacter.characterWeapons = this.editingCharacter.characterWeapons.filter((entry: CharacterWeapon) => entry.weaponId !== id);
-                  }
+                    this.RemoveWeaponFromCharacter(id);
                 }
                 if (key === 'spells') {
                     this.editingCharacter.spellIds = this.editingCharacter.spellIds.filter((value: string) => value !== id);
