@@ -12,7 +12,9 @@ type CatalogItem = {
     id: string;
     name: string;
     description: string;
-  effect?: string;
+    effect?: string;
+    damage?: string;
+    scaling?: string;
     level?: number;
     classes?: string[];
     weaponDamage?: string;
@@ -150,6 +152,8 @@ const DEFAULT_SPELLS: CatalogItem[] = Spells.map((item) => ({
   name: item.name,
   description: item.description,
   effect: item.effect,
+  damage: item.damage,
+  scaling: item.scaling,
   level: item.level,
   classes: item.classes
 }));
@@ -271,6 +275,8 @@ function NormalizeSpellCatalog(items: CatalogItem[]): CatalogItem[] {
     return {
       ...item,
       effect: item.effect ?? canonical?.effect ?? SummarizeSpellEffect(item.description),
+      damage: item.damage ?? canonical?.damage,
+      scaling: item.scaling ?? canonical?.scaling,
       level: item.level ?? canonical?.level ?? inferredLevelFromDescription ?? 0,
       classes: item.classes ?? canonical?.classes ?? inferredClassesFromDescription ?? []
     };
@@ -1334,7 +1340,8 @@ const NpcEasyApp = (): any => {
             const ritual = srcSpell?.ritual ? ' (ritual)' : '';
             const concentration = srcSpell?.concentration ? ' ★ Concentration' : '';
             const effect = spell.effect ?? srcSpell?.effect ?? SummarizeSpellEffect(descriptionText);
-            const damage = SummarizeSpellDamage(descriptionText);
+            const damage = spell.damage ?? srcSpell?.damage ?? SummarizeSpellDamage(descriptionText);
+            const scaling = spell.scaling ?? srcSpell?.scaling;
 
             const meta: string[] = [];
             if (school) meta.push(school.charAt(0).toUpperCase() + school.slice(1));
@@ -1345,6 +1352,7 @@ const NpcEasyApp = (): any => {
               `Range: ${range}`,
               `Duration: ${duration}`,
               ...(damage ? [`Damage: ${damage}`] : []),
+              ...(scaling ? [`Scaling: ${scaling}`] : []),
               ...(meta.length ? [`${meta.join(' · ')}`] : []),
               `Effects: ${effect || 'See full text'}`
             ];
