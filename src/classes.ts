@@ -257,6 +257,16 @@ Fighter.addSubclass({
     ]
 });
 
+Fighter.addSubclass({
+    name: 'Eldritch Knight',
+    source: 'PHB',
+    description: 'Blend martial prowess with arcane magic',
+    features: [
+        { name: 'Spellcasting', level: 3, description: 'Cast wizard spells using Intelligence' },
+        { name: 'Weapon Bond', level: 3, description: 'Bond with a weapon to summon it' }
+    ]
+});
+
 // Monk
 export const Monk = new CharClass(ClassType.Monk, 8, {
     armor: [],
@@ -394,6 +404,16 @@ Rogue.addSubclass({
     features: [
         { name: 'Assassinate', level: 3, description: 'Advantage on attacks against surprised creatures' },
         { name: 'Infiltration Expertise', level: 9, description: 'Forge documents and create false identity' }
+    ]
+});
+
+Rogue.addSubclass({
+    name: 'Arcane Trickster',
+    source: 'PHB',
+    description: 'Enhance roguish abilities with arcane magic',
+    features: [
+        { name: 'Spellcasting', level: 3, description: 'Cast wizard spells using Intelligence' },
+        { name: 'Mage Hand Legerdemain', level: 3, description: 'Enhanced mage hand for trickery' }
     ]
 });
 
