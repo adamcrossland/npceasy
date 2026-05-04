@@ -25,6 +25,7 @@ type CatalogItem = {
 type ClassLevel = {
     classId: string;
     level: number;
+  subclassName?: string;
 };
 
 type CharacterWeapon = {
@@ -610,13 +611,24 @@ app.innerHTML = `
               </div>
               <div class="space-y-2">
                 <template x-for="(row, index) in editingCharacter.classLevels" :key="index">
-                  <div class="grid grid-cols-[1fr_90px_auto] gap-2">
+                  <div class="grid gap-2 md:grid-cols-[1fr_160px_90px_auto]">
                     <select x-model="row.classId" class="input-base">
                       <option value="">Choose class</option>
                       <template x-for="entry in catalogs.classes" :key="entry.id">
                         <option :value="entry.id" x-text="entry.name"></option>
                       </template>
                     </select>
+                    <template x-if="GetSubclassOptionsForClass(row.classId).length > 0">
+                      <select x-model="row.subclassName" class="input-base">
+                        <option value="">No subclass</option>
+                        <template x-for="sc in GetSubclassOptionsForClass(row.classId)" :key="sc">
+                          <option :value="sc" x-text="sc"></option>
+                        </template>
+                      </select>
+                    </template>
+                    <template x-if="GetSubclassOptionsForClass(row.classId).length === 0">
+                      <input x-model="row.subclassName" type="text" placeholder="Subclass (optional)" class="input-base" />
+                    </template>
                     <input x-model.number="row.level" type="number" min="1" class="input-base" />
                     <button type="button" class="btn-danger" @click="RemoveClassLevel(index)">Remove</button>
                   </div>
@@ -831,7 +843,7 @@ app.innerHTML = `
             <ul class="list-base">
               <template x-for="entry in editingCharacter?.classLevels ?? []" :key="entry.classId + '-' + entry.level">
                 <li>
-                  <span x-text="GetCatalogName('classes', entry.classId)"></span>
+                  <span x-text="entry.subclassName ? (GetCatalogName('classes', entry.classId) + ' (' + entry.subclassName + ')') : GetCatalogName('classes', entry.classId)"></span>
                   <span class="opacity-75">(Lv <span x-text="entry.level"></span>)</span>
                 </li>
               </template>
@@ -854,6 +866,12 @@ app.innerHTML = `
                 <li>
                   <span class="font-semibold" x-text="FormatWeaponName(editingCharacter, id)"></span>
                   <span class="block text-xs text-ink-soft" x-text="FormatWeaponAttack(editingCharacter, id)"></span>
+                </li>
+              </template>
+              <template x-if="editingCharacter && ShouldShowSpellAttack(editingCharacter)">
+                <li>
+                  <span class="font-semibold">Attack Spell</span>
+                  <span class="block text-xs text-ink-soft" x-text="FormatSpellAttack(editingCharacter)"></span>
                 </li>
               </template>
             </ul>
@@ -1035,6 +1053,13 @@ const NpcEasyApp = (): any => {
             this.SaveAll();
         },
 
+        GetSubclassOptionsForClass(classId: string): string[] {
+            const classEntry = this.catalogs.classes.find((c: CatalogItem) => c.id === classId);
+            if (!classEntry) return [];
+            const charClass = AllClasses.find(c => c.classType === classEntry.name);
+            return charClass ? charClass.subclasses.map(sc => sc.name) : [];
+        },
+
         AddClassLevel() {
             if (!this.editingCharacter) {
                 return;
@@ -1042,7 +1067,8 @@ const NpcEasyApp = (): any => {
 
             this.editingCharacter.classLevels.push({
                 classId: this.catalogs.classes[0]?.id ?? '',
-                level: 1
+              level: 1,
+              subclassName: ''
             });
             this.SaveAll();
         },
@@ -1258,6 +1284,85 @@ const NpcEasyApp = (): any => {
             const dmgBonus = totalDamageBonus !== 0 ? (totalDamageBonus > 0 ? `+${totalDamageBonus}` : `${totalDamageBonus}`) : '';
             return `${toHitText} to hit | ${weapon.weaponDamage}${dmgBonus} ${weapon.weaponDamageType}`;
         },
+
+          GetSpellcastingAbilityForClassEntry(entry: ClassLevel): keyof CharacterRecord['abilityScores'] | undefined {
+            const className = this.GetCatalogName('classes', entry.classId).toLowerCase();
+            const subclass = (entry.subclassName ?? '').toLowerCase();
+
+            if (className.includes('bard') || className.includes('paladin') || className.includes('sorcerer') || className.includes('warlock')) {
+              return 'charisma';
+            }
+            if (className.includes('cleric') || className.includes('druid') || className.includes('ranger')) {
+              return 'wisdom';
+            }
+            if (className.includes('wizard')) {
+              return 'intelligence';
+            }
+            if (className.includes('fighter') && subclass.includes('eldritch knight')) {
+              return 'intelligence';
+            }
+            if (className.includes('rogue') && subclass.includes('arcane trickster')) {
+              return 'intelligence';
+            }
+
+            return undefined;
+          },
+
+          GetBestSpellcastingAbility(character: CharacterRecord): keyof CharacterRecord['abilityScores'] | undefined {
+            const abilities: Array<keyof CharacterRecord['abilityScores']> = [];
+
+            for (const entry of character.classLevels) {
+              const ability = this.GetSpellcastingAbilityForClassEntry(entry);
+              if (ability) {
+                abilities.push(ability);
+              }
+            }
+
+            if (abilities.length === 0) {
+              return undefined;
+            }
+
+            return abilities.reduce((best, current) => {
+              const bestMod = this.GetAbilityModifier(character.abilityScores[best]);
+              const currentMod = this.GetAbilityModifier(character.abilityScores[current]);
+              return currentMod > bestMod ? current : best;
+            });
+          },
+
+          CharacterHasDamagingSpell(character: CharacterRecord): boolean {
+            for (const spellId of character.spellIds) {
+              const catalogSpell = this.catalogs.spells.find((item: CatalogItem) => item.id === spellId);
+              if (!catalogSpell) {
+                continue;
+              }
+
+              const sourceSpell = GetSpellByName(catalogSpell.name);
+              const damage = catalogSpell.damage ?? sourceSpell?.damage ?? SummarizeSpellDamage(catalogSpell.description ?? sourceSpell?.description ?? '');
+              if (damage && damage !== 'See description') {
+                return true;
+              }
+            }
+
+            return false;
+          },
+
+          ShouldShowSpellAttack(character: CharacterRecord): boolean {
+            return Boolean(this.GetBestSpellcastingAbility(character)) && this.CharacterHasDamagingSpell(character);
+          },
+
+          FormatSpellAttack(character: CharacterRecord): string {
+            const ability = this.GetBestSpellcastingAbility(character);
+            if (!ability) {
+              return '';
+            }
+
+            const abilityKey = ability as keyof CharacterRecord['abilityScores'];
+            const abilityMod = this.GetAbilityModifier(character.abilityScores[abilityKey]);
+            const profBonus = this.GetProficiencyBonus(character.level);
+            const toHit = profBonus + abilityMod;
+            const toHitText = toHit >= 0 ? `+${toHit}` : `${toHit}`;
+            return `${toHitText} to hit | spell attack`;
+          },
 
           FormatSpellLevel(level: number): string {
             if (level === 1) {
