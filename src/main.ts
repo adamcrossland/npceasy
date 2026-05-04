@@ -839,6 +839,18 @@ app.innerHTML = `
           </div>
 
           <div class="sheet-card">
+            <h4>Saving Throws</h4>
+            <dl class="score-grid">
+              <template x-for="save in GetSavingThrows(editingCharacter)" :key="save.label">
+                <div>
+                  <dt x-text="save.label" :class="save.proficient ? 'font-bold' : ''"></dt>
+                  <dd x-text="save.value" :class="save.proficient ? 'font-bold' : ''"></dd>
+                </div>
+              </template>
+            </dl>
+          </div>
+
+          <div class="sheet-card">
             <h4>Class Levels</h4>
             <ul class="list-base">
               <template x-for="entry in editingCharacter?.classLevels ?? []" :key="entry.classId + '-' + entry.level">
@@ -1240,6 +1252,35 @@ const NpcEasyApp = (): any => {
         GetProficiencyBonus(level: number): number {
             return Math.ceil(level / 4) + 1;
         },
+
+        GetSavingThrows(character: CharacterRecord): { label: string; value: string; proficient: boolean }[] {
+            const proficientSaves = new Set<string>();
+            for (const entry of character.classLevels) {
+                const classEntry = this.catalogs.classes.find((c: CatalogItem) => c.id === entry.classId);
+                if (!classEntry) continue;
+                const charClass = AllClasses.find(c => c.classType === classEntry.name);
+                if (!charClass) continue;
+                for (const save of charClass.proficiencies.savingThrows) {
+                    proficientSaves.add(save.toLowerCase());
+                }
+            }
+            const profBonus = this.GetProficiencyBonus(character.level);
+            const entries: { key: keyof CharacterRecord['abilityScores']; label: string; abbr: string }[] = [
+                { key: 'strength', label: 'Strength', abbr: 'STR' },
+                { key: 'dexterity', label: 'Dexterity', abbr: 'DEX' },
+                { key: 'constitution', label: 'Constitution', abbr: 'CON' },
+                { key: 'intelligence', label: 'Intelligence', abbr: 'INT' },
+                { key: 'wisdom', label: 'Wisdom', abbr: 'WIS' },
+                { key: 'charisma', label: 'Charisma', abbr: 'CHA' },
+            ];
+            return entries.map(({ key, label, abbr }) => {
+                const proficient = proficientSaves.has(label.toLowerCase());
+                const mod = this.GetAbilityModifier(character.abilityScores[key]) + (proficient ? profBonus : 0);
+                const value = mod >= 0 ? `+${mod}` : `${mod}`;
+                return { label: abbr, value, proficient };
+            });
+        },
+
 
         FormatWeaponName(character: CharacterRecord, weaponId: string): string {
           const weaponName = this.GetCatalogName('weapons', weaponId);
