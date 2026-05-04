@@ -879,6 +879,9 @@ app.innerHTML = `
 
           <div class="sheet-card sheet-card-spells">
             <h4>Spells</h4>
+            <div class="mb-2 space-y-1 text-xs text-ink-soft" x-show="editingCharacter && GetBestSpellcastingAbility(editingCharacter)" x-cloak>
+              <p><span class="font-semibold">Spell Save DC:</span> <span x-text="'DC ' + GetSpellSaveDC(editingCharacter)"></span></p>
+            </div>
             <div class="mb-2 space-y-1 text-xs text-ink-soft" x-show="GetSpellSlotSummary(editingCharacter).length > 0" x-cloak>
               <template x-for="line in GetSpellSlotSummary(editingCharacter)" :key="line">
                 <p x-text="line"></p>
@@ -1344,6 +1347,16 @@ const NpcEasyApp = (): any => {
             }
 
             return false;
+          },
+
+          GetSpellSaveDC(character: CharacterRecord): number {
+            const ability = this.GetBestSpellcastingAbility(character);
+            if (!ability) {
+              return 8;
+            }
+            const abilityMod = this.GetAbilityModifier(character.abilityScores[ability as keyof CharacterRecord['abilityScores']]);
+            const profBonus = this.GetProficiencyBonus(character.level);
+            return 8 + profBonus + abilityMod;
           },
 
           ShouldShowSpellAttack(character: CharacterRecord): boolean {
