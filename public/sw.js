@@ -1,4 +1,4 @@
-const CACHE_NAME = 'npceasy-cache-v1';
+const CACHE_NAME = 'npceasy-cache-v2';
 const CORE_ASSETS = ['/', '/index.html', '/manifest.webmanifest'];
 
 self.addEventListener('install', event => {
