@@ -822,6 +822,7 @@ app.innerHTML = `
             <span>HP <strong x-text="editingCharacter?.hitPoints ?? 0"></strong>/<span x-text="editingCharacter?.maxHitPoints ?? 0"></span></span>
             <span>AC <strong x-text="editingCharacter?.armorClass ?? 0"></strong></span>
             <span>Speed <strong x-text="editingCharacter?.speed ?? 0"></strong> ft</span>
+            <span>Prof Bonus <strong x-text="'+' + GetProficiencyBonus(editingCharacter?.level ?? 1)"></strong></span>
           </div>
         </header>
 
