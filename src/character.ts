@@ -44,10 +44,6 @@ export type Character = {
     flaws: string;
 };
 
-export function GetTotalCharacterLevel(character: Character): number {
-    return character.classLevels.reduce((totalLevel, classLevel) => totalLevel + classLevel.level, 0);
-}
-
 function matchesClassType(classLevel: CharacterClassLevel, charClass: CharClass | ClassType): boolean {
     const classType = charClass instanceof CharClass ? charClass.classType : charClass;
     return classLevel.charClass.classType === classType;
