@@ -25,12 +25,12 @@ type CatalogItem = {
 type ClassLevel = {
     classId: string;
     level: number;
-  subclassName?: string;
+    subclassName?: string;
 };
 
 type CharacterWeapon = {
-  weaponId: string;
-  magicalBonus: number;
+    weaponId: string;
+    magicalBonus: number;
 };
 
 type CharacterRecord = {
@@ -91,51 +91,51 @@ type AppState = {
 const STORAGE_KEY = 'NpcEasy.AppState.v1';
 
 const SpellSlotsByCasterLevel: number[][] = [
-  [],
-  [2],
-  [3],
-  [4, 2],
-  [4, 3],
-  [4, 3, 2],
-  [4, 3, 3],
-  [4, 3, 3, 1],
-  [4, 3, 3, 2],
-  [4, 3, 3, 3, 1],
-  [4, 3, 3, 3, 2],
-  [4, 3, 3, 3, 2, 1],
-  [4, 3, 3, 3, 2, 1],
-  [4, 3, 3, 3, 2, 1, 1],
-  [4, 3, 3, 3, 2, 1, 1],
-  [4, 3, 3, 3, 2, 1, 1, 1],
-  [4, 3, 3, 3, 2, 1, 1, 1],
-  [4, 3, 3, 3, 2, 1, 1, 1, 1],
-  [4, 3, 3, 3, 3, 1, 1, 1, 1],
-  [4, 3, 3, 3, 3, 2, 1, 1, 1],
-  [4, 3, 3, 3, 3, 2, 2, 1, 1]
+    [],
+    [2],
+    [3],
+    [4, 2],
+    [4, 3],
+    [4, 3, 2],
+    [4, 3, 3],
+    [4, 3, 3, 1],
+    [4, 3, 3, 2],
+    [4, 3, 3, 3, 1],
+    [4, 3, 3, 3, 2],
+    [4, 3, 3, 3, 2, 1],
+    [4, 3, 3, 3, 2, 1],
+    [4, 3, 3, 3, 2, 1, 1],
+    [4, 3, 3, 3, 2, 1, 1],
+    [4, 3, 3, 3, 2, 1, 1, 1],
+    [4, 3, 3, 3, 2, 1, 1, 1],
+    [4, 3, 3, 3, 2, 1, 1, 1, 1],
+    [4, 3, 3, 3, 3, 1, 1, 1, 1],
+    [4, 3, 3, 3, 3, 2, 1, 1, 1],
+    [4, 3, 3, 3, 3, 2, 2, 1, 1]
 ];
 
 const WarlockPactSlotsByLevel: Array<{ slots: number; slotLevel: number }> = [
-  { slots: 0, slotLevel: 0 },
-  { slots: 1, slotLevel: 1 },
-  { slots: 2, slotLevel: 1 },
-  { slots: 2, slotLevel: 2 },
-  { slots: 2, slotLevel: 2 },
-  { slots: 2, slotLevel: 3 },
-  { slots: 2, slotLevel: 3 },
-  { slots: 2, slotLevel: 4 },
-  { slots: 2, slotLevel: 4 },
-  { slots: 2, slotLevel: 5 },
-  { slots: 2, slotLevel: 5 },
-  { slots: 3, slotLevel: 5 },
-  { slots: 3, slotLevel: 5 },
-  { slots: 3, slotLevel: 5 },
-  { slots: 3, slotLevel: 5 },
-  { slots: 3, slotLevel: 5 },
-  { slots: 3, slotLevel: 5 },
-  { slots: 4, slotLevel: 5 },
-  { slots: 4, slotLevel: 5 },
-  { slots: 4, slotLevel: 5 },
-  { slots: 4, slotLevel: 5 }
+    { slots: 0, slotLevel: 0 },
+    { slots: 1, slotLevel: 1 },
+    { slots: 2, slotLevel: 1 },
+    { slots: 2, slotLevel: 2 },
+    { slots: 2, slotLevel: 2 },
+    { slots: 2, slotLevel: 3 },
+    { slots: 2, slotLevel: 3 },
+    { slots: 2, slotLevel: 4 },
+    { slots: 2, slotLevel: 4 },
+    { slots: 2, slotLevel: 5 },
+    { slots: 2, slotLevel: 5 },
+    { slots: 3, slotLevel: 5 },
+    { slots: 3, slotLevel: 5 },
+    { slots: 3, slotLevel: 5 },
+    { slots: 3, slotLevel: 5 },
+    { slots: 3, slotLevel: 5 },
+    { slots: 3, slotLevel: 5 },
+    { slots: 4, slotLevel: 5 },
+    { slots: 4, slotLevel: 5 },
+    { slots: 4, slotLevel: 5 },
+    { slots: 4, slotLevel: 5 }
 ];
 
 const DEFAULT_WEAPONS: CatalogItem[] = SrdWeapons.map((item) => ({
@@ -148,197 +148,197 @@ const DEFAULT_WEAPONS: CatalogItem[] = SrdWeapons.map((item) => ({
 }));
 
 const DEFAULT_SPELLS: CatalogItem[] = Spells.map((item) => ({
-  id: `spell-${item.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
-  name: item.name,
-  description: item.description,
-  effect: item.effect,
-  damage: item.damage,
-  scaling: item.scaling,
-  level: item.level,
-  classes: item.classes
+    id: `spell-${item.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
+    name: item.name,
+    description: item.description,
+    effect: item.effect,
+    damage: item.damage,
+    scaling: item.scaling,
+    level: item.level,
+    classes: item.classes
 }));
 
 function SummarizeSpellEffect(description: string): string {
-  const text = (description ?? '').replace(/\r/g, '').trim();
-  if (!text) {
-    return 'See full spell description.';
-  }
+    const text = (description ?? '').replace(/\r/g, '').trim();
+    if (!text) {
+        return 'See full spell description.';
+    }
 
-  const firstParagraph = text.split(/\n\s*\n/)[0]?.replace(/\s+/g, ' ').trim() ?? text;
-  const firstSentence = firstParagraph.split(/(?<=[.!?])\s+/)[0] ?? firstParagraph;
-  const compact = firstSentence.replace(/\s+/g, ' ').trim();
+    const firstParagraph = text.split(/\n\s*\n/)[0]?.replace(/\s+/g, ' ').trim() ?? text;
+    const firstSentence = firstParagraph.split(/(?<=[.!?])\s+/)[0] ?? firstParagraph;
+    const compact = firstSentence.replace(/\s+/g, ' ').trim();
 
-  if (compact.length <= 96) {
-    return compact;
-  }
+    if (compact.length <= 96) {
+        return compact;
+    }
 
-  const clipped = compact.slice(0, 93);
-  const lastSpace = clipped.lastIndexOf(' ');
-  const safe = lastSpace > 40 ? clipped.slice(0, lastSpace) : clipped;
-  return `${safe}...`;
+    const clipped = compact.slice(0, 93);
+    const lastSpace = clipped.lastIndexOf(' ');
+    const safe = lastSpace > 40 ? clipped.slice(0, lastSpace) : clipped;
+    return `${safe}...`;
 }
 
 function SummarizeSpellDamage(description: string): string | undefined {
-  const text = (description ?? '').replace(/\r/g, ' ');
-  if (!/\bdamage\b/i.test(text)) {
-    return undefined;
-  }
-
-  const damageTypes = 'acid|bludgeoning|cold|fire|force|lightning|necrotic|piercing|poison|psychic|radiant|slashing|thunder';
-  const parts: string[] = [];
-
-  const diceMatches = Array.from(text.matchAll(new RegExp(`\\b(\\d+d\\d+(?:\\s*[+\\-]\\s*\\d+)?)\\s+(${damageTypes})\\s+damage\\b`, 'gi')));
-  for (const match of diceMatches) {
-    const dice = match[1].replace(/\s+/g, '');
-    const damageType = match[2].toLowerCase();
-    const value = `${dice} ${damageType}`;
-    if (!parts.includes(value)) {
-      parts.push(value);
-    }
-  }
-
-  const flatMatches = Array.from(text.matchAll(new RegExp(`\\b(\\d+)\\s+(${damageTypes})\\s+damage\\b`, 'gi')));
-  for (const match of flatMatches) {
-    const value = `${match[1]} ${match[2].toLowerCase()}`;
-    if (!parts.includes(value)) {
-      parts.push(value);
-    }
-  }
-
-  if (parts.length > 0) {
-    const notes: string[] = [];
-
-    const cantripScalingMatch = text.match(/damage\s+increases\s+by\s+([^.;\n]+?)\s+when\s+you\s+reach\s+5th\s+level\s*\(([^)]+)\),\s*11th\s+level\s*\(([^)]+)\),\s*and\s*17th\s+level\s*\(([^)]+)\)/i);
-    if (cantripScalingMatch) {
-      const step = cantripScalingMatch[1].trim();
-      const lvl5 = cantripScalingMatch[2].trim();
-      const lvl11 = cantripScalingMatch[3].trim();
-      const lvl17 = cantripScalingMatch[4].trim();
-      notes.push(`cantrip scaling: +${step} (5th: ${lvl5}, 11th: ${lvl11}, 17th: ${lvl17})`);
+    const text = (description ?? '').replace(/\r/g, ' ');
+    if (!/\bdamage\b/i.test(text)) {
+        return undefined;
     }
 
-    const wordToNumber: Record<string, number> = {
-      one: 1,
-      two: 2,
-      three: 3,
-      four: 4
-    };
+    const damageTypes = 'acid|bludgeoning|cold|fire|force|lightning|necrotic|piercing|poison|psychic|radiant|slashing|thunder';
+    const parts: string[] = [];
 
-    const slotScalingMatch = text.match(/At\s+Higher\s+Levels:[\s\S]*?damage\s+increases\s+by\s+([^.;\n]+?)\s+for\s+(?:each|every)\s+(?:(one|two|three|four|\d+)\s+)?slot\s+level(?:s)?\s+above\s+(\d+)(?:st|nd|rd|th)/i);
-    if (slotScalingMatch) {
-      const increment = slotScalingMatch[1].trim();
-      const stepRaw = (slotScalingMatch[2] ?? '1').toLowerCase();
-      const step = Number.isFinite(Number(stepRaw)) ? Number(stepRaw) : (wordToNumber[stepRaw] ?? 1);
-      const baseSlot = Number(slotScalingMatch[3]);
-      const perText = step <= 1 ? 'slot level' : `${step} slot levels`;
-      notes.push(`higher slots: +${increment} per ${perText} above ${baseSlot}`);
+    const diceMatches = Array.from(text.matchAll(new RegExp(`\\b(\\d+d\\d+(?:\\s*[+\\-]\\s*\\d+)?)\\s+(${damageTypes})\\s+damage\\b`, 'gi')));
+    for (const match of diceMatches) {
+        const dice = match[1].replace(/\s+/g, '');
+        const damageType = match[2].toLowerCase();
+        const value = `${dice} ${damageType}`;
+        if (!parts.includes(value)) {
+            parts.push(value);
+        }
     }
 
-    return notes.length > 0
-      ? `${parts.join(', ')} (${notes.join('; ')})`
-      : parts.join(', ');
-  }
+    const flatMatches = Array.from(text.matchAll(new RegExp(`\\b(\\d+)\\s+(${damageTypes})\\s+damage\\b`, 'gi')));
+    for (const match of flatMatches) {
+        const value = `${match[1]} ${match[2].toLowerCase()}`;
+        if (!parts.includes(value)) {
+            parts.push(value);
+        }
+    }
 
-  return 'See description';
+    if (parts.length > 0) {
+        const notes: string[] = [];
+
+        const cantripScalingMatch = text.match(/damage\s+increases\s+by\s+([^.;\n]+?)\s+when\s+you\s+reach\s+5th\s+level\s*\(([^)]+)\),\s*11th\s+level\s*\(([^)]+)\),\s*and\s*17th\s+level\s*\(([^)]+)\)/i);
+        if (cantripScalingMatch) {
+            const step = cantripScalingMatch[1].trim();
+            const lvl5 = cantripScalingMatch[2].trim();
+            const lvl11 = cantripScalingMatch[3].trim();
+            const lvl17 = cantripScalingMatch[4].trim();
+            notes.push(`cantrip scaling: +${step} (5th: ${lvl5}, 11th: ${lvl11}, 17th: ${lvl17})`);
+        }
+
+        const wordToNumber: Record<string, number> = {
+            one: 1,
+            two: 2,
+            three: 3,
+            four: 4
+        };
+
+        const slotScalingMatch = text.match(/At\s+Higher\s+Levels:[\s\S]*?damage\s+increases\s+by\s+([^.;\n]+?)\s+for\s+(?:each|every)\s+(?:(one|two|three|four|\d+)\s+)?slot\s+level(?:s)?\s+above\s+(\d+)(?:st|nd|rd|th)/i);
+        if (slotScalingMatch) {
+            const increment = slotScalingMatch[1].trim();
+            const stepRaw = (slotScalingMatch[2] ?? '1').toLowerCase();
+            const step = Number.isFinite(Number(stepRaw)) ? Number(stepRaw) : (wordToNumber[stepRaw] ?? 1);
+            const baseSlot = Number(slotScalingMatch[3]);
+            const perText = step <= 1 ? 'slot level' : `${step} slot levels`;
+            notes.push(`higher slots: +${increment} per ${perText} above ${baseSlot}`);
+        }
+
+        return notes.length > 0
+            ? `${parts.join(', ')} (${notes.join('; ')})`
+            : parts.join(', ');
+    }
+
+    return 'See description';
 }
 
 function NormalizeSpellCatalog(items: CatalogItem[]): CatalogItem[] {
-  return items.map((item) => {
-    const canonical = Spells.find((spell) => spell.name.toLowerCase() === item.name.toLowerCase());
+    return items.map((item) => {
+        const canonical = Spells.find((spell) => spell.name.toLowerCase() === item.name.toLowerCase());
 
-    const inferredLevelFromDescription = (() => {
-      const cantripMatch = item.description.match(/\bcantrip\b/i);
-      if (cantripMatch) {
-        return 0;
-      }
+        const inferredLevelFromDescription = (() => {
+            const cantripMatch = item.description.match(/\bcantrip\b/i);
+            if (cantripMatch) {
+                return 0;
+            }
 
-      const levelMatch = item.description.match(/\blevel\s+(\d+)\b/i);
-      if (levelMatch) {
-        return Number(levelMatch[1]);
-      }
+            const levelMatch = item.description.match(/\blevel\s+(\d+)\b/i);
+            if (levelMatch) {
+                return Number(levelMatch[1]);
+            }
 
-      return undefined;
-    })();
+            return undefined;
+        })();
 
-    const inferredClassesFromDescription = (() => {
-      const classesMatch = item.description.match(/\bclasses:\s*([^.]*)/i);
-      if (!classesMatch) {
-        return undefined;
-      }
+        const inferredClassesFromDescription = (() => {
+            const classesMatch = item.description.match(/\bclasses:\s*([^.]*)/i);
+            if (!classesMatch) {
+                return undefined;
+            }
 
-      return classesMatch[1]
-        .split(',')
-        .map((value) => value.trim())
-        .filter((value) => value.length > 0);
-    })();
+            return classesMatch[1]
+                .split(',')
+                .map((value) => value.trim())
+                .filter((value) => value.length > 0);
+        })();
 
-    return {
-      ...item,
-      effect: item.effect ?? canonical?.effect ?? SummarizeSpellEffect(item.description),
-      damage: item.damage ?? canonical?.damage,
-      scaling: item.scaling ?? canonical?.scaling,
-      level: item.level ?? canonical?.level ?? inferredLevelFromDescription ?? 0,
-      classes: item.classes ?? canonical?.classes ?? inferredClassesFromDescription ?? []
-    };
-  });
+        return {
+            ...item,
+            effect: item.effect ?? canonical?.effect ?? SummarizeSpellEffect(item.description),
+            damage: item.damage ?? canonical?.damage,
+            scaling: item.scaling ?? canonical?.scaling,
+            level: item.level ?? canonical?.level ?? inferredLevelFromDescription ?? 0,
+            classes: item.classes ?? canonical?.classes ?? inferredClassesFromDescription ?? []
+        };
+    });
 }
 
 function NormalizeWeaponCatalog(items: CatalogItem[]): CatalogItem[] {
-  return items.map((item) => {
-    if (item.weaponDamage) {
-      return item;
-    }
+    return items.map((item) => {
+        if (item.weaponDamage) {
+            return item;
+        }
 
-    const canonical = SrdWeapons.find((weapon) => weapon.name.toLowerCase() === item.name.toLowerCase());
-    if (canonical) {
-      return {
-        ...item,
-        weaponDamage: canonical.damage,
-        weaponDamageType: canonical.damageType,
-        weaponProperties: canonical.properties
-      };
-    }
+        const canonical = SrdWeapons.find((weapon) => weapon.name.toLowerCase() === item.name.toLowerCase());
+        if (canonical) {
+            return {
+                ...item,
+                weaponDamage: canonical.damage,
+                weaponDamageType: canonical.damageType,
+                weaponProperties: canonical.properties
+            };
+        }
 
-    return item;
-  });
+        return item;
+    });
 }
 
 function NormalizeCharacterWeaponData(character: CharacterRecord): CharacterRecord {
-  const existingBonuses = character.weaponMagicBonuses ?? {};
-  const normalizedCharacterWeapons = (character.characterWeapons ?? []).map((entry) => ({
-    weaponId: entry.weaponId,
-    magicalBonus: Number.isFinite(entry.magicalBonus) ? entry.magicalBonus : 0
-  }));
+    const existingBonuses = character.weaponMagicBonuses ?? {};
+    const normalizedCharacterWeapons = (character.characterWeapons ?? []).map((entry) => ({
+        weaponId: entry.weaponId,
+        magicalBonus: Number.isFinite(entry.magicalBonus) ? entry.magicalBonus : 0
+    }));
 
-  const weaponIdsFromCharacterWeapons = normalizedCharacterWeapons.map((entry) => entry.weaponId);
-  const mergedWeaponIds = [...new Set([...character.weaponIds, ...weaponIdsFromCharacterWeapons])];
+    const weaponIdsFromCharacterWeapons = normalizedCharacterWeapons.map((entry) => entry.weaponId);
+    const mergedWeaponIds = [...new Set([...character.weaponIds, ...weaponIdsFromCharacterWeapons])];
 
-  const normalizedBonuses: Record<string, number> = { ...existingBonuses };
-  for (const entry of normalizedCharacterWeapons) {
-    normalizedBonuses[entry.weaponId] = entry.magicalBonus;
-  }
-  for (const weaponId of mergedWeaponIds) {
-    if (!Number.isFinite(normalizedBonuses[weaponId])) {
-      normalizedBonuses[weaponId] = 0;
+    const normalizedBonuses: Record<string, number> = { ...existingBonuses };
+    for (const entry of normalizedCharacterWeapons) {
+        normalizedBonuses[entry.weaponId] = entry.magicalBonus;
     }
-  }
+    for (const weaponId of mergedWeaponIds) {
+        if (!Number.isFinite(normalizedBonuses[weaponId])) {
+            normalizedBonuses[weaponId] = 0;
+        }
+    }
 
-  return {
-    ...character,
-    weaponIds: mergedWeaponIds,
-    weaponMagicBonuses: normalizedBonuses,
-    characterWeapons: mergedWeaponIds.map((weaponId) => ({
-      weaponId,
-      magicalBonus: normalizedBonuses[weaponId] ?? 0
-    }))
-  };
+    return {
+        ...character,
+        weaponIds: mergedWeaponIds,
+        weaponMagicBonuses: normalizedBonuses,
+        characterWeapons: mergedWeaponIds.map((weaponId) => ({
+            weaponId,
+            magicalBonus: normalizedBonuses[weaponId] ?? 0
+        }))
+    };
 }
 
 function NormalizeCollections(collections: Collection[]): Collection[] {
-  return collections.map((collection) => ({
-    ...collection,
-    characters: collection.characters.map((character) => NormalizeCharacterWeaponData(character))
-  }));
+    return collections.map((collection) => ({
+        ...collection,
+        characters: collection.characters.map((character) => NormalizeCharacterWeaponData(character))
+    }));
 }
 
 function NewId(prefix: string): string {
@@ -353,7 +353,7 @@ function BuildDefaultState(): AppState {
         selectedCharacterId: '',
         catalogs: {
             classes: AllClasses.map(item => ({
-                id: `class-${item.classType.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
+                id: `${item.classType.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
                 name: item.classType,
                 description: `Hit Die: d${item.hitDice}`
             })),
@@ -449,17 +449,17 @@ function LoadState(): AppState {
         };
 
         return {
-          ...mergedState,
-          collections: NormalizeCollections(mergedState.collections).map(col => ({
-            ...col,
-            characters: col.characters.map(char => ({
-              ...char,
-              classLevels: char.classLevels.map(entry => ({
-                ...entry,
-                classId: MigrateClassId(entry.classId, freshCatalogs.classes)
-              }))
+            ...mergedState,
+            collections: NormalizeCollections(mergedState.collections).map(col => ({
+                ...col,
+                characters: col.characters.map(char => ({
+                    ...char,
+                    classLevels: char.classLevels.map(entry => ({
+                        ...entry,
+                        classId: MigrateClassId(entry.classId, freshCatalogs.classes)
+                    }))
+                }))
             }))
-          }))
         };
     } catch {
         return BuildDefaultState();
@@ -628,7 +628,7 @@ app.innerHTML = `
                   <div class="grid gap-2 md:grid-cols-[1fr_160px_90px_auto]">
                     <select x-model="row.classId" class="input-base">
                       <option value="">Choose class</option>
-                      <template x-for="entry in catalogs.classes" :key="entry.id">
+                      <template x-for="entry in catalogs.classes" :key="entry.name">
                         <option :value="entry.name" x-text="entry.name"></option>
                       </template>
                     </select>
@@ -828,7 +828,7 @@ app.innerHTML = `
             <h3 class="sheet-name" x-text="editingCharacter?.name || 'Unnamed Character'"></h3>
             <p class="sheet-subline">
               <span x-text="GetCatalogName('races', editingCharacter?.raceId || '')"></span>
-              <span> | Level </span><span x-text="editingCharacter?.level ?? 0"></span>
+              <span> | Level </span><span x-text="GetTotalCharacterLevel(editingCharacter)"></span>
               <span> | </span><span x-text="editingCharacter?.alignment || 'Unaligned'"></span>
             </p>
             <p class="mt-1 text-sm text-ink-soft" x-show="(editingCharacter?.classLevels?.length ?? 0) > 0" x-cloak>
@@ -840,7 +840,7 @@ app.innerHTML = `
             <span>Max HP <strong x-text="editingCharacter?.maxHitPoints ?? 0"></strong></span>
             <span>AC <strong x-text="editingCharacter?.armorClass ?? 0"></strong></span>
             <span>Speed <strong x-text="editingCharacter?.speed ?? 0"></strong> ft</span>
-            <span>Prof Bonus <strong x-text="'+' + GetProficiencyBonus(editingCharacter?.level ?? 1)"></strong></span>
+            <span>Prof Bonus <strong x-text="'+' + GetProficiencyBonus(GetTotalCharacterLevel(editingCharacter))"></strong></span>
           </div>
         </header>
 
@@ -938,9 +938,9 @@ app.innerHTML = `
 const defaultCatalogs = BuildDefaultState().catalogs;
 
 declare global {
-  interface Window {
-    NpcEasyApp: () => any;
-  }
+    interface Window {
+        NpcEasyApp: () => any;
+    }
 }
 
 const NpcEasyApp = (): any => {
@@ -1087,8 +1087,8 @@ const NpcEasyApp = (): any => {
 
             this.editingCharacter.classLevels.push({
                 classId: this.catalogs.classes[0]?.name ?? '',
-              level: 1,
-              subclassName: ''
+                level: 1,
+                subclassName: ''
             });
             this.SaveAll();
         },
@@ -1103,81 +1103,81 @@ const NpcEasyApp = (): any => {
         },
 
         RemoveWeaponFromCharacter(weaponId: string) {
-          if (!this.editingCharacter) {
-            return;
-          }
+            if (!this.editingCharacter) {
+                return;
+            }
 
-          this.editingCharacter.weaponIds = this.editingCharacter.weaponIds.filter((value: string) => value !== weaponId);
+            this.editingCharacter.weaponIds = this.editingCharacter.weaponIds.filter((value: string) => value !== weaponId);
 
-          if (this.editingCharacter.weaponMagicBonuses) {
-            delete this.editingCharacter.weaponMagicBonuses[weaponId];
-          }
+            if (this.editingCharacter.weaponMagicBonuses) {
+                delete this.editingCharacter.weaponMagicBonuses[weaponId];
+            }
 
-          if (this.editingCharacter.characterWeapons) {
-            this.editingCharacter.characterWeapons = this.editingCharacter.characterWeapons.filter((entry: CharacterWeapon) => entry.weaponId !== weaponId);
-          }
+            if (this.editingCharacter.characterWeapons) {
+                this.editingCharacter.characterWeapons = this.editingCharacter.characterWeapons.filter((entry: CharacterWeapon) => entry.weaponId !== weaponId);
+            }
 
-          this.SaveAll();
+            this.SaveAll();
         },
 
-    ToggleCharacterListSelection(listKey: 'featIds' | 'spellIds', id: string, isChecked: boolean) {
-      if (!this.editingCharacter) {
-        return;
-      }
+        ToggleCharacterListSelection(listKey: 'featIds' | 'spellIds', id: string, isChecked: boolean) {
+            if (!this.editingCharacter) {
+                return;
+            }
 
-      const existing = this.editingCharacter[listKey] ?? [];
+            const existing = this.editingCharacter[listKey] ?? [];
 
-      if (isChecked) {
-        if (!existing.includes(id)) {
-          existing.push(id);
-        }
-      } else {
-        this.editingCharacter[listKey] = existing.filter((value: string) => value !== id);
-      }
+            if (isChecked) {
+                if (!existing.includes(id)) {
+                    existing.push(id);
+                }
+            } else {
+                this.editingCharacter[listKey] = existing.filter((value: string) => value !== id);
+            }
 
-      this.SaveAll();
-    },
+            this.SaveAll();
+        },
 
-    ToggleWeaponSelection(weaponId: string, isChecked: boolean) {
-      if (!this.editingCharacter) {
-        return;
-      }
+        ToggleWeaponSelection(weaponId: string, isChecked: boolean) {
+            if (!this.editingCharacter) {
+                return;
+            }
 
-      if (isChecked) {
-        if (!this.editingCharacter.weaponIds.includes(weaponId)) {
-          this.editingCharacter.weaponIds.push(weaponId);
-        }
-        this.SaveAll();
-        return;
-      }
+            if (isChecked) {
+                if (!this.editingCharacter.weaponIds.includes(weaponId)) {
+                    this.editingCharacter.weaponIds.push(weaponId);
+                }
+                this.SaveAll();
+                return;
+            }
 
-      this.RemoveWeaponFromCharacter(weaponId);
-    },
+            this.RemoveWeaponFromCharacter(weaponId);
+        },
 
         AddCompendiumItem(key: CatalogKey) {
-          const item: CatalogItem = {
+            const item: CatalogItem = {
                 id: NewId(key.slice(0, -1)),
                 name: `New ${key.slice(0, -1)}`,
                 description: ''
-          };
+            };
 
-          if (key === 'spells') {
-            item.level = 0;
-            item.classes = [];
-          }
+            if (key === 'spells') {
+                item.level = 0;
+                item.classes = [];
+            }
 
-          this.catalogs[key].unshift(item);
+            this.catalogs[key].unshift(item);
 
             this.SaveAll();
         },
 
         SetSpellClasses(item: CatalogItem, value: string) {
-          item.classes = value
-            .split(',')
-            .map((className: string) => className.trim())
-            .filter((className: string) => className.length > 0);
+            item.classes = value
+                .split(',')
+                .map((className: string) => className.trim())
+                .filter((className: string) => className.length > 0);
 
-          this.SaveAll();
+            this.SaveAll();
         },
 
         RemoveCompendiumItem(key: CatalogKey, id: string) {
@@ -1204,55 +1204,55 @@ const NpcEasyApp = (): any => {
             this.SaveAll();
         },
 
-    GetAbilityModifier(score: number): number {
-      return Math.floor((score - 10) / 2);
-    },
+        GetAbilityModifier(score: number): number {
+            return Math.floor((score - 10) / 2);
+        },
 
-      GetWeaponMagicBonus(character: CharacterRecord, weaponId: string): number {
-        if (!character.weaponMagicBonuses) {
-          character.weaponMagicBonuses = {};
-        }
+        GetWeaponMagicBonus(character: CharacterRecord, weaponId: string): number {
+            if (!character.weaponMagicBonuses) {
+                character.weaponMagicBonuses = {};
+            }
 
-        const current = Number(character.weaponMagicBonuses[weaponId] ?? 0);
-        const bonus = Number.isFinite(current) ? current : 0;
-        character.weaponMagicBonuses[weaponId] = bonus;
+            const current = Number(character.weaponMagicBonuses[weaponId] ?? 0);
+            const bonus = Number.isFinite(current) ? current : 0;
+            character.weaponMagicBonuses[weaponId] = bonus;
 
-        if (!character.characterWeapons) {
-          character.characterWeapons = [];
-        }
+            if (!character.characterWeapons) {
+                character.characterWeapons = [];
+            }
 
-        const existing = character.characterWeapons.find((entry: CharacterWeapon) => entry.weaponId === weaponId);
-        if (existing) {
-          existing.magicalBonus = bonus;
-        } else {
-          character.characterWeapons.push({ weaponId, magicalBonus: bonus });
-        }
+            const existing = character.characterWeapons.find((entry: CharacterWeapon) => entry.weaponId === weaponId);
+            if (existing) {
+                existing.magicalBonus = bonus;
+            } else {
+                character.characterWeapons.push({ weaponId, magicalBonus: bonus });
+            }
 
-        return bonus;
-      },
+            return bonus;
+        },
 
-      SetWeaponMagicBonus(character: CharacterRecord, weaponId: string, value: string) {
-        const parsed = Number.parseInt(value, 10);
-        const safeBonus = Number.isFinite(parsed) ? Math.max(0, parsed) : 0;
+        SetWeaponMagicBonus(character: CharacterRecord, weaponId: string, value: string) {
+            const parsed = Number.parseInt(value, 10);
+            const safeBonus = Number.isFinite(parsed) ? Math.max(0, parsed) : 0;
 
-        if (!character.weaponMagicBonuses) {
-          character.weaponMagicBonuses = {};
-        }
-        character.weaponMagicBonuses[weaponId] = safeBonus;
+            if (!character.weaponMagicBonuses) {
+                character.weaponMagicBonuses = {};
+            }
+            character.weaponMagicBonuses[weaponId] = safeBonus;
 
-        if (!character.characterWeapons) {
-          character.characterWeapons = [];
-        }
+            if (!character.characterWeapons) {
+                character.characterWeapons = [];
+            }
 
-        const existing = character.characterWeapons.find((entry: CharacterWeapon) => entry.weaponId === weaponId);
-        if (existing) {
-          existing.magicalBonus = safeBonus;
-        } else {
-          character.characterWeapons.push({ weaponId, magicalBonus: safeBonus });
-        }
+            const existing = character.characterWeapons.find((entry: CharacterWeapon) => entry.weaponId === weaponId);
+            if (existing) {
+                existing.magicalBonus = safeBonus;
+            } else {
+                character.characterWeapons.push({ weaponId, magicalBonus: safeBonus });
+            }
 
-        this.SaveAll();
-      },
+            this.SaveAll();
+        },
 
         GetProficiencyBonus(level: number): number {
             return Math.ceil(level / 4) + 1;
@@ -1284,16 +1284,15 @@ const NpcEasyApp = (): any => {
             });
         },
 
-
         FormatWeaponName(character: CharacterRecord, weaponId: string): string {
-          const weaponName = this.GetCatalogName('weapons', weaponId);
-          const magicBonus = this.GetWeaponMagicBonus(character, weaponId);
+            const weaponName = this.GetCatalogName('weapons', weaponId);
+            const magicBonus = this.GetWeaponMagicBonus(character, weaponId);
 
-          if (magicBonus <= 0) {
-            return weaponName;
-          }
+            if (magicBonus <= 0) {
+                return weaponName;
+            }
 
-          return `${weaponName} +${magicBonus}`;
+            return `${weaponName} +${magicBonus}`;
         },
 
         FormatWeaponAttack(character: CharacterRecord, weaponId: string): string {
@@ -1332,85 +1331,85 @@ const NpcEasyApp = (): any => {
             return `${toHitText} to hit | ${weapon.weaponDamage}${dmgBonus} ${weapon.weaponDamageType}`;
         },
 
-          GetSpellcastingAbilityForClassEntry(entry: ClassLevel): keyof CharacterRecord['abilityScores'] | undefined {
+        GetSpellcastingAbilityForClassEntry(entry: ClassLevel): keyof CharacterRecord['abilityScores'] | undefined {
             const className = entry.classId.toLowerCase();
             const subclass = (entry.subclassName ?? '').toLowerCase();
 
             if (className.includes('bard') || className.includes('paladin') || className.includes('sorcerer') || className.includes('warlock')) {
-              return 'charisma';
+                return 'charisma';
             }
             if (className.includes('cleric') || className.includes('druid') || className.includes('ranger')) {
-              return 'wisdom';
+                return 'wisdom';
             }
             if (className.includes('wizard')) {
-              return 'intelligence';
+                return 'intelligence';
             }
             if (className.includes('fighter') && subclass.includes('eldritch knight')) {
-              return 'intelligence';
+                return 'intelligence';
             }
             if (className.includes('rogue') && subclass.includes('arcane trickster')) {
-              return 'intelligence';
+                return 'intelligence';
             }
 
             return undefined;
-          },
+        },
 
-          GetBestSpellcastingAbility(character: CharacterRecord): keyof CharacterRecord['abilityScores'] | undefined {
+        GetBestSpellcastingAbility(character: CharacterRecord): keyof CharacterRecord['abilityScores'] | undefined {
             const abilities: Array<keyof CharacterRecord['abilityScores']> = [];
 
             for (const entry of character.classLevels) {
-              const ability = this.GetSpellcastingAbilityForClassEntry(entry);
-              if (ability) {
-                abilities.push(ability);
-              }
+                const ability = this.GetSpellcastingAbilityForClassEntry(entry);
+                if (ability) {
+                    abilities.push(ability);
+                }
             }
 
             if (abilities.length === 0) {
-              return undefined;
+                return undefined;
             }
 
             return abilities.reduce((best, current) => {
-              const bestMod = this.GetAbilityModifier(character.abilityScores[best]);
-              const currentMod = this.GetAbilityModifier(character.abilityScores[current]);
-              return currentMod > bestMod ? current : best;
+                const bestMod = this.GetAbilityModifier(character.abilityScores[best]);
+                const currentMod = this.GetAbilityModifier(character.abilityScores[current]);
+                return currentMod > bestMod ? current : best;
             });
-          },
+        },
 
-          CharacterHasDamagingSpell(character: CharacterRecord): boolean {
+        CharacterHasDamagingSpell(character: CharacterRecord): boolean {
             for (const spellId of character.spellIds) {
-              const catalogSpell = this.catalogs.spells.find((item: CatalogItem) => item.id === spellId);
-              if (!catalogSpell) {
-                continue;
-              }
+                const catalogSpell = this.catalogs.spells.find((item: CatalogItem) => item.id === spellId);
+                if (!catalogSpell) {
+                    continue;
+                }
 
-              const sourceSpell = GetSpellByName(catalogSpell.name);
-              const damage = catalogSpell.damage ?? sourceSpell?.damage ?? SummarizeSpellDamage(catalogSpell.description ?? sourceSpell?.description ?? '');
-              if (damage && damage !== 'See description') {
-                return true;
-              }
+                const sourceSpell = GetSpellByName(catalogSpell.name);
+                const damage = catalogSpell.damage ?? sourceSpell?.damage ?? SummarizeSpellDamage(catalogSpell.description ?? sourceSpell?.description ?? '');
+                if (damage && damage !== 'See description') {
+                    return true;
+                }
             }
 
             return false;
-          },
+        },
 
-          GetSpellSaveDC(character: CharacterRecord): number {
+        GetSpellSaveDC(character: CharacterRecord): number {
             const ability = this.GetBestSpellcastingAbility(character);
             if (!ability) {
-              return 8;
+                return 8;
             }
             const abilityMod = this.GetAbilityModifier(character.abilityScores[ability as keyof CharacterRecord['abilityScores']]);
             const profBonus = this.GetProficiencyBonus(character.level);
             return 8 + profBonus + abilityMod;
-          },
+        },
 
-          ShouldShowSpellAttack(character: CharacterRecord): boolean {
+        ShouldShowSpellAttack(character: CharacterRecord): boolean {
             return Boolean(this.GetBestSpellcastingAbility(character)) && this.CharacterHasDamagingSpell(character);
-          },
+        },
 
-          FormatSpellAttack(character: CharacterRecord): string {
+        FormatSpellAttack(character: CharacterRecord): string {
             const ability = this.GetBestSpellcastingAbility(character);
             if (!ability) {
-              return '';
+                return '';
             }
 
             const abilityKey = ability as keyof CharacterRecord['abilityScores'];
@@ -1419,35 +1418,35 @@ const NpcEasyApp = (): any => {
             const toHit = profBonus + abilityMod;
             const toHitText = toHit >= 0 ? `+${toHit}` : `${toHit}`;
             return `${toHitText} to hit | spell attack`;
-          },
+        },
 
-          FormatSpellLevel(level: number): string {
+        FormatSpellLevel(level: number): string {
             if (level === 1) {
-              return '1st';
+                return '1st';
             }
             if (level === 2) {
-              return '2nd';
+                return '2nd';
             }
             if (level === 3) {
-              return '3rd';
+                return '3rd';
             }
 
             return `${level}th`;
-          },
+        },
 
-          GetSpellSlotSummary(character: CharacterRecord | null): string[] {
+        GetSpellSlotSummary(character: CharacterRecord | null): string[] {
             if (!character) {
-              return [];
+                return [];
             }
 
             const classLevelsByName: Record<string, number> = {};
             for (const entry of character.classLevels) {
-              const className = entry.classId.toLowerCase();
-              if (!className) {
-                continue;
-              }
+                const className = entry.classId.toLowerCase();
+                if (!className) {
+                    continue;
+                }
 
-              classLevelsByName[className] = (classLevelsByName[className] ?? 0) + Math.max(0, entry.level);
+                classLevelsByName[className] = (classLevelsByName[className] ?? 0) + Math.max(0, entry.level);
             }
 
             const fullCasterClasses = new Set(['bard', 'cleric', 'druid', 'sorcerer', 'wizard']);
@@ -1455,40 +1454,40 @@ const NpcEasyApp = (): any => {
 
             let multiclassCasterLevel = 0;
             for (const className in classLevelsByName) {
-              const classLevel = classLevelsByName[className];
-              if (fullCasterClasses.has(className)) {
-                multiclassCasterLevel += classLevel;
-              } else if (halfCasterClasses.has(className)) {
-                multiclassCasterLevel += Math.floor(classLevel / 2);
-              }
+                const classLevel = classLevelsByName[className];
+                if (fullCasterClasses.has(className)) {
+                    multiclassCasterLevel += classLevel;
+                } else if (halfCasterClasses.has(className)) {
+                    multiclassCasterLevel += Math.floor(classLevel / 2);
+                }
             }
 
             const spellSlotLines: string[] = [];
             const boundedCasterLevel = Math.min(20, Math.max(0, multiclassCasterLevel));
             const slots = SpellSlotsByCasterLevel[boundedCasterLevel] ?? [];
             if (slots.length > 0) {
-              const slotText = slots
-                .map((count, index) => `${this.FormatSpellLevel(index + 1)}: ${count}`)
-                .join(', ');
-              spellSlotLines.push(`Spell Slots - ${slotText}`);
+                const slotText = slots
+                    .map((count, index) => `${this.FormatSpellLevel(index + 1)}: ${count}`)
+                    .join(', ');
+                spellSlotLines.push(`Spell Slots - ${slotText}`);
             }
 
             const warlockLevel = classLevelsByName.warlock ?? 0;
             if (warlockLevel > 0) {
-              const pactSlots = WarlockPactSlotsByLevel[Math.min(20, warlockLevel)] ?? { slots: 0, slotLevel: 0 };
-              if (pactSlots.slots > 0 && pactSlots.slotLevel > 0) {
-                const slotLabel = pactSlots.slots === 1 ? 'slot' : 'slots';
-                spellSlotLines.push(`Pact Magic - ${pactSlots.slots} ${slotLabel} (${this.FormatSpellLevel(pactSlots.slotLevel)} level)`);
-              }
+                const pactSlots = WarlockPactSlotsByLevel[Math.min(20, warlockLevel)] ?? { slots: 0, slotLevel: 0 };
+                if (pactSlots.slots > 0 && pactSlots.slotLevel > 0) {
+                    const slotLabel = pactSlots.slots === 1 ? 'slot' : 'slots';
+                    spellSlotLines.push(`Pact Magic - ${pactSlots.slots} ${slotLabel} (${this.FormatSpellLevel(pactSlots.slotLevel)} level)`);
+                }
             }
 
             return spellSlotLines;
-          },
+        },
 
-          GetSpellFacts(spellId: string): string[] {
+        GetSpellFacts(spellId: string): string[] {
             const spell = this.catalogs.spells.find((item: CatalogItem) => item.id === spellId);
             if (!spell) {
-              return [];
+                return [];
             }
 
             // Use structured fields from the enriched spell catalog
@@ -1510,15 +1509,15 @@ const NpcEasyApp = (): any => {
             if (components) meta.push(components);
 
             return [
-              `Casting Time: ${castingTime}${ritual}${concentration}`,
-              `Range: ${range}`,
-              `Duration: ${duration}`,
-              ...(damage ? [`Damage: ${damage}`] : []),
-              ...(scaling ? [`Scaling: ${scaling}`] : []),
-              ...(meta.length ? [`${meta.join(' · ')}`] : []),
-              `Effects: ${effect || 'See full text'}`
+                `Casting Time: ${castingTime}${ritual}${concentration}`,
+                `Range: ${range}`,
+                `Duration: ${duration}`,
+                ...(damage ? [`Damage: ${damage}`] : []),
+                ...(scaling ? [`Scaling: ${scaling}`] : []),
+                ...(meta.length ? [`${meta.join(' · ')}`] : []),
+                `Effects: ${effect || 'See full text'}`
             ];
-          },
+        },
 
         FormatAbilityScore(score: number): string {
             const modifier = this.GetAbilityModifier(score);
@@ -1528,11 +1527,25 @@ const NpcEasyApp = (): any => {
 
         GetCatalogName(key: CatalogKey, id: string): string {
             return this.catalogs[key].find((item: CatalogItem) => item.id === id)?.name ?? 'Unknown';
+        },
+
+        GetTotalCharacterLevel(): number {
+            let totalCharLvl: number = 0;
+            this.editingCharacter.classLevels.forEach((classLevel: ClassLevel) => {
+                if (classLevel.level < 0) {
+                    console.warn(`Character ${this.editingCharacter.name} has a class level entry with negative level (${classLevel.classId} Lv ${classLevel.level}). Treating it as 0 for total level calculation.`);
+                }
+                totalCharLvl += classLevel.level > 0 ? classLevel.level : 0;
+            
+
+            });
+            //console.info(`Calculated total character level for ${this.editingCharacter.name}: ${totalCharLvl}`);
+            return totalCharLvl;
         }
-    };
+    }
 };
 
-    window.NpcEasyApp = NpcEasyApp;
+window.NpcEasyApp = NpcEasyApp;
 
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
