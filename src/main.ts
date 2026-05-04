@@ -40,7 +40,6 @@ type CharacterRecord = {
     classLevels: ClassLevel[];
     level: number;
     experience: number;
-    hitPoints: number;
     maxHitPoints: number;
     armorClass: number;
     speed: number;
@@ -382,7 +381,6 @@ function BuildNewCharacter(raceId: string): CharacterRecord {
         classLevels: [],
         level: 1,
         experience: 0,
-        hitPoints: 8,
         maxHitPoints: 8,
         armorClass: 10,
         speed: 30,
@@ -585,11 +583,8 @@ app.innerHTML = `
               <label class="field-label">Experience
                 <input x-model.number="editingCharacter.experience" type="number" min="0" class="input-base" />
               </label>
-              <label class="field-label">HP / Max HP
-                <div class="grid grid-cols-2 gap-2">
-                  <input x-model.number="editingCharacter.hitPoints" type="number" min="0" class="input-base" />
-                  <input x-model.number="editingCharacter.maxHitPoints" type="number" min="0" class="input-base" />
-                </div>
+              <label class="field-label">Max HP
+                <input x-model.number="editingCharacter.maxHitPoints" type="number" min="0" class="input-base" />
               </label>
               <label class="field-label">AC / Speed
                 <div class="grid grid-cols-2 gap-2">
@@ -842,7 +837,7 @@ app.innerHTML = `
             </p>
           </div>
           <div class="sheet-badges">
-            <span>HP <strong x-text="editingCharacter?.hitPoints ?? 0"></strong>/<span x-text="editingCharacter?.maxHitPoints ?? 0"></span></span>
+            <span>Max HP <strong x-text="editingCharacter?.maxHitPoints ?? 0"></strong></span>
             <span>AC <strong x-text="editingCharacter?.armorClass ?? 0"></strong></span>
             <span>Speed <strong x-text="editingCharacter?.speed ?? 0"></strong> ft</span>
             <span>Prof Bonus <strong x-text="'+' + GetProficiencyBonus(editingCharacter?.level ?? 1)"></strong></span>
