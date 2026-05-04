@@ -836,6 +836,10 @@ app.innerHTML = `
               <span> | Level </span><span x-text="editingCharacter?.level ?? 0"></span>
               <span> | </span><span x-text="editingCharacter?.alignment || 'Unaligned'"></span>
             </p>
+            <p class="mt-1 text-sm text-ink-soft" x-show="(editingCharacter?.classLevels?.length ?? 0) > 0" x-cloak>
+              <span class="font-semibold">Classes:</span>
+              <span x-text="(editingCharacter?.classLevels ?? []).map(entry => entry.subclassName ? (entry.classId + ' (' + entry.subclassName + ') Lv ' + entry.level) : (entry.classId + ' Lv ' + entry.level)).join(', ')"></span>
+            </p>
           </div>
           <div class="sheet-badges">
             <span>HP <strong x-text="editingCharacter?.hitPoints ?? 0"></strong>/<span x-text="editingCharacter?.maxHitPoints ?? 0"></span></span>
@@ -868,18 +872,6 @@ app.innerHTML = `
                 </div>
               </template>
             </dl>
-          </div>
-
-          <div class="sheet-card">
-            <h4>Class Levels</h4>
-            <ul class="list-base">
-              <template x-for="entry in editingCharacter?.classLevels ?? []" :key="entry.classId + '-' + entry.level">
-                <li>
-                  <span x-text="entry.subclassName ? (entry.classId + ' (' + entry.subclassName + ')') : entry.classId"></span>
-                  <span class="opacity-75">(Lv <span x-text="entry.level"></span>)</span>
-                </li>
-              </template>
-            </ul>
           </div>
 
           <div class="sheet-card" x-show="(editingCharacter?.featIds?.length ?? 0) > 0" x-cloak>
