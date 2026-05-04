@@ -1539,7 +1539,6 @@ const NpcEasyApp = (): any => {
             
 
             });
-            //console.info(`Calculated total character level for ${this.editingCharacter.name}: ${totalCharLvl}`);
             return totalCharLvl;
         }
     }
