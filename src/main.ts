@@ -882,7 +882,7 @@ app.innerHTML = `
             </ul>
           </div>
 
-          <div class="sheet-card">
+          <div class="sheet-card" x-show="(editingCharacter?.featIds?.length ?? 0) > 0" x-cloak>
             <h4>Feats</h4>
             <ul class="list-base">
               <template x-for="id in editingCharacter?.featIds ?? []" :key="id">
@@ -909,7 +909,7 @@ app.innerHTML = `
             </ul>
           </div>
 
-          <div class="sheet-card sheet-card-spells">
+          <div class="sheet-card sheet-card-spells" x-show="(editingCharacter?.spellIds?.length ?? 0) > 0" x-cloak>
             <h4>Spells</h4>
             <div class="mb-2 space-y-1 text-xs text-ink-soft" x-show="editingCharacter && GetBestSpellcastingAbility(editingCharacter)" x-cloak>
               <p><span class="font-semibold">Spell Save DC:</span> <span x-text="'DC ' + GetSpellSaveDC(editingCharacter)"></span></p>
