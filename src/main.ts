@@ -354,19 +354,19 @@ function BuildDefaultState(): AppState {
         selectedCharacterId: '',
         catalogs: {
             classes: AllClasses.map(item => ({
-                id: NewId('class'),
+                id: `class-${item.classType.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
                 name: item.classType,
                 description: `Hit Die: d${item.hitDice}`
             })),
             feats: Feats.map(item => ({
-                id: NewId('feat'),
+                id: `feat-${item.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
                 name: item.name,
                 description: item.prerequisites ? `${item.description} Prereq: ${item.prerequisites}` : item.description
             })),
             weapons: DEFAULT_WEAPONS,
             spells: DEFAULT_SPELLS,
             races: Races.map(item => ({
-                id: NewId('race'),
+                id: `race-${item.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
                 name: item.name,
                 description: item.description
             }))
@@ -412,6 +412,14 @@ function BuildNewCharacter(raceId: string): CharacterRecord {
     };
 }
 
+function MigrateClassId(classId: string, classItems: CatalogItem[]): string {
+    // Already a class name (new format)
+    if (AllClasses.some(c => c.classType === classId)) return classId;
+    // Old format: look up by catalog item ID
+    const match = classItems.find(c => c.id === classId);
+    return match ? match.name : classId;
+}
+
 function LoadState(): AppState {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) {
@@ -429,20 +437,31 @@ function LoadState(): AppState {
             && parsed.catalogs.spells.length === 5
             && parsed.catalogs.spells.some((item) => item.id === 'spell-fireball');
 
+        const freshCatalogs = BuildDefaultState().catalogs;
         const mergedState = {
             ...BuildDefaultState(),
             ...parsed,
             catalogs: {
-                ...BuildDefaultState().catalogs,
-                ...parsed.catalogs,
-                weapons: NormalizeWeaponCatalog(isLegacyWeaponCatalog ? DEFAULT_WEAPONS : (parsed.catalogs?.weapons ?? BuildDefaultState().catalogs.weapons)),
-                spells: NormalizeSpellCatalog(isLegacySpellCatalog ? DEFAULT_SPELLS : (parsed.catalogs?.spells ?? BuildDefaultState().catalogs.spells))
+                classes: freshCatalogs.classes,
+                feats: freshCatalogs.feats,
+                races: freshCatalogs.races,
+                weapons: NormalizeWeaponCatalog(isLegacyWeaponCatalog ? DEFAULT_WEAPONS : (parsed.catalogs?.weapons ?? freshCatalogs.weapons)),
+                spells: NormalizeSpellCatalog(isLegacySpellCatalog ? DEFAULT_SPELLS : (parsed.catalogs?.spells ?? freshCatalogs.spells))
             }
         };
 
         return {
           ...mergedState,
-          collections: NormalizeCollections(mergedState.collections)
+          collections: NormalizeCollections(mergedState.collections).map(col => ({
+            ...col,
+            characters: col.characters.map(char => ({
+              ...char,
+              classLevels: char.classLevels.map(entry => ({
+                ...entry,
+                classId: MigrateClassId(entry.classId, freshCatalogs.classes)
+              }))
+            }))
+          }))
         };
     } catch {
         return BuildDefaultState();
@@ -615,7 +634,7 @@ app.innerHTML = `
                     <select x-model="row.classId" class="input-base">
                       <option value="">Choose class</option>
                       <template x-for="entry in catalogs.classes" :key="entry.id">
-                        <option :value="entry.id" x-text="entry.name"></option>
+                        <option :value="entry.name" x-text="entry.name"></option>
                       </template>
                     </select>
                     <template x-if="GetSubclassOptionsForClass(row.classId).length > 0">
@@ -856,7 +875,7 @@ app.innerHTML = `
             <ul class="list-base">
               <template x-for="entry in editingCharacter?.classLevels ?? []" :key="entry.classId + '-' + entry.level">
                 <li>
-                  <span x-text="entry.subclassName ? (GetCatalogName('classes', entry.classId) + ' (' + entry.subclassName + ')') : GetCatalogName('classes', entry.classId)"></span>
+                  <span x-text="entry.subclassName ? (entry.classId + ' (' + entry.subclassName + ')') : entry.classId"></span>
                   <span class="opacity-75">(Lv <span x-text="entry.level"></span>)</span>
                 </li>
               </template>
@@ -1070,9 +1089,7 @@ const NpcEasyApp = (): any => {
         },
 
         GetSubclassOptionsForClass(classId: string): string[] {
-            const classEntry = this.catalogs.classes.find((c: CatalogItem) => c.id === classId);
-            if (!classEntry) return [];
-            const charClass = AllClasses.find(c => c.classType === classEntry.name);
+            const charClass = AllClasses.find(c => c.classType === classId);
             return charClass ? charClass.subclasses.map(sc => sc.name) : [];
         },
 
@@ -1082,7 +1099,7 @@ const NpcEasyApp = (): any => {
             }
 
             this.editingCharacter.classLevels.push({
-                classId: this.catalogs.classes[0]?.id ?? '',
+                classId: this.catalogs.classes[0]?.name ?? '',
               level: 1,
               subclassName: ''
             });
@@ -1257,9 +1274,7 @@ const NpcEasyApp = (): any => {
         GetSavingThrows(character: CharacterRecord): { label: string; value: string; proficient: boolean }[] {
             const proficientSaves = new Set<string>();
             for (const entry of character.classLevels) {
-                const classEntry = this.catalogs.classes.find((c: CatalogItem) => c.id === entry.classId);
-                if (!classEntry) continue;
-                const charClass = AllClasses.find(c => c.classType === classEntry.name);
+                const charClass = AllClasses.find(c => c.classType === entry.classId);
                 if (!charClass) continue;
                 for (const save of charClass.proficiencies.savingThrows) {
                     proficientSaves.add(save.toLowerCase());
@@ -1331,7 +1346,7 @@ const NpcEasyApp = (): any => {
         },
 
           GetSpellcastingAbilityForClassEntry(entry: ClassLevel): keyof CharacterRecord['abilityScores'] | undefined {
-            const className = this.GetCatalogName('classes', entry.classId).toLowerCase();
+            const className = entry.classId.toLowerCase();
             const subclass = (entry.subclassName ?? '').toLowerCase();
 
             if (className.includes('bard') || className.includes('paladin') || className.includes('sorcerer') || className.includes('warlock')) {
@@ -1440,8 +1455,8 @@ const NpcEasyApp = (): any => {
 
             const classLevelsByName: Record<string, number> = {};
             for (const entry of character.classLevels) {
-              const className = this.GetCatalogName('classes', entry.classId).toLowerCase();
-              if (className === 'unknown') {
+              const className = entry.classId.toLowerCase();
+              if (!className) {
                 continue;
               }
 
