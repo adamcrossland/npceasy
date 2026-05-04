@@ -12,6 +12,7 @@ type CatalogItem = {
     id: string;
     name: string;
     description: string;
+  effect?: string;
     level?: number;
     classes?: string[];
     weaponDamage?: string;
@@ -148,9 +149,94 @@ const DEFAULT_SPELLS: CatalogItem[] = Spells.map((item) => ({
   id: `spell-${item.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
   name: item.name,
   description: item.description,
+  effect: item.effect,
   level: item.level,
   classes: item.classes
 }));
+
+function SummarizeSpellEffect(description: string): string {
+  const text = (description ?? '').replace(/\r/g, '').trim();
+  if (!text) {
+    return 'See full spell description.';
+  }
+
+  const firstParagraph = text.split(/\n\s*\n/)[0]?.replace(/\s+/g, ' ').trim() ?? text;
+  const firstSentence = firstParagraph.split(/(?<=[.!?])\s+/)[0] ?? firstParagraph;
+  const compact = firstSentence.replace(/\s+/g, ' ').trim();
+
+  if (compact.length <= 96) {
+    return compact;
+  }
+
+  const clipped = compact.slice(0, 93);
+  const lastSpace = clipped.lastIndexOf(' ');
+  const safe = lastSpace > 40 ? clipped.slice(0, lastSpace) : clipped;
+  return `${safe}...`;
+}
+
+function SummarizeSpellDamage(description: string): string | undefined {
+  const text = (description ?? '').replace(/\r/g, ' ');
+  if (!/\bdamage\b/i.test(text)) {
+    return undefined;
+  }
+
+  const damageTypes = 'acid|bludgeoning|cold|fire|force|lightning|necrotic|piercing|poison|psychic|radiant|slashing|thunder';
+  const parts: string[] = [];
+
+  const diceMatches = Array.from(text.matchAll(new RegExp(`\\b(\\d+d\\d+(?:\\s*[+\\-]\\s*\\d+)?)\\s+(${damageTypes})\\s+damage\\b`, 'gi')));
+  for (const match of diceMatches) {
+    const dice = match[1].replace(/\s+/g, '');
+    const damageType = match[2].toLowerCase();
+    const value = `${dice} ${damageType}`;
+    if (!parts.includes(value)) {
+      parts.push(value);
+    }
+  }
+
+  const flatMatches = Array.from(text.matchAll(new RegExp(`\\b(\\d+)\\s+(${damageTypes})\\s+damage\\b`, 'gi')));
+  for (const match of flatMatches) {
+    const value = `${match[1]} ${match[2].toLowerCase()}`;
+    if (!parts.includes(value)) {
+      parts.push(value);
+    }
+  }
+
+  if (parts.length > 0) {
+    const notes: string[] = [];
+
+    const cantripScalingMatch = text.match(/damage\s+increases\s+by\s+([^.;\n]+?)\s+when\s+you\s+reach\s+5th\s+level\s*\(([^)]+)\),\s*11th\s+level\s*\(([^)]+)\),\s*and\s*17th\s+level\s*\(([^)]+)\)/i);
+    if (cantripScalingMatch) {
+      const step = cantripScalingMatch[1].trim();
+      const lvl5 = cantripScalingMatch[2].trim();
+      const lvl11 = cantripScalingMatch[3].trim();
+      const lvl17 = cantripScalingMatch[4].trim();
+      notes.push(`cantrip scaling: +${step} (5th: ${lvl5}, 11th: ${lvl11}, 17th: ${lvl17})`);
+    }
+
+    const wordToNumber: Record<string, number> = {
+      one: 1,
+      two: 2,
+      three: 3,
+      four: 4
+    };
+
+    const slotScalingMatch = text.match(/At\s+Higher\s+Levels:[\s\S]*?damage\s+increases\s+by\s+([^.;\n]+?)\s+for\s+(?:each|every)\s+(?:(one|two|three|four|\d+)\s+)?slot\s+level(?:s)?\s+above\s+(\d+)(?:st|nd|rd|th)/i);
+    if (slotScalingMatch) {
+      const increment = slotScalingMatch[1].trim();
+      const stepRaw = (slotScalingMatch[2] ?? '1').toLowerCase();
+      const step = Number.isFinite(Number(stepRaw)) ? Number(stepRaw) : (wordToNumber[stepRaw] ?? 1);
+      const baseSlot = Number(slotScalingMatch[3]);
+      const perText = step <= 1 ? 'slot level' : `${step} slot levels`;
+      notes.push(`higher slots: +${increment} per ${perText} above ${baseSlot}`);
+    }
+
+    return notes.length > 0
+      ? `${parts.join(', ')} (${notes.join('; ')})`
+      : parts.join(', ');
+  }
+
+  return 'See description';
+}
 
 function NormalizeSpellCatalog(items: CatalogItem[]): CatalogItem[] {
   return items.map((item) => {
@@ -184,6 +270,7 @@ function NormalizeSpellCatalog(items: CatalogItem[]): CatalogItem[] {
 
     return {
       ...item,
+      effect: item.effect ?? canonical?.effect ?? SummarizeSpellEffect(item.description),
       level: item.level ?? canonical?.level ?? inferredLevelFromDescription ?? 0,
       classes: item.classes ?? canonical?.classes ?? inferredClassesFromDescription ?? []
     };
@@ -1238,6 +1325,7 @@ const NpcEasyApp = (): any => {
 
             // Use structured fields from the enriched spell catalog
             const srcSpell = GetSpellByName(spell.name);
+            const descriptionText = (spell.description?.trim() || srcSpell?.description || '');
             const castingTime = srcSpell?.castingTime ?? 'Action';
             const range = srcSpell?.range ?? 'See description';
             const duration = srcSpell?.duration ?? 'See description';
@@ -1245,12 +1333,8 @@ const NpcEasyApp = (): any => {
             const school = srcSpell?.school ?? '';
             const ritual = srcSpell?.ritual ? ' (ritual)' : '';
             const concentration = srcSpell?.concentration ? ' ★ Concentration' : '';
-
-            const text = spell.description ?? '';
-            const firstParagraph = text.split('\n\n')[0]?.trim() ?? '';
-            const effect = firstParagraph.length > 180
-              ? `${firstParagraph.slice(0, 177).trim()}...`
-              : firstParagraph;
+            const effect = spell.effect ?? srcSpell?.effect ?? SummarizeSpellEffect(descriptionText);
+            const damage = SummarizeSpellDamage(descriptionText);
 
             const meta: string[] = [];
             if (school) meta.push(school.charAt(0).toUpperCase() + school.slice(1));
@@ -1260,6 +1344,7 @@ const NpcEasyApp = (): any => {
               `Casting Time: ${castingTime}${ritual}${concentration}`,
               `Range: ${range}`,
               `Duration: ${duration}`,
+              ...(damage ? [`Damage: ${damage}`] : []),
               ...(meta.length ? [`${meta.join(' · ')}`] : []),
               `Effects: ${effect || 'See full text'}`
             ];
