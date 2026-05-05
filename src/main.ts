@@ -1155,7 +1155,11 @@ app.innerHTML = `
           </div>
 
           <div class="sheet-card">
-            <h4>Narrative</h4>
+            <h4>Equipment</h4>
+            <p class="text-sm text-ink whitespace-pre-wrap" x-text="editingCharacter?.equipment || '(none specified)'"></p>
+          </div>
+
+          <div class="sheet-card">
             <p><strong>Background:</strong> <span x-text="editingCharacter?.background"></span></p>
             <p><strong>Personality:</strong> <span x-text="editingCharacter?.personality"></span></p>
             <p><strong>Ideals:</strong> <span x-text="editingCharacter?.ideals"></span></p>
