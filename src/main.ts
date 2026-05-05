@@ -14,6 +14,14 @@ type ClassSubclass = {
   features: string;
 };
 
+type ClassFeatureSummary = {
+    className: string;
+    classLevel: number;
+    subclassName: string;
+    classFeatures: string[];
+    subclassFeatures: string[];
+};
+
 type CatalogItem = {
     id: string;
     name: string;
@@ -378,6 +386,13 @@ function NormalizeClassSubclasses(subclasses?: Array<ClassSubclass | string>): C
     seen.add(key);
     return true;
   });
+}
+
+function ParseFeatureLines(featuresText: string): string[] {
+  return (featuresText ?? '')
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0);
 }
 
 function NewId(prefix: string): string {
@@ -1003,6 +1018,25 @@ app.innerHTML = `
             </ul>
           </div>
 
+          <div class="sheet-card" x-show="(editingCharacter?.classLevels?.length ?? 0) > 0" x-cloak>
+            <h4>Class Features</h4>
+            <div class="space-y-2">
+              <template x-for="entry in GetClassFeatureSummary(editingCharacter)" :key="entry.className + '-' + entry.classLevel + '-' + entry.subclassName">
+                <div class="rounded-lg border border-amber-100 p-2">
+                  <p class="font-semibold text-ink" x-text="entry.subclassName ? (entry.className + ' (' + entry.subclassName + ') Lv ' + entry.classLevel) : (entry.className + ' Lv ' + entry.classLevel)"></p>
+                  <ul class="mt-1 list-base text-sm">
+                    <template x-for="feature in entry.classFeatures" :key="entry.className + '-base-' + feature">
+                      <li x-text="feature"></li>
+                    </template>
+                    <template x-for="feature in entry.subclassFeatures" :key="entry.className + '-subclass-' + feature">
+                      <li class="text-ink-soft" x-text="feature"></li>
+                    </template>
+                  </ul>
+                </div>
+              </template>
+            </div>
+          </div>
+
           <div class="sheet-card">
             <h4>Weapons</h4>
             <ul class="list-base">
@@ -1462,6 +1496,78 @@ const NpcEasyApp = (): any => {
                 return { label: abbr, value, proficient };
             });
         },
+
+          GetClassFeatureSummary(character: CharacterRecord | null): ClassFeatureSummary[] {
+            if (!character) {
+              return [];
+            }
+
+            const groupedEntries = new Map<string, { className: string; subclassName: string; classLevel: number }>();
+            for (const classLevelEntry of character.classLevels ?? []) {
+              if (!classLevelEntry.classId || classLevelEntry.level <= 0) {
+                continue;
+              }
+
+              const className = classLevelEntry.classId;
+              const subclassName = classLevelEntry.subclassName ?? '';
+              const key = `${className}::${subclassName}`;
+              const existing = groupedEntries.get(key);
+              if (existing) {
+                existing.classLevel += classLevelEntry.level;
+              } else {
+                groupedEntries.set(key, {
+                  className,
+                  subclassName,
+                  classLevel: classLevelEntry.level
+                });
+              }
+            }
+
+            return Array.from(groupedEntries.values())
+              .sort((a, b) => {
+                  const classCompare = a.className.localeCompare(b.className);
+                  return classCompare !== 0 ? classCompare : a.subclassName.localeCompare(b.subclassName);
+              })
+              .map((entry) => {
+                const className = entry.className;
+                const classLevel = entry.classLevel;
+                const subclassName = entry.subclassName;
+
+                const sourceClass = AllClasses.find((item) => item.classType === className);
+                const classFeatures = (sourceClass?.features ?? [])
+                  .filter((feature) => feature.level <= classLevel)
+                  .map((feature) => `Lv ${feature.level}: ${feature.name} - ${feature.description}`);
+
+                let subclassFeatures: string[] = [];
+                if (subclassName) {
+                  const classCatalogItem = this.catalogs.classes.find((item: CatalogItem) => item.name === className);
+                  const subclassCatalogItem = NormalizeClassSubclasses(classCatalogItem?.classSubclasses)
+                    .find((subclass) => subclass.name === subclassName);
+
+                  const configuredFeatures = ParseFeatureLines(subclassCatalogItem?.features ?? '');
+                  if (configuredFeatures.length > 0) {
+                    subclassFeatures = configuredFeatures;
+                  } else {
+                    const sourceSubclass = sourceClass?.subclasses.find((subclass) => subclass.name === subclassName);
+                    subclassFeatures = (sourceSubclass?.features ?? [])
+                      .filter((feature) => feature.level <= classLevel)
+                      .map((feature) => `Lv ${feature.level}: ${feature.name} - ${feature.description}`);
+                  }
+                }
+
+                const uniqueClassFeatures = [...new Set(classFeatures)];
+                const uniqueSubclassFeatures = [...new Set(subclassFeatures)];
+
+                return {
+                  className,
+                  classLevel,
+                  subclassName,
+                  classFeatures: uniqueClassFeatures,
+                  subclassFeatures: uniqueSubclassFeatures
+                };
+              })
+              .filter((entry) => entry.classFeatures.length > 0 || entry.subclassFeatures.length > 0);
+          },
 
         FormatWeaponName(character: CharacterRecord, weaponId: string): string {
             const weaponName = this.GetCatalogName('weapons', weaponId);
