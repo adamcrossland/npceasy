@@ -79,6 +79,7 @@ export const Armors: ArmorRecord[] = [
         name: 'Ring Mail',
         category: 'Heavy',
         baseArmorClass: 14,
+        maxDexBonus: 0,
         stealthDisadvantage: true,
         description: 'Heavy armor. AC 14. Disadvantage on Stealth.'
     },
@@ -87,6 +88,7 @@ export const Armors: ArmorRecord[] = [
         name: 'Chain Mail',
         category: 'Heavy',
         baseArmorClass: 16,
+        maxDexBonus: 0,
         minimumStrength: 13,
         stealthDisadvantage: true,
         description: 'Heavy armor. AC 16. Str 13. Disadvantage on Stealth.'
@@ -96,6 +98,7 @@ export const Armors: ArmorRecord[] = [
         name: 'Splint',
         category: 'Heavy',
         baseArmorClass: 17,
+        maxDexBonus: 0,
         minimumStrength: 15,
         stealthDisadvantage: true,
         description: 'Heavy armor. AC 17. Str 15. Disadvantage on Stealth.'
@@ -105,6 +108,7 @@ export const Armors: ArmorRecord[] = [
         name: 'Plate',
         category: 'Heavy',
         baseArmorClass: 18,
+        maxDexBonus: 0,
         minimumStrength: 15,
         stealthDisadvantage: true,
         description: 'Heavy armor. AC 18. Str 15. Disadvantage on Stealth.'

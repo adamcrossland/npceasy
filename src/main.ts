@@ -66,7 +66,7 @@ type CharacterRecord = {
     fightingStyleId?: string;
     experience: number;
     maxHitPoints: number;
-    armorClass: number;
+    armorClass?: number;
     equippedArmorId?: string;
     hasShield?: boolean;
     speed: number;
@@ -341,6 +341,7 @@ function NormalizeWeaponCatalog(items: CatalogItem[]): CatalogItem[] {
 }
 
 function NormalizeCharacterWeaponData(character: CharacterRecord): CharacterRecord {
+  const { armorClass: _legacyArmorClass, ...characterWithoutLegacyArmorClass } = character;
     const existingBonuses = character.weaponMagicBonuses ?? {};
     const normalizedCharacterWeapons = (character.characterWeapons ?? []).map((entry) => ({
         weaponId: entry.weaponId,
@@ -373,7 +374,7 @@ function NormalizeCharacterWeaponData(character: CharacterRecord): CharacterReco
       : '';
 
     return {
-        ...character,
+        ...characterWithoutLegacyArmorClass,
         weaponIds: mergedWeaponIds,
       primaryWeaponId,
       offhandWeaponId,
@@ -535,7 +536,6 @@ function BuildNewCharacter(raceId: string): CharacterRecord {
         fightingStyleId: '',
         experience: 0,
         maxHitPoints: 8,
-        armorClass: 10,
         equippedArmorId: '',
         hasShield: false,
         speed: 30,
@@ -778,18 +778,15 @@ app.innerHTML = `
               </label>
             </div>
 
-            <div class="grid gap-3 md:grid-cols-4">
+            <div class="grid gap-3 md:grid-cols-3">
               <label class="field-label">Experience
                 <input x-model.number="editingCharacter.experience" type="number" min="0" class="input-base" />
               </label>
               <label class="field-label">Max HP
                 <input x-model.number="editingCharacter.maxHitPoints" type="number" min="0" class="input-base" />
               </label>
-              <label class="field-label">Base AC / Speed
-                <div class="grid grid-cols-2 gap-2">
-                  <input x-model.number="editingCharacter.armorClass" type="number" min="1" class="input-base" />
-                  <input x-model.number="editingCharacter.speed" type="number" min="0" class="input-base" />
-                </div>
+              <label class="field-label">Speed
+                <input x-model.number="editingCharacter.speed" type="number" min="0" class="input-base" />
               </label>
             </div>
 
@@ -1359,9 +1356,17 @@ const NpcEasyApp = (): any => {
         },
 
         SaveAll() {
+          const collectionsWithoutLegacyArmorClass = this.collections.map((collection: Collection) => ({
+            ...collection,
+            characters: collection.characters.map((character: CharacterRecord) => {
+              const { armorClass: _legacyArmorClass, ...characterWithoutLegacyArmorClass } = character;
+              return characterWithoutLegacyArmorClass;
+            })
+          }));
+
             const snapshot: AppState = {
                 screen: this.screen,
-                collections: this.collections,
+            collections: collectionsWithoutLegacyArmorClass,
                 selectedCollectionId: this.selectedCollectionId,
                 selectedCharacterId: this.selectedCharacterId,
                 catalogs: this.catalogs
@@ -2129,7 +2134,7 @@ const NpcEasyApp = (): any => {
       const dexterityModifier = this.GetAbilityModifier(character.abilityScores.dexterity);
       const armorBase = armor
         ? armor.baseArmorClass + Math.min(dexterityModifier, armor.maxDexBonus ?? dexterityModifier)
-        : character.armorClass;
+        : 10 + dexterityModifier;
       const shieldBonus = character.hasShield ? 2 : 0;
       const defenseBonus = styleName === 'Defense' && armor ? 1 : 0;
 
@@ -2148,7 +2153,7 @@ const NpcEasyApp = (): any => {
       if (armor) {
         notes.push(armor.description);
       } else {
-        notes.push(`No armor equipped. Using base AC ${character.armorClass}.`);
+        notes.push(`No armor equipped. Using unarmored AC 10 + Dex modifier (${10 + this.GetAbilityModifier(character.abilityScores.dexterity)}).`);
       }
       if (character.hasShield) {
         notes.push('Shield equipped: +2 AC.');
