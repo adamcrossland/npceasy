@@ -854,6 +854,7 @@ app.innerHTML = `
                     <button type="button" class="btn-danger" @click="RemoveClassLevel(index)">Remove</button>
                   </div>
                 </template>
+                <p class="text-sm text-ink-soft" x-show="(editingCharacter?.classLevels?.length ?? 0) === 0" x-cloak>No class levels set yet. Click Add Class to begin.</p>
               </div>
             </div>
 
