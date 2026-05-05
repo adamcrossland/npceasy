@@ -1053,7 +1053,7 @@ app.innerHTML = `
             </p>
             <p class="mt-1 text-sm text-ink-soft" x-show="(editingCharacter?.classLevels?.length ?? 0) > 0" x-cloak>
               <span class="font-semibold">Classes:</span>
-              <span x-text="(editingCharacter?.classLevels ?? []).map(entry => entry.subclassName ? (entry.className + ' (' + entry.subclassName + ') Lv ' + entry.level) : (entry.classId + ' Lv ' + entry.level)).join(', ')"></span>
+              <span x-text="(editingCharacter?.classLevels ?? []).map(entry => entry.subclassName ? (entry.classId + ' (' + entry.subclassName + ') Lv ' + entry.level) : (entry.classId + ' Lv ' + entry.level)).join(', ')"></span>
             </p>
           </div>
           <div class="sheet-badges">
