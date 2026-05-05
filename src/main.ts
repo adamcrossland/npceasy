@@ -681,6 +681,10 @@ app.innerHTML = `
       <div>
         <p class="font-display text-xl tracking-wide text-ink md:text-2xl">NPC Easy</p>
         <p class="text-xs uppercase tracking-[0.2em] text-ink-soft">Offline Campaign Workbench</p>
+        <p class="mt-1 text-xs font-semibold text-ink-soft">
+          Selected Collection:
+          <span class="text-ink" x-text="activeCollection?.name || '(none selected)'"></span>
+        </p>
       </div>
       <nav class="grid grid-cols-2 gap-2 md:flex md:items-center">
         <button class="tab-btn" :class="{ 'tab-btn-active': screen === 'Collections' }" @click="screen = 'Collections'">Collections</button>
@@ -704,13 +708,20 @@ app.innerHTML = `
 
       <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <template x-for="collection in collections" :key="collection.id">
-          <article class="panel ring-1 ring-transparent transition hover:ring-amber-300">
+          <article class="panel ring-1 ring-transparent transition hover:ring-amber-300" :class="selectedCollectionId === collection.id ? 'ring-amber-500 bg-amber-50/70' : ''">
             <div class="flex items-start justify-between gap-3">
               <div>
                 <h3 class="font-display text-xl text-ink" x-text="collection.name"></h3>
                 <p class="mt-1 text-sm text-ink-soft"><span x-text="collection.characters.length"></span> characters</p>
               </div>
-              <button class="btn-danger px-3 py-2 text-xs" @click="DeleteCollection(collection.id)">Delete</button>
+              <div class="flex items-center gap-2">
+                <span
+                  x-show="selectedCollectionId === collection.id"
+                  x-cloak
+                  class="rounded-full border border-amber-400 bg-amber-100 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-amber-900"
+                >Selected</span>
+                <button class="btn-danger px-3 py-2 text-xs" @click="DeleteCollection(collection.id)">Delete</button>
+              </div>
             </div>
             <div class="mt-4 flex gap-2">
               <button class="btn-secondary" @click="SelectCollection(collection.id)">Open</button>
