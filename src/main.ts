@@ -8,10 +8,17 @@ import { SrdWeapons } from './weapons';
 type Screen = 'Collections' | 'CharacterBuilder' | 'Compendium' | 'CharacterSheet';
 type CatalogKey = 'classes' | 'feats' | 'weapons' | 'spells' | 'races';
 
+type ClassSubclass = {
+  name: string;
+  description: string;
+  features: string;
+};
+
 type CatalogItem = {
     id: string;
     name: string;
     description: string;
+  classSubclasses?: ClassSubclass[];
     effect?: string;
     damage?: string;
     scaling?: string;
@@ -341,8 +348,63 @@ function NormalizeCollections(collections: Collection[]): Collection[] {
     }));
 }
 
+function FormatSubclassFeatures(features: Array<{ name: string; level: number; description: string }>): string {
+  return features.map((feature) => `Lv ${feature.level}: ${feature.name} - ${feature.description}`).join('\n');
+}
+
+function NormalizeClassSubclasses(subclasses?: Array<ClassSubclass | string>): ClassSubclass[] {
+  const normalized = (subclasses ?? []).map((subclass): ClassSubclass => {
+    if (typeof subclass === 'string') {
+      return {
+        name: subclass.trim(),
+        description: '',
+        features: ''
+      };
+    }
+
+    return {
+      name: (subclass.name ?? '').trim(),
+      description: (subclass.description ?? '').trim(),
+      features: (subclass.features ?? '').trim()
+    };
+  }).filter((subclass) => subclass.name.length > 0);
+
+  const seen = new Set<string>();
+  return normalized.filter((subclass) => {
+    const key = subclass.name.toLowerCase();
+    if (seen.has(key)) {
+      return false;
+    }
+    seen.add(key);
+    return true;
+  });
+}
+
 function NewId(prefix: string): string {
     return `${prefix}-${crypto.randomUUID()}`;
+}
+
+function MergeClassCatalog(savedClasses: CatalogItem[] | undefined, defaultClasses: CatalogItem[]): CatalogItem[] {
+    const saved = savedClasses ?? [];
+
+    const mergedDefaults = defaultClasses.map((defaultItem) => {
+        const savedMatch = saved.find((item) => item.name === defaultItem.name);
+        return {
+            ...defaultItem,
+            description: savedMatch?.description ?? defaultItem.description,
+            classSubclasses: NormalizeClassSubclasses(savedMatch?.classSubclasses ?? defaultItem.classSubclasses)
+        };
+    });
+
+    const customClasses = saved
+        .filter((item) => !defaultClasses.some((defaultItem) => defaultItem.name === item.name))
+        .map((item) => ({
+            ...item,
+            id: item.id || NewId('class'),
+            classSubclasses: NormalizeClassSubclasses(item.classSubclasses)
+        }));
+
+    return [...mergedDefaults, ...customClasses];
 }
 
 function BuildDefaultState(): AppState {
@@ -355,7 +417,12 @@ function BuildDefaultState(): AppState {
             classes: AllClasses.map(item => ({
                 id: `${item.classType.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
                 name: item.classType,
-                description: `Hit Die: d${item.hitDice}`
+              description: `Hit Die: d${item.hitDice}`,
+              classSubclasses: item.subclasses.map((subclass) => ({
+                name: subclass.name,
+                description: subclass.description,
+                features: FormatSubclassFeatures(subclass.features)
+              }))
             })),
             feats: Feats.map(item => ({
                 id: `feat-${item.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
@@ -477,7 +544,7 @@ function LoadState(): AppState {
             ...BuildDefaultState(),
             ...parsed,
             catalogs: {
-                classes: freshCatalogs.classes,
+              classes: MergeClassCatalog(parsed.catalogs?.classes, freshCatalogs.classes),
                 feats: freshCatalogs.feats,
                 races: freshCatalogs.races,
                 weapons: NormalizeWeaponCatalog(isLegacyWeaponCatalog ? DEFAULT_WEAPONS : (parsed.catalogs?.weapons ?? freshCatalogs.weapons)),
@@ -819,29 +886,49 @@ app.innerHTML = `
 
           <div class="space-y-2" @input.debounce.300ms="SaveAll()">
             <template x-for="item in catalogs[group.key]" :key="item.id">
-              <div
-                class="grid gap-2 rounded-xl border border-amber-200 p-3"
-                :class="group.key === 'spells' ? 'md:grid-cols-[180px_1fr_90px_260px_auto]' : 'md:grid-cols-[220px_1fr_auto]'"
-              >
-                <input x-model="item.name" type="text" class="input-base" placeholder="Name" />
-                <input x-model="item.description" type="text" class="input-base" placeholder="Description" />
-                <input
-                  x-show="group.key === 'spells'"
-                  x-model.number="item.level"
-                  type="number"
-                  min="0"
-                  class="input-base"
-                  placeholder="Level"
-                />
-                <input
-                  x-show="group.key === 'spells'"
-                  :value="(item.classes ?? []).join(', ')"
-                  @input="SetSpellClasses(item, $event.target.value)"
-                  type="text"
-                  class="input-base"
-                  placeholder="Classes (comma-separated)"
-                />
-                <button class="btn-danger" @click="RemoveCompendiumItem(group.key, item.id)">Remove</button>
+              <div class="space-y-2">
+                <div
+                  class="grid gap-2 rounded-xl border border-amber-200 p-3"
+                  :class="group.key === 'spells' ? 'md:grid-cols-[180px_1fr_90px_260px_auto]' : 'md:grid-cols-[220px_1fr_auto]'"
+                >
+                  <input x-model="item.name" type="text" class="input-base" placeholder="Name" />
+                  <input x-model="item.description" type="text" class="input-base" placeholder="Description" />
+                  <input
+                    x-show="group.key === 'spells'"
+                    x-model.number="item.level"
+                    type="number"
+                    min="0"
+                    class="input-base"
+                    placeholder="Level"
+                  />
+                  <input
+                    x-show="group.key === 'spells'"
+                    :value="(item.classes ?? []).join(', ')"
+                    @input="SetSpellClasses(item, $event.target.value)"
+                    type="text"
+                    class="input-base"
+                    placeholder="Classes (comma-separated)"
+                  />
+                  <button class="btn-danger" @click="RemoveCompendiumItem(group.key, item.id)">Remove</button>
+                </div>
+
+                <div x-show="group.key === 'classes'" class="rounded-xl border border-amber-200/70 p-3">
+                  <div class="mb-2 flex items-center justify-between">
+                    <p class="field-label !mb-0">Subclasses</p>
+                    <button type="button" class="btn-secondary" @click="AddClassSubclass(item)">Add Subclass</button>
+                  </div>
+                  <div class="space-y-2" x-show="(item.classSubclasses ?? []).length > 0" x-cloak>
+                    <template x-for="(subclass, subclassIndex) in item.classSubclasses ?? []" :key="item.id + '-subclass-' + subclassIndex">
+                      <div class="grid gap-2 rounded-lg border border-amber-100 p-2 md:grid-cols-[180px_1fr_1fr_auto]">
+                        <input x-model="subclass.name" type="text" class="input-base" placeholder="Subclass name" />
+                        <input x-model="subclass.description" type="text" class="input-base" placeholder="Subclass description" />
+                        <textarea x-model="subclass.features" class="input-base min-h-[70px]" placeholder="Features"></textarea>
+                        <button type="button" class="btn-danger self-start" @click="RemoveClassSubclass(item, subclassIndex)">Remove</button>
+                      </div>
+                    </template>
+                  </div>
+                  <p class="text-sm text-ink-soft" x-show="(item.classSubclasses ?? []).length === 0" x-cloak>No subclasses yet.</p>
+                </div>
               </div>
             </template>
           </div>
@@ -1114,12 +1201,8 @@ const NpcEasyApp = (): any => {
         },
 
         GetSubclassOptionsForClass(classId: string): string[] {
-          if (classId !== 'Fighter' && classId !== 'Rogue') {
-            return [];
-          }
-
-          const charClass = AllClasses.find(c => c.classType === classId);
-          return charClass ? charClass.subclasses.map(sc => sc.name) : [];
+          const classEntry = this.catalogs.classes.find((entry: CatalogItem) => entry.name === classId);
+          return NormalizeClassSubclasses(classEntry?.classSubclasses).map((subclass) => subclass.name);
         },
 
         NormalizeSubclassSelection(entry: ClassLevel) {
@@ -1132,6 +1215,22 @@ const NpcEasyApp = (): any => {
           if (entry.subclassName && !subclassOptions.includes(entry.subclassName)) {
             entry.subclassName = '';
           }
+        },
+
+        AddClassSubclass(item: CatalogItem) {
+          item.classSubclasses = NormalizeClassSubclasses(item.classSubclasses);
+          item.classSubclasses.push({
+            name: 'New Subclass',
+            description: '',
+            features: ''
+          });
+          this.SaveAll();
+        },
+
+        RemoveClassSubclass(item: CatalogItem, index: number) {
+          item.classSubclasses = NormalizeClassSubclasses(item.classSubclasses);
+          item.classSubclasses.splice(index, 1);
+          this.SaveAll();
         },
 
           RollAbilityScore(): number {
@@ -1235,6 +1334,10 @@ const NpcEasyApp = (): any => {
                 description: ''
             };
 
+            if (key === 'classes') {
+                item.classSubclasses = [];
+            }
+
             if (key === 'spells') {
                 item.level = 0;
                 item.classes = [];
@@ -1255,6 +1358,7 @@ const NpcEasyApp = (): any => {
         },
 
         RemoveCompendiumItem(key: CatalogKey, id: string) {
+          const removedItem = this.catalogs[key].find((item: CatalogItem) => item.id === id);
             this.catalogs[key] = this.catalogs[key].filter((item: CatalogItem) => item.id !== id);
 
             if (this.editingCharacter) {
@@ -1271,7 +1375,8 @@ const NpcEasyApp = (): any => {
                     this.editingCharacter.raceId = '';
                 }
                 if (key === 'classes') {
-                    this.editingCharacter.classLevels = this.editingCharacter.classLevels.filter((entry: ClassLevel) => entry.classId !== id);
+                  const removedClassName = removedItem?.name;
+                  this.editingCharacter.classLevels = this.editingCharacter.classLevels.filter((entry: ClassLevel) => entry.classId !== removedClassName);
                 }
             }
 
