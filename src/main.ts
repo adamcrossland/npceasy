@@ -633,7 +633,10 @@ app.innerHTML = `
             </div>
 
             <div>
-              <p class="field-heading">Ability Scores</p>
+              <div class="mb-2 flex items-center justify-between">
+                <p class="field-heading">Ability Scores</p>
+                <button type="button" class="btn-secondary" @click="RollAbilityScores()">Roll 4d6 (Drop Lowest)</button>
+              </div>
               <div class="grid gap-3 sm:grid-cols-3 lg:grid-cols-6">
                 <label class="field-label">STR
                   <input x-model.number="editingCharacter.abilityScores.strength" type="number" class="input-base" />
@@ -1130,6 +1133,26 @@ const NpcEasyApp = (): any => {
             entry.subclassName = '';
           }
         },
+
+          RollAbilityScore(): number {
+            const rolls = Array.from({ length: 4 }, () => Math.floor(Math.random() * 6) + 1);
+            rolls.sort((a, b) => b - a);
+            return rolls[0] + rolls[1] + rolls[2];
+          },
+
+          RollAbilityScores() {
+            if (!this.editingCharacter) {
+              return;
+            }
+
+            this.editingCharacter.abilityScores.strength = this.RollAbilityScore();
+            this.editingCharacter.abilityScores.dexterity = this.RollAbilityScore();
+            this.editingCharacter.abilityScores.constitution = this.RollAbilityScore();
+            this.editingCharacter.abilityScores.intelligence = this.RollAbilityScore();
+            this.editingCharacter.abilityScores.wisdom = this.RollAbilityScore();
+            this.editingCharacter.abilityScores.charisma = this.RollAbilityScore();
+            this.SaveAll();
+          },
 
         AddClassLevel() {
             if (!this.editingCharacter) {
