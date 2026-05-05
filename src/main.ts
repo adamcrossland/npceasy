@@ -8,10 +8,16 @@ import { SrdWeapons } from './weapons';
 type Screen = 'Collections' | 'CharacterBuilder' | 'Compendium' | 'CharacterSheet';
 type CatalogKey = 'classes' | 'feats' | 'weapons' | 'spells' | 'races';
 
+type ClassFeatureRecord = {
+    name: string;
+    level: number;
+    description: string;
+};
+
 type ClassSubclass = {
-  name: string;
-  description: string;
-  features: string;
+    name: string;
+    description: string;
+    features: ClassFeatureRecord[];
 };
 
 type ClassFeatureSummary = {
@@ -26,7 +32,8 @@ type CatalogItem = {
     id: string;
     name: string;
     description: string;
-  classSubclasses?: ClassSubclass[];
+    classFeatures?: ClassFeatureRecord[];
+    classSubclasses?: ClassSubclass[];
     effect?: string;
     damage?: string;
     scaling?: string;
@@ -356,43 +363,69 @@ function NormalizeCollections(collections: Collection[]): Collection[] {
     }));
 }
 
-function FormatSubclassFeatures(features: Array<{ name: string; level: number; description: string }>): string {
-  return features.map((feature) => `Lv ${feature.level}: ${feature.name} - ${feature.description}`).join('\n');
+function NormalizeFeatureRecord(f: ClassFeatureRecord | string | unknown): ClassFeatureRecord | null {
+    if (typeof f === 'string') {
+        const trimmed = f.trim();
+        if (!trimmed) return null;
+        // Parse legacy formatted strings like "Lv 3: Name - Description"
+        const match = trimmed.match(/^Lv\s*(\d+):\s*([^-]+?)\s*-\s*(.+)$/);
+        if (match) {
+            return { level: Number(match[1]), name: match[2].trim(), description: match[3].trim() };
+        }
+        return { level: 0, name: trimmed, description: '' };
+    }
+    if (f && typeof f === 'object') {
+        const rec = f as Partial<ClassFeatureRecord>;
+        const name = (rec.name ?? '').toString().trim();
+        if (!name) return null;
+        return {
+            name,
+            level: Number.isFinite(Number(rec.level)) ? Number(rec.level) : 0,
+            description: (rec.description ?? '').toString().trim()
+        };
+    }
+    return null;
+}
+
+function NormalizeFeatureRecords(features: unknown): ClassFeatureRecord[] {
+    if (!features) return [];
+    // Legacy: was a newline-separated string
+    if (typeof features === 'string') {
+        return (features as string)
+            .split(/\r?\n/)
+            .map(NormalizeFeatureRecord)
+            .filter((f): f is ClassFeatureRecord => f !== null);
+    }
+    if (Array.isArray(features)) {
+        return (features as unknown[])
+            .map(NormalizeFeatureRecord)
+            .filter((f): f is ClassFeatureRecord => f !== null);
+    }
+    return [];
 }
 
 function NormalizeClassSubclasses(subclasses?: Array<ClassSubclass | string>): ClassSubclass[] {
-  const normalized = (subclasses ?? []).map((subclass): ClassSubclass => {
-    if (typeof subclass === 'string') {
-      return {
-        name: subclass.trim(),
-        description: '',
-        features: ''
-      };
-    }
+    const normalized = (subclasses ?? []).map((subclass): ClassSubclass | null => {
+        if (typeof subclass === 'string') {
+            const name = subclass.trim();
+            return name ? { name, description: '', features: [] } : null;
+        }
+        const name = (subclass.name ?? '').trim();
+        if (!name) return null;
+        return {
+            name,
+            description: (subclass.description ?? '').trim(),
+            features: NormalizeFeatureRecords((subclass as any).features)
+        };
+    }).filter((subclass): subclass is ClassSubclass => subclass !== null);
 
-    return {
-      name: (subclass.name ?? '').trim(),
-      description: (subclass.description ?? '').trim(),
-      features: (subclass.features ?? '').trim()
-    };
-  }).filter((subclass) => subclass.name.length > 0);
-
-  const seen = new Set<string>();
-  return normalized.filter((subclass) => {
-    const key = subclass.name.toLowerCase();
-    if (seen.has(key)) {
-      return false;
-    }
-    seen.add(key);
-    return true;
-  });
-}
-
-function ParseFeatureLines(featuresText: string): string[] {
-  return (featuresText ?? '')
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter((line) => line.length > 0);
+    const seen = new Set<string>();
+    return normalized.filter((subclass) => {
+        const key = subclass.name.toLowerCase();
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+    });
 }
 
 function NewId(prefix: string): string {
@@ -407,6 +440,9 @@ function MergeClassCatalog(savedClasses: CatalogItem[] | undefined, defaultClass
         return {
             ...defaultItem,
             description: savedMatch?.description ?? defaultItem.description,
+            classFeatures: savedMatch?.classFeatures
+                ? NormalizeFeatureRecords(savedMatch.classFeatures)
+                : (defaultItem.classFeatures ?? []),
             classSubclasses: NormalizeClassSubclasses(savedMatch?.classSubclasses ?? defaultItem.classSubclasses)
         };
     });
@@ -416,6 +452,7 @@ function MergeClassCatalog(savedClasses: CatalogItem[] | undefined, defaultClass
         .map((item) => ({
             ...item,
             id: item.id || NewId('class'),
+            classFeatures: NormalizeFeatureRecords((item as any).classFeatures),
             classSubclasses: NormalizeClassSubclasses(item.classSubclasses)
         }));
 
@@ -433,10 +470,11 @@ function BuildDefaultState(): AppState {
                 id: `${item.classType.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
                 name: item.classType,
               description: `Hit Die: d${item.hitDice}`,
+              classFeatures: item.features.map((f) => ({ name: f.name, level: f.level, description: f.description })),
               classSubclasses: item.subclasses.map((subclass) => ({
                 name: subclass.name,
                 description: subclass.description,
-                features: FormatSubclassFeatures(subclass.features)
+                features: subclass.features.map((f) => ({ name: f.name, level: f.level, description: f.description }))
               }))
             })),
             feats: Feats.map(item => ({
@@ -927,22 +965,64 @@ app.innerHTML = `
                   <button class="btn-danger" @click="RemoveCompendiumItem(group.key, item.id)">Remove</button>
                 </div>
 
-                <div x-show="group.key === 'classes'" class="rounded-xl border border-amber-200/70 p-3">
-                  <div class="mb-2 flex items-center justify-between">
-                    <p class="field-label !mb-0">Subclasses</p>
-                    <button type="button" class="btn-secondary" @click="AddClassSubclass(item)">Add Subclass</button>
+                <div x-show="group.key === 'classes'" class="space-y-3">
+
+                  <div class="rounded-xl border border-amber-200/70 p-3">
+                    <div class="mb-2 flex items-center justify-between">
+                      <p class="field-label !mb-0">Class Features</p>
+                      <button type="button" class="btn-secondary" @click="AddClassFeature(item)">Add Feature</button>
+                    </div>
+                    <div class="space-y-2" x-show="(item.classFeatures ?? []).length > 0" x-cloak>
+                      <template x-for="(feature, featureIndex) in item.classFeatures ?? []" :key="item.id + '-feat-' + featureIndex">
+                        <div class="grid gap-2 rounded-lg border border-amber-100 p-2 md:grid-cols-[60px_1fr_1fr_auto]">
+                          <label class="field-label !mb-0">Level
+                            <input x-model.number="feature.level" type="number" min="1" max="20" class="input-base" />
+                          </label>
+                          <input x-model="feature.name" type="text" class="input-base" placeholder="Feature name" />
+                          <input x-model="feature.description" type="text" class="input-base" placeholder="Feature description" />
+                          <button type="button" class="btn-danger self-end" @click="RemoveClassFeature(item, featureIndex)">Remove</button>
+                        </div>
+                      </template>
+                    </div>
+                    <p class="text-sm text-ink-soft" x-show="(item.classFeatures ?? []).length === 0" x-cloak>No features yet.</p>
                   </div>
-                  <div class="space-y-2" x-show="(item.classSubclasses ?? []).length > 0" x-cloak>
-                    <template x-for="(subclass, subclassIndex) in item.classSubclasses ?? []" :key="item.id + '-subclass-' + subclassIndex">
-                      <div class="grid gap-2 rounded-lg border border-amber-100 p-2 md:grid-cols-[180px_1fr_1fr_auto]">
-                        <input x-model="subclass.name" type="text" class="input-base" placeholder="Subclass name" />
-                        <input x-model="subclass.description" type="text" class="input-base" placeholder="Subclass description" />
-                        <textarea x-model="subclass.features" class="input-base min-h-[70px]" placeholder="Features"></textarea>
-                        <button type="button" class="btn-danger self-start" @click="RemoveClassSubclass(item, subclassIndex)">Remove</button>
-                      </div>
-                    </template>
+
+                  <div class="rounded-xl border border-amber-200/70 p-3">
+                    <div class="mb-2 flex items-center justify-between">
+                      <p class="field-label !mb-0">Subclasses</p>
+                      <button type="button" class="btn-secondary" @click="AddClassSubclass(item)">Add Subclass</button>
+                    </div>
+                    <div class="space-y-3" x-show="(item.classSubclasses ?? []).length > 0" x-cloak>
+                      <template x-for="(subclass, subclassIndex) in item.classSubclasses ?? []" :key="item.id + '-subclass-' + subclassIndex">
+                        <div class="rounded-lg border border-amber-100 p-2 space-y-2">
+                          <div class="grid gap-2 md:grid-cols-[1fr_1fr_auto]">
+                            <input x-model="subclass.name" type="text" class="input-base" placeholder="Subclass name" />
+                            <input x-model="subclass.description" type="text" class="input-base" placeholder="Subclass description" />
+                            <button type="button" class="btn-danger self-start" @click="RemoveClassSubclass(item, subclassIndex)">Remove</button>
+                          </div>
+                          <div class="pl-2 border-l-2 border-amber-200 space-y-2">
+                            <div class="flex items-center justify-between">
+                              <p class="text-xs font-semibold uppercase tracking-wide text-ink-soft">Subclass Features</p>
+                              <button type="button" class="btn-secondary text-xs py-1 px-2" @click="AddSubclassFeature(subclass)">Add Feature</button>
+                            </div>
+                            <template x-for="(feature, featureIndex) in subclass.features ?? []" :key="item.id + '-subclass-' + subclassIndex + '-feat-' + featureIndex">
+                              <div class="grid gap-2 rounded-md border border-amber-100 p-2 md:grid-cols-[60px_1fr_1fr_auto]">
+                                <label class="field-label !mb-0">Level
+                                  <input x-model.number="feature.level" type="number" min="1" max="20" class="input-base" />
+                                </label>
+                                <input x-model="feature.name" type="text" class="input-base" placeholder="Feature name" />
+                                <input x-model="feature.description" type="text" class="input-base" placeholder="Feature description" />
+                                <button type="button" class="btn-danger self-end" @click="RemoveSubclassFeature(subclass, featureIndex)">Remove</button>
+                              </div>
+                            </template>
+                            <p class="text-xs text-ink-soft" x-show="(subclass.features ?? []).length === 0" x-cloak>No subclass features yet.</p>
+                          </div>
+                        </div>
+                      </template>
+                    </div>
+                    <p class="text-sm text-ink-soft" x-show="(item.classSubclasses ?? []).length === 0" x-cloak>No subclasses yet.</p>
                   </div>
-                  <p class="text-sm text-ink-soft" x-show="(item.classSubclasses ?? []).length === 0" x-cloak>No subclasses yet.</p>
+
                 </div>
               </div>
             </template>
@@ -1256,7 +1336,7 @@ const NpcEasyApp = (): any => {
           item.classSubclasses.push({
             name: 'New Subclass',
             description: '',
-            features: ''
+            features: []
           });
           this.SaveAll();
         },
@@ -1264,6 +1344,30 @@ const NpcEasyApp = (): any => {
         RemoveClassSubclass(item: CatalogItem, index: number) {
           item.classSubclasses = NormalizeClassSubclasses(item.classSubclasses);
           item.classSubclasses.splice(index, 1);
+          this.SaveAll();
+        },
+
+        AddClassFeature(item: CatalogItem) {
+          if (!item.classFeatures) item.classFeatures = [];
+          item.classFeatures.push({ name: 'New Feature', level: 1, description: '' });
+          this.SaveAll();
+        },
+
+        RemoveClassFeature(item: CatalogItem, index: number) {
+          if (!item.classFeatures) return;
+          item.classFeatures.splice(index, 1);
+          this.SaveAll();
+        },
+
+        AddSubclassFeature(subclass: ClassSubclass) {
+          if (!subclass.features) subclass.features = [];
+          subclass.features.push({ name: 'New Feature', level: 1, description: '' });
+          this.SaveAll();
+        },
+
+        RemoveSubclassFeature(subclass: ClassSubclass, index: number) {
+          if (!subclass.features) return;
+          subclass.features.splice(index, 1);
           this.SaveAll();
         },
 
@@ -1534,19 +1638,27 @@ const NpcEasyApp = (): any => {
                 const subclassName = entry.subclassName;
 
                 const sourceClass = AllClasses.find((item) => item.classType === className);
-                const classFeatures = (sourceClass?.features ?? [])
+                const classCatalogItem = this.catalogs.classes.find((item: CatalogItem) => item.name === className);
+
+                // Prefer catalog-stored features (user-edited); fall back to SRD data
+                const catalogFeatures = NormalizeFeatureRecords(classCatalogItem?.classFeatures);
+                const baseFeaturesToUse = catalogFeatures.length > 0
+                  ? catalogFeatures
+                  : (sourceClass?.features ?? []);
+                const classFeatures = baseFeaturesToUse
                   .filter((feature) => feature.level <= classLevel)
                   .map((feature) => `Lv ${feature.level}: ${feature.name} - ${feature.description}`);
 
                 let subclassFeatures: string[] = [];
                 if (subclassName) {
-                  const classCatalogItem = this.catalogs.classes.find((item: CatalogItem) => item.name === className);
                   const subclassCatalogItem = NormalizeClassSubclasses(classCatalogItem?.classSubclasses)
                     .find((subclass) => subclass.name === subclassName);
 
-                  const configuredFeatures = ParseFeatureLines(subclassCatalogItem?.features ?? '');
-                  if (configuredFeatures.length > 0) {
-                    subclassFeatures = configuredFeatures;
+                  const catalogSubclassFeatures = NormalizeFeatureRecords(subclassCatalogItem?.features);
+                  if (catalogSubclassFeatures.length > 0) {
+                    subclassFeatures = catalogSubclassFeatures
+                      .filter((feature) => feature.level <= classLevel)
+                      .map((feature) => `Lv ${feature.level}: ${feature.name} - ${feature.description}`);
                   } else {
                     const sourceSubclass = sourceClass?.subclasses.find((subclass) => subclass.name === subclassName);
                     subclassFeatures = (sourceSubclass?.features ?? [])
