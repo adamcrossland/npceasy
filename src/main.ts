@@ -1,12 +1,15 @@
 import './style.css';
+import { Armors } from './armors';
 import { AllClasses } from './classes';
 import { Feats } from './feats';
+import { FightingStyles } from './fightingStyles';
 import { Races } from './races';
 import { Spells, GetSpellByName } from './spells';
 import { SrdWeapons } from './weapons';
 
 type Screen = 'Collections' | 'CharacterBuilder' | 'Compendium' | 'CharacterSheet';
-type CatalogKey = 'classes' | 'feats' | 'weapons' | 'spells' | 'races';
+type CatalogKey = 'classes' | 'feats' | 'weapons' | 'spells' | 'races' | 'fightingStyles';
+type WeaponGrip = 'one-handed' | 'two-handed';
 
 type ClassFeatureRecord = {
     name: string;
@@ -60,9 +63,12 @@ type CharacterRecord = {
     name: string;
     raceId: string;
     classLevels: ClassLevel[];
+    fightingStyleId?: string;
     experience: number;
     maxHitPoints: number;
     armorClass: number;
+    equippedArmorId?: string;
+    hasShield?: boolean;
     speed: number;
     abilityScores: {
         strength: number;
@@ -78,6 +84,9 @@ type CharacterRecord = {
     equipment: string;
     featIds: string[];
     weaponIds: string[];
+    primaryWeaponId?: string;
+    offhandWeaponId?: string;
+    primaryWeaponGrip?: WeaponGrip;
     characterWeapons?: CharacterWeapon[];
     weaponMagicBonuses?: Record<string, number>;
     spellIds: string[];
@@ -106,6 +115,7 @@ type AppState = {
         weapons: CatalogItem[];
         spells: CatalogItem[];
         races: CatalogItem[];
+      fightingStyles: CatalogItem[];
     };
 };
 
@@ -178,6 +188,12 @@ const DEFAULT_SPELLS: CatalogItem[] = Spells.map((item) => ({
     level: item.level,
     classes: item.classes
 }));
+
+  const DEFAULT_FIGHTING_STYLES: CatalogItem[] = FightingStyles.map((item) => ({
+    id: `fighting-style-${item.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
+    name: item.name,
+    description: item.description
+  }));
 
 function SummarizeSpellEffect(description: string): string {
     const text = (description ?? '').replace(/\r/g, '').trim();
@@ -344,9 +360,26 @@ function NormalizeCharacterWeaponData(character: CharacterRecord): CharacterReco
         }
     }
 
+    const primaryWeaponId = mergedWeaponIds.includes(character.primaryWeaponId ?? '')
+      ? character.primaryWeaponId ?? ''
+      : '';
+    const offhandWeaponId = mergedWeaponIds.includes(character.offhandWeaponId ?? '')
+      && character.offhandWeaponId !== primaryWeaponId
+      ? character.offhandWeaponId ?? ''
+      : '';
+    const primaryWeaponGrip: WeaponGrip = character.primaryWeaponGrip === 'two-handed' ? 'two-handed' : 'one-handed';
+    const equippedArmorId = Armors.some((armor) => armor.id === character.equippedArmorId)
+      ? character.equippedArmorId ?? ''
+      : '';
+
     return {
         ...character,
         weaponIds: mergedWeaponIds,
+      primaryWeaponId,
+      offhandWeaponId,
+      primaryWeaponGrip,
+      equippedArmorId,
+      hasShield: Boolean(character.hasShield),
         weaponMagicBonuses: normalizedBonuses,
         characterWeapons: mergedWeaponIds.map((weaponId) => ({
             weaponId,
@@ -487,7 +520,8 @@ function BuildDefaultState(): AppState {
                 id: `race-${item.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
                 name: item.name,
                 description: item.description
-            }))
+            })),
+            fightingStyles: DEFAULT_FIGHTING_STYLES
         }
     };
 }
@@ -498,9 +532,12 @@ function BuildNewCharacter(raceId: string): CharacterRecord {
         name: 'New Character',
         raceId,
         classLevels: [],
+        fightingStyleId: '',
         experience: 0,
         maxHitPoints: 8,
         armorClass: 10,
+        equippedArmorId: '',
+        hasShield: false,
         speed: 30,
         abilityScores: {
             strength: 10,
@@ -516,6 +553,9 @@ function BuildNewCharacter(raceId: string): CharacterRecord {
         equipment: '',
         featIds: [],
         weaponIds: [],
+        primaryWeaponId: '',
+        offhandWeaponId: '',
+        primaryWeaponGrip: 'one-handed',
         characterWeapons: [],
         weaponMagicBonuses: {},
         spellIds: [],
@@ -591,6 +631,7 @@ function LoadState(): AppState {
         const freshCatalogs = BuildDefaultState().catalogs;
         const savedClassCatalog = parsed.catalogs?.classes ?? freshCatalogs.classes;
         const savedRaceCatalog = parsed.catalogs?.races ?? freshCatalogs.races;
+        const savedFightingStyleCatalog = parsed.catalogs?.fightingStyles ?? freshCatalogs.fightingStyles;
         const mergedState = {
             ...BuildDefaultState(),
             ...parsed,
@@ -599,7 +640,8 @@ function LoadState(): AppState {
                 feats: freshCatalogs.feats,
                 races: freshCatalogs.races,
                 weapons: NormalizeWeaponCatalog(isLegacyWeaponCatalog ? DEFAULT_WEAPONS : (parsed.catalogs?.weapons ?? freshCatalogs.weapons)),
-                spells: NormalizeSpellCatalog(isLegacySpellCatalog ? DEFAULT_SPELLS : (parsed.catalogs?.spells ?? freshCatalogs.spells))
+                spells: NormalizeSpellCatalog(isLegacySpellCatalog ? DEFAULT_SPELLS : (parsed.catalogs?.spells ?? freshCatalogs.spells)),
+                fightingStyles: parsed.catalogs?.fightingStyles ?? freshCatalogs.fightingStyles
             }
         };
 
@@ -609,10 +651,14 @@ function LoadState(): AppState {
                 ...col,
                 characters: col.characters.map(char => ({
                     ...char,
-                raceId: MigrateCatalogItemId(char.raceId, savedRaceCatalog, freshCatalogs.races),
+                  raceId: MigrateCatalogItemId(char.raceId, savedRaceCatalog, freshCatalogs.races),
+                  fightingStyleId: (() => {
+                    const migratedId = MigrateCatalogItemId(char.fightingStyleId ?? '', savedFightingStyleCatalog, freshCatalogs.fightingStyles);
+                    return freshCatalogs.fightingStyles.some((item) => item.id === migratedId) ? migratedId : '';
+                  })(),
                     classLevels: char.classLevels.map(entry => ({
                         ...entry,
-                  classId: MigrateClassId(entry.classId, savedClassCatalog)
+                    classId: MigrateClassId(entry.classId, savedClassCatalog)
                     }))
                 }))
             }))
@@ -702,7 +748,7 @@ app.innerHTML = `
                 @click="SelectCharacter(character.id)"
               >
                 <span class="block font-semibold text-ink" x-text="character.name"></span>
-                <span class="text-xs text-ink-soft">Lvl <span x-text="character.level"></span></span>
+                <span class="text-xs text-ink-soft">Lvl <span x-text="GetTotalCharacterLevel(character)"></span></span>
               </button>
             </template>
           </div>
@@ -739,7 +785,7 @@ app.innerHTML = `
               <label class="field-label">Max HP
                 <input x-model.number="editingCharacter.maxHitPoints" type="number" min="0" class="input-base" />
               </label>
-              <label class="field-label">AC / Speed
+              <label class="field-label">Base AC / Speed
                 <div class="grid grid-cols-2 gap-2">
                   <input x-model.number="editingCharacter.armorClass" type="number" min="1" class="input-base" />
                   <input x-model.number="editingCharacter.speed" type="number" min="0" class="input-base" />
@@ -782,7 +828,7 @@ app.innerHTML = `
               <div class="space-y-2">
                 <template x-for="(row, index) in editingCharacter.classLevels" :key="index">
                   <div class="grid gap-2" :class="GetSubclassOptionsForClass(row.classId).length > 0 ? 'md:grid-cols-[1fr_160px_90px_auto]' : 'md:grid-cols-[1fr_90px_auto]'">
-                    <select x-model="row.classId" x-effect="$el.value = row.classId ?? ''" class="input-base" @change="NormalizeSubclassSelection(row)">
+                    <select x-model="row.classId" x-effect="$el.value = row.classId ?? ''" class="input-base" @change="NormalizeSubclassSelection(row); NormalizeFightingStyleSelection()">
                       <option value="" :selected="!row.classId">Choose class</option>
                       <template x-for="entry in catalogs.classes" :key="entry.name">
                         <option :value="entry.name" :selected="row.classId === entry.name" x-text="entry.name"></option>
@@ -796,11 +842,76 @@ app.innerHTML = `
                         </template>
                       </select>
                     </template>
-                    <input x-model.number="row.level" type="number" min="1" class="input-base" />
+                    <input x-model.number="row.level" type="number" min="1" class="input-base" @input="NormalizeFightingStyleSelection()" />
                     <button type="button" class="btn-danger" @click="RemoveClassLevel(index)">Remove</button>
                   </div>
                 </template>
               </div>
+            </div>
+
+            <div x-show="CanSelectFightingStyle(editingCharacter)" x-cloak>
+              <label class="field-label">Fighting Style
+                <select x-model="editingCharacter.fightingStyleId" x-effect="$el.value = editingCharacter?.fightingStyleId ?? ''" class="input-base">
+                  <option value="" :selected="!editingCharacter?.fightingStyleId">Choose a fighting style</option>
+                  <template x-for="entry in catalogs.fightingStyles" :key="entry.id">
+                    <option :value="entry.id" :selected="editingCharacter?.fightingStyleId === entry.id" x-text="entry.name"></option>
+                  </template>
+                </select>
+              </label>
+              <p class="mt-2 text-sm text-ink-soft" x-show="editingCharacter?.fightingStyleId" x-text="GetCatalogDescription('fightingStyles', editingCharacter?.fightingStyleId || '')"></p>
+            </div>
+
+            <div>
+              <div class="mb-2 flex items-center justify-between">
+                <p class="field-heading">Armor & Loadout</p>
+                <p class="text-xs text-ink-soft">Track worn armor, shield use, and wielded weapons for exact fighting-style math.</p>
+              </div>
+              <div class="grid gap-3 md:grid-cols-2">
+                <label class="field-label">Equipped Armor
+                  <select x-model="editingCharacter.equippedArmorId" x-effect="$el.value = editingCharacter?.equippedArmorId ?? ''" class="input-base" @change="NormalizeEquippedLoadout()">
+                    <option value="" :selected="!editingCharacter?.equippedArmorId">No armor</option>
+                    <template x-for="armor in armors" :key="armor.id">
+                      <option :value="armor.id" :selected="editingCharacter?.equippedArmorId === armor.id" x-text="armor.name"></option>
+                    </template>
+                  </select>
+                </label>
+                <label class="field-label">Shield
+                  <label class="mt-2 flex items-center gap-2 rounded-xl border border-amber-200 px-3 py-3 text-sm text-ink">
+                    <input x-model="editingCharacter.hasShield" type="checkbox" class="h-4 w-4" @change="NormalizeEquippedLoadout()" />
+                    <span>Using a shield (+2 AC)</span>
+                  </label>
+                </label>
+                <label class="field-label">Primary Weapon
+                  <select x-model="editingCharacter.primaryWeaponId" x-effect="$el.value = editingCharacter?.primaryWeaponId ?? ''" class="input-base" @change="NormalizeEquippedLoadout()">
+                    <option value="" :selected="!editingCharacter?.primaryWeaponId">No primary weapon</option>
+                    <template x-for="weapon in GetLoadoutWeaponOptions(editingCharacter)" :key="weapon.id">
+                      <option :value="weapon.id" :selected="editingCharacter?.primaryWeaponId === weapon.id" x-text="weapon.name"></option>
+                    </template>
+                  </select>
+                </label>
+                <label class="field-label">Off-Hand Weapon
+                  <select x-model="editingCharacter.offhandWeaponId" x-effect="$el.value = editingCharacter?.offhandWeaponId ?? ''" class="input-base" @change="NormalizeEquippedLoadout()" :disabled="editingCharacter?.hasShield || IsPrimaryWeaponLockedToTwoHands(editingCharacter)">
+                    <option value="" :selected="!editingCharacter?.offhandWeaponId">No off-hand weapon</option>
+                    <template x-for="weapon in GetOffhandWeaponOptions(editingCharacter)" :key="weapon.id">
+                      <option :value="weapon.id" :selected="editingCharacter?.offhandWeaponId === weapon.id" x-text="weapon.name"></option>
+                    </template>
+                  </select>
+                </label>
+              </div>
+              <div class="mt-3 grid gap-3 md:grid-cols-2" x-show="ShouldShowPrimaryGrip(editingCharacter)" x-cloak>
+                <label class="field-label">Primary Weapon Grip
+                  <select x-model="editingCharacter.primaryWeaponGrip" x-effect="$el.value = editingCharacter?.primaryWeaponGrip ?? 'one-handed'" class="input-base" @change="NormalizeEquippedLoadout()">
+                    <option value="one-handed" :selected="editingCharacter?.primaryWeaponGrip !== 'two-handed'">One-Handed</option>
+                    <option value="two-handed" :selected="editingCharacter?.primaryWeaponGrip === 'two-handed'">Two-Handed</option>
+                  </select>
+                </label>
+              </div>
+              <p class="mt-2 text-sm text-ink-soft" x-text="GetArmorClassNote(editingCharacter)"></p>
+              <ul class="mt-2 list-base text-sm text-red-700" x-show="GetLoadoutWarnings(editingCharacter).length > 0" x-cloak>
+                <template x-for="warning in GetLoadoutWarnings(editingCharacter)" :key="warning">
+                  <li x-text="warning"></li>
+                </template>
+              </ul>
             </div>
 
             <div class="grid gap-4 md:grid-cols-3">
@@ -1053,7 +1164,7 @@ app.innerHTML = `
           </div>
           <div class="sheet-badges">
             <span>Max HP <strong x-text="editingCharacter?.maxHitPoints ?? 0"></strong></span>
-            <span>AC <strong x-text="editingCharacter?.armorClass ?? 0"></strong></span>
+            <span :title="GetArmorClassNote(editingCharacter)">AC <strong x-text="GetDisplayedArmorClass(editingCharacter)"></strong></span>
             <span>Speed <strong x-text="editingCharacter?.speed ?? 0"></strong> ft</span>
             <span>Prof Bonus <strong x-text="'+' + GetProficiencyBonus(GetTotalCharacterLevel(editingCharacter))"></strong></span>
           </div>
@@ -1130,6 +1241,34 @@ app.innerHTML = `
             </ul>
           </div>
 
+          <div class="sheet-card">
+            <h4>Armor & Loadout</h4>
+            <ul class="list-base text-sm">
+              <li><span class="font-semibold">Armor:</span> <span x-text="GetEquippedArmorName(editingCharacter)"></span></li>
+              <li><span class="font-semibold">Shield:</span> <span x-text="editingCharacter?.hasShield ? 'Equipped' : 'Not equipped'"></span></li>
+              <li><span class="font-semibold">Primary:</span> <span x-text="GetEquippedWeaponLabel(editingCharacter, editingCharacter?.primaryWeaponId || '', 'None')"></span></li>
+              <li><span class="font-semibold">Off-Hand:</span> <span x-text="GetEquippedWeaponLabel(editingCharacter, editingCharacter?.offhandWeaponId || '', 'None')"></span></li>
+            </ul>
+            <ul class="mt-2 list-base text-sm text-red-700" x-show="GetLoadoutWarnings(editingCharacter).length > 0" x-cloak>
+              <template x-for="warning in GetLoadoutWarnings(editingCharacter)" :key="'sheet-' + warning">
+                <li x-text="warning"></li>
+              </template>
+            </ul>
+          </div>
+
+          <div class="sheet-card" x-show="editingCharacter?.fightingStyleId || CanSelectFightingStyle(editingCharacter)" x-cloak>
+            <h4>Fighting Style</h4>
+            <template x-if="editingCharacter?.fightingStyleId">
+              <div>
+                <p class="font-semibold" x-text="GetCatalogName('fightingStyles', editingCharacter?.fightingStyleId || '')"></p>
+                <p class="mt-1 text-sm text-ink-soft" x-text="GetCatalogDescription('fightingStyles', editingCharacter?.fightingStyleId || '')"></p>
+              </div>
+            </template>
+            <template x-if="!editingCharacter?.fightingStyleId">
+              <p class="text-sm text-ink-soft">No fighting style selected.</p>
+            </template>
+          </div>
+
           <div class="sheet-card sheet-card-spells" x-show="(editingCharacter?.spellIds?.length ?? 0) > 0" x-cloak>
             <h4>Spells</h4>
             <div class="mb-2 space-y-1 text-xs text-ink-soft" x-show="editingCharacter && GetBestSpellcastingAbility(editingCharacter)" x-cloak>
@@ -1186,6 +1325,7 @@ const NpcEasyApp = (): any => {
 
     return {
         ...state,
+      armors: Armors,
         newCollectionName: '',
         editingCharacter: null as CharacterRecord | null,
         compendiumSections: [
@@ -1193,7 +1333,8 @@ const NpcEasyApp = (): any => {
             { key: 'feats', label: 'Feats' },
             { key: 'weapons', label: 'Weapons' },
             { key: 'spells', label: 'Spells' },
-            { key: 'races', label: 'Races' }
+          { key: 'races', label: 'Races' },
+          { key: 'fightingStyles', label: 'Fighting Styles' }
         ] as { key: CatalogKey; label: string }[],
 
         get activeCollection(): Collection | undefined {
@@ -1211,6 +1352,8 @@ const NpcEasyApp = (): any => {
 
             const selected = this.GetSelectedCharacter();
             this.editingCharacter = selected ?? null;
+            this.NormalizeEquippedLoadout();
+      this.NormalizeFightingStyleSelection();
 
             window.addEventListener('beforeunload', () => this.SaveAll());
         },
@@ -1283,6 +1426,8 @@ const NpcEasyApp = (): any => {
         SelectCharacter(characterId: string) {
             this.selectedCharacterId = characterId;
             this.editingCharacter = this.GetSelectedCharacter() ?? null;
+          this.NormalizeEquippedLoadout();
+          this.NormalizeFightingStyleSelection();
             this.SaveAll();
         },
 
@@ -1296,6 +1441,7 @@ const NpcEasyApp = (): any => {
             const character = BuildNewCharacter(defaultRaceId);
             collection.characters.push(character);
             this.SelectCharacter(character.id);
+      this.NormalizeEquippedLoadout();
             this.SaveAll();
         },
 
@@ -1310,8 +1456,232 @@ const NpcEasyApp = (): any => {
             const first = collection.characters[0];
             this.selectedCharacterId = first?.id ?? '';
             this.editingCharacter = first ?? null;
+            this.NormalizeEquippedLoadout();
+            this.NormalizeFightingStyleSelection();
             this.SaveAll();
         },
+
+          GetWeaponCatalogItem(weaponId: string): CatalogItem | undefined {
+            return this.catalogs.weapons.find((item: CatalogItem) => item.id === weaponId);
+          },
+
+          IsRangedWeapon(weapon: CatalogItem | undefined): boolean {
+            if (!weapon) {
+              return false;
+            }
+
+            const props: string[] = weapon.weaponProperties ?? [];
+            return props.includes('ammunition') || ['Simple Ranged', 'Martial Ranged'].some((group) => weapon.description.startsWith(group));
+          },
+
+          IsTwoHandedWeapon(weapon: CatalogItem | undefined): boolean {
+            return Boolean(weapon?.weaponProperties?.includes('two-handed'));
+          },
+
+          IsVersatileWeapon(weapon: CatalogItem | undefined): boolean {
+            return Boolean(weapon?.weaponProperties?.includes('versatile'));
+          },
+
+          IsPrimaryWeaponLockedToTwoHands(character: CharacterRecord | null): boolean {
+            if (!character?.primaryWeaponId) {
+              return false;
+            }
+
+            const primaryWeapon = this.GetWeaponCatalogItem(character.primaryWeaponId);
+            if (this.IsTwoHandedWeapon(primaryWeapon)) {
+              return true;
+            }
+
+            return this.IsVersatileWeapon(primaryWeapon) && character.primaryWeaponGrip === 'two-handed';
+          },
+
+          ShouldShowPrimaryGrip(character: CharacterRecord | null): boolean {
+            if (!character?.primaryWeaponId) {
+              return false;
+            }
+
+            return this.IsVersatileWeapon(this.GetWeaponCatalogItem(character.primaryWeaponId));
+          },
+
+          GetLoadoutWeaponOptions(character: CharacterRecord | null): CatalogItem[] {
+            if (!character) {
+              return [];
+            }
+
+            return character.weaponIds
+              .map((weaponId: string) => this.GetWeaponCatalogItem(weaponId))
+              .filter((weapon): weapon is CatalogItem => Boolean(weapon));
+          },
+
+          GetOffhandWeaponOptions(character: CharacterRecord | null): CatalogItem[] {
+            if (!character) {
+              return [];
+            }
+
+            return this.GetLoadoutWeaponOptions(character)
+              .filter((weapon: CatalogItem) => weapon.id !== character.primaryWeaponId)
+              .filter((weapon: CatalogItem) => !this.IsRangedWeapon(weapon) && !this.IsTwoHandedWeapon(weapon));
+          },
+
+          NormalizeEquippedLoadout() {
+            if (!this.editingCharacter) {
+              return;
+            }
+
+            const availableWeaponIds = new Set(this.editingCharacter.weaponIds);
+            if (!availableWeaponIds.has(this.editingCharacter.primaryWeaponId ?? '')) {
+              this.editingCharacter.primaryWeaponId = '';
+            }
+            if (!availableWeaponIds.has(this.editingCharacter.offhandWeaponId ?? '') || this.editingCharacter.offhandWeaponId === this.editingCharacter.primaryWeaponId) {
+              this.editingCharacter.offhandWeaponId = '';
+            }
+            if (!Armors.some((armor) => armor.id === this.editingCharacter?.equippedArmorId)) {
+              this.editingCharacter.equippedArmorId = '';
+            }
+
+            const primaryWeapon = this.GetWeaponCatalogItem(this.editingCharacter.primaryWeaponId ?? '');
+            if (!primaryWeapon) {
+              this.editingCharacter.primaryWeaponGrip = 'one-handed';
+            } else if (this.IsTwoHandedWeapon(primaryWeapon)) {
+              this.editingCharacter.primaryWeaponGrip = 'two-handed';
+            } else if (!this.IsVersatileWeapon(primaryWeapon)) {
+              this.editingCharacter.primaryWeaponGrip = 'one-handed';
+            }
+
+            if (this.IsPrimaryWeaponLockedToTwoHands(this.editingCharacter)) {
+              this.editingCharacter.offhandWeaponId = '';
+              this.editingCharacter.hasShield = false;
+            }
+
+            if (this.editingCharacter.hasShield) {
+              this.editingCharacter.offhandWeaponId = '';
+            }
+          },
+
+          GetCharacterArmorProficiencies(character: CharacterRecord | null): Set<string> {
+            const proficiencies = new Set<string>();
+            if (!character) {
+              return proficiencies;
+            }
+
+            for (const classLevel of character.classLevels) {
+              if (!classLevel.classId || classLevel.level <= 0) {
+                continue;
+              }
+
+              const charClass = AllClasses.find((entry) => entry.classType === classLevel.classId);
+              if (!charClass) {
+                continue;
+              }
+
+              for (const armorProficiency of charClass.proficiencies.armor) {
+                proficiencies.add(armorProficiency.toLowerCase());
+              }
+            }
+
+            return proficiencies;
+          },
+
+          HasArmorProficiency(character: CharacterRecord | null): boolean {
+            const equippedArmor = this.GetEquippedArmor(character);
+            if (!equippedArmor) {
+              return true;
+            }
+
+            const proficiencies = this.GetCharacterArmorProficiencies(character);
+            if (proficiencies.has('all armor')) {
+              return true;
+            }
+
+            if (equippedArmor.category === 'Light') {
+              return proficiencies.has('light armor');
+            }
+
+            if (equippedArmor.category === 'Medium') {
+              return proficiencies.has('medium armor');
+            }
+
+            return proficiencies.has('heavy armor');
+          },
+
+          HasShieldProficiency(character: CharacterRecord | null): boolean {
+            if (!character?.hasShield) {
+              return true;
+            }
+
+            const proficiencies = this.GetCharacterArmorProficiencies(character);
+            return proficiencies.has('shields');
+          },
+
+          GetLoadoutWarnings(character: CharacterRecord | null): string[] {
+            if (!character) {
+              return [];
+            }
+
+            const warnings: string[] = [];
+            const equippedArmor = this.GetEquippedArmor(character);
+            const styleName = this.GetSelectedFightingStyleName(character);
+            const primaryWeapon = this.GetWeaponCatalogItem(character.primaryWeaponId ?? '');
+
+            if (equippedArmor && !this.HasArmorProficiency(character)) {
+              warnings.push(`No proficiency with ${equippedArmor.name}.`);
+            }
+
+            if (character.hasShield && !this.HasShieldProficiency(character)) {
+              warnings.push('No proficiency with shields.');
+            }
+
+            if (styleName === 'Defense' && !equippedArmor) {
+              warnings.push('Defense style requires wearing armor for its AC bonus.');
+            }
+
+            if (styleName === 'Protection' && !character.hasShield) {
+              warnings.push('Protection style requires a shield.');
+            }
+
+            if (styleName === 'Archery' && primaryWeapon && !this.IsRangedWeapon(primaryWeapon)) {
+              warnings.push('Archery style applies only to ranged weapon attacks.');
+            }
+
+            if (styleName === 'Great Weapon Fighting' && !this.IsPrimaryWeaponLockedToTwoHands(character)) {
+              warnings.push('Great Weapon Fighting applies only when wielding the primary weapon with two hands.');
+            }
+
+            if (styleName === 'Two-Weapon Fighting' && !character.offhandWeaponId) {
+              warnings.push('Two-Weapon Fighting requires an off-hand weapon attack.');
+            }
+
+            return warnings;
+          },
+
+          CanSelectFightingStyle(character: CharacterRecord | null): boolean {
+            if (!character) {
+              return false;
+            }
+
+            const classLevelsByName = character.classLevels.reduce((levels: Record<string, number>, entry: ClassLevel) => {
+              if (!entry.classId) {
+                return levels;
+              }
+
+              levels[entry.classId] = (levels[entry.classId] ?? 0) + Math.max(0, entry.level ?? 0);
+              return levels;
+            }, {});
+
+            return (classLevelsByName.Fighter ?? 0) >= 1
+              || (classLevelsByName.Paladin ?? 0) >= 2
+              || (classLevelsByName.Ranger ?? 0) >= 2;
+          },
+
+          NormalizeFightingStyleSelection() {
+            if (!this.editingCharacter) {
+              return;
+            }
+
+            if (!this.CanSelectFightingStyle(this.editingCharacter)) {
+              this.editingCharacter.fightingStyleId = '';
+            }
+          },
 
         GetSubclassOptionsForClass(classId: string): string[] {
           const classEntry = this.catalogs.classes.find((entry: CatalogItem) => entry.name === classId);
@@ -1400,6 +1770,8 @@ const NpcEasyApp = (): any => {
                 level: 1,
                 subclassName: ''
             });
+            this.NormalizeEquippedLoadout();
+            this.NormalizeFightingStyleSelection();
             this.SaveAll();
         },
 
@@ -1409,6 +1781,8 @@ const NpcEasyApp = (): any => {
             }
 
             this.editingCharacter.classLevels.splice(index, 1);
+      this.NormalizeEquippedLoadout();
+            this.NormalizeFightingStyleSelection();
             this.SaveAll();
         },
 
@@ -1426,6 +1800,16 @@ const NpcEasyApp = (): any => {
             if (this.editingCharacter.characterWeapons) {
                 this.editingCharacter.characterWeapons = this.editingCharacter.characterWeapons.filter((entry: CharacterWeapon) => entry.weaponId !== weaponId);
             }
+
+            if (this.editingCharacter.primaryWeaponId === weaponId) {
+              this.editingCharacter.primaryWeaponId = '';
+              this.editingCharacter.primaryWeaponGrip = 'one-handed';
+            }
+            if (this.editingCharacter.offhandWeaponId === weaponId) {
+              this.editingCharacter.offhandWeaponId = '';
+            }
+
+            this.NormalizeEquippedLoadout();
 
             this.SaveAll();
         },
@@ -1457,6 +1841,10 @@ const NpcEasyApp = (): any => {
                 if (!this.editingCharacter.weaponIds.includes(weaponId)) {
                     this.editingCharacter.weaponIds.push(weaponId);
                 }
+              if (!this.editingCharacter.primaryWeaponId) {
+                this.editingCharacter.primaryWeaponId = weaponId;
+              }
+              this.NormalizeEquippedLoadout();
                 this.SaveAll();
                 return;
             }
@@ -1465,9 +1853,10 @@ const NpcEasyApp = (): any => {
         },
 
         AddCompendiumItem(key: CatalogKey) {
+          const singularLabel = key === 'fightingStyles' ? 'Fighting Style' : key.slice(0, -1);
             const item: CatalogItem = {
                 id: NewId(key.slice(0, -1)),
-                name: `New ${key.slice(0, -1)}`,
+            name: `New ${singularLabel}`,
                 description: ''
             };
 
@@ -1691,6 +2080,89 @@ const NpcEasyApp = (): any => {
             return `${weaponName} +${magicBonus}`;
         },
 
+    GetSelectedFightingStyleName(character: CharacterRecord | null): string {
+      if (!character?.fightingStyleId) {
+        return '';
+      }
+
+      return this.GetCatalogName('fightingStyles', character.fightingStyleId);
+    },
+
+    GetEquippedArmor(character: CharacterRecord | null) {
+      if (!character?.equippedArmorId) {
+        return undefined;
+      }
+
+      return this.armors.find((armor: typeof Armors[number]) => armor.id === character.equippedArmorId);
+    },
+
+    GetEquippedArmorName(character: CharacterRecord | null): string {
+      return this.GetEquippedArmor(character)?.name ?? 'No armor';
+    },
+
+    GetEquippedWeaponLabel(character: CharacterRecord | null, weaponId: string, fallback: string): string {
+      if (!character || !weaponId) {
+        return fallback;
+      }
+
+      const weaponName = this.GetCatalogName('weapons', weaponId);
+      if (weaponId === character.primaryWeaponId && this.IsPrimaryWeaponLockedToTwoHands(character)) {
+        return `${weaponName} (two-handed)`;
+      }
+      if (weaponId === character.primaryWeaponId) {
+        return `${weaponName} (primary)`;
+      }
+      if (weaponId === character.offhandWeaponId) {
+        return `${weaponName} (off-hand)`;
+      }
+
+      return weaponName;
+    },
+
+    GetDisplayedArmorClass(character: CharacterRecord | null): number {
+      if (!character) {
+        return 0;
+      }
+
+      const styleName = this.GetSelectedFightingStyleName(character);
+      const armor = this.GetEquippedArmor(character);
+      const dexterityModifier = this.GetAbilityModifier(character.abilityScores.dexterity);
+      const armorBase = armor
+        ? armor.baseArmorClass + Math.min(dexterityModifier, armor.maxDexBonus ?? dexterityModifier)
+        : character.armorClass;
+      const shieldBonus = character.hasShield ? 2 : 0;
+      const defenseBonus = styleName === 'Defense' && armor ? 1 : 0;
+
+      return armorBase + shieldBonus + defenseBonus;
+    },
+
+    GetArmorClassNote(character: CharacterRecord | null): string {
+      if (!character) {
+        return '';
+      }
+
+      const styleName = this.GetSelectedFightingStyleName(character);
+      const armor = this.GetEquippedArmor(character);
+      const notes: string[] = [];
+
+      if (armor) {
+        notes.push(armor.description);
+      } else {
+        notes.push(`No armor equipped. Using base AC ${character.armorClass}.`);
+      }
+      if (character.hasShield) {
+        notes.push('Shield equipped: +2 AC.');
+      }
+      if (styleName === 'Defense' && armor) {
+        notes.push('Defense fighting style: +1 AC while armored.');
+      }
+      if (styleName === 'Protection' && character.hasShield) {
+        notes.push('Protection fighting style is active while the shield is equipped.');
+      }
+
+      return notes.join(' ');
+    },
+
         FormatWeaponAttack(character: CharacterRecord, weaponId: string): string {
             const weapon = this.catalogs.weapons.find((item: CatalogItem) => item.id === weaponId);
             if (!weapon?.weaponDamage) {
@@ -1698,8 +2170,13 @@ const NpcEasyApp = (): any => {
             }
 
             const props: string[] = weapon.weaponProperties ?? [];
-            const isRanged = props.includes('ammunition') || ['Simple Ranged', 'Martial Ranged'].some((g) => weapon.description.startsWith(g));
+      const isRanged = this.IsRangedWeapon(weapon);
             const isFinesse = props.includes('finesse');
+      const isTwoHanded = props.includes('two-handed');
+            const styleName = this.GetSelectedFightingStyleName(character);
+      const isPrimaryWeapon = character.primaryWeaponId === weaponId;
+      const isOffhandWeapon = character.offhandWeaponId === weaponId;
+      const isUsedTwoHanded = isPrimaryWeapon && this.IsPrimaryWeaponLockedToTwoHands(character);
 
             const strMod = this.GetAbilityModifier(character.abilityScores.strength);
             const dexMod = this.GetAbilityModifier(character.abilityScores.dexterity);
@@ -1715,16 +2192,47 @@ const NpcEasyApp = (): any => {
 
             const profBonus = this.GetProficiencyBonus(this.GetTotalCharacterLevel(character));
             const magicBonus = this.GetWeaponMagicBonus(character, weaponId);
-            const toHit = abilityMod + profBonus + magicBonus;
+            const archeryBonus = styleName === 'Archery' && isRanged ? 2 : 0;
+      const duelingBonus = styleName === 'Dueling'
+        && isPrimaryWeapon
+        && !isRanged
+        && !isUsedTwoHanded
+        && !character.offhandWeaponId
+        ? 2
+        : 0;
+            const toHit = abilityMod + profBonus + magicBonus + archeryBonus;
             const toHitText = toHit >= 0 ? `+${toHit}` : `${toHit}`;
+            const styleNotes: string[] = [];
 
-            if (weapon.weaponDamage === '—') {
-                return `${toHitText} to hit | special`;
+            if (archeryBonus > 0) {
+              styleNotes.push('Archery +2');
+            }
+            if (duelingBonus > 0) {
+              styleNotes.push('Dueling +2 damage');
+            }
+            if (styleName === 'Great Weapon Fighting' && isPrimaryWeapon && !isRanged && (isTwoHanded || isUsedTwoHanded)) {
+              styleNotes.push('Great Weapon Fighting rerolls 1s and 2s');
+            }
+            if (styleName === 'Two-Weapon Fighting' && isOffhandWeapon) {
+              styleNotes.push('Off-hand attack adds ability modifier');
+            }
+            if (styleName === 'Protection' && character.hasShield) {
+              styleNotes.push('Protection reaction available while using a shield');
             }
 
-            const totalDamageBonus = abilityMod + magicBonus;
+            if (weapon.weaponDamage === '—') {
+              return styleNotes.length > 0
+                ? `${toHitText} to hit | special | ${styleNotes.join('; ')}`
+                : `${toHitText} to hit | special`;
+            }
+
+            const offhandAbilityBonus = isOffhandWeapon && styleName !== 'Two-Weapon Fighting' ? 0 : abilityMod;
+            const totalDamageBonus = offhandAbilityBonus + magicBonus + duelingBonus;
             const dmgBonus = totalDamageBonus !== 0 ? (totalDamageBonus > 0 ? `+${totalDamageBonus}` : `${totalDamageBonus}`) : '';
-            return `${toHitText} to hit | ${weapon.weaponDamage}${dmgBonus} ${weapon.weaponDamageType}`;
+            const attackSummary = `${toHitText} to hit | ${weapon.weaponDamage}${dmgBonus} ${weapon.weaponDamageType}`;
+            return styleNotes.length > 0
+              ? `${attackSummary} | ${styleNotes.join('; ')}`
+              : attackSummary;
         },
 
         GetSpellcastingAbilityForClassEntry(entry: ClassLevel): keyof CharacterRecord['abilityScores'] | undefined {
@@ -1925,15 +2433,22 @@ const NpcEasyApp = (): any => {
             return this.catalogs[key].find((item: CatalogItem) => item.id === id)?.name ?? 'Unknown';
         },
 
-        GetTotalCharacterLevel(): number {
+        GetCatalogDescription(key: CatalogKey, id: string): string {
+          return this.catalogs[key].find((item: CatalogItem) => item.id === id)?.description ?? '';
+        },
+
+        GetTotalCharacterLevel(character?: CharacterRecord | null): number {
+          const targetCharacter = character ?? this.editingCharacter;
+          if (!targetCharacter) {
+            return 0;
+          }
+
             let totalCharLvl: number = 0;
-            this.editingCharacter.classLevels.forEach((classLevel: ClassLevel) => {
+          targetCharacter.classLevels.forEach((classLevel: ClassLevel) => {
                 if (classLevel.level < 0) {
-                    console.warn(`Character ${this.editingCharacter.name} has a class level entry with negative level (${classLevel.classId} Lv ${classLevel.level}). Treating it as 0 for total level calculation.`);
+              console.warn(`Character ${targetCharacter.name} has a class level entry with negative level (${classLevel.classId} Lv ${classLevel.level}). Treating it as 0 for total level calculation.`);
                 }
                 totalCharLvl += classLevel.level > 0 ? classLevel.level : 0;
-            
-
             });
             return totalCharLvl;
         }
