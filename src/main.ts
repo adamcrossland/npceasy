@@ -855,6 +855,7 @@ app.innerHTML = `
                   </div>
                 </template>
                 <p class="text-sm text-ink-soft" x-show="(editingCharacter?.classLevels?.length ?? 0) === 0" x-cloak>No class levels set yet. Click Add Class to begin.</p>
+                <p class="text-sm font-semibold text-red-700" x-show="ShouldPromptWizardArcaneTradition(editingCharacter)" x-cloak>Wizard characters at level 2+ must choose an Arcane Tradition.</p>
               </div>
             </div>
 
@@ -1575,6 +1576,37 @@ const NpcEasyApp = (): any => {
             }
           },
 
+          GetTotalLevelsForClass(character: CharacterRecord | null, className: string): number {
+            if (!character) {
+              return 0;
+            }
+
+            return (character.classLevels ?? []).reduce((total: number, entry: ClassLevel) => {
+              if (entry.classId !== className) {
+                return total;
+              }
+
+              return total + Math.max(0, entry.level ?? 0);
+            }, 0);
+          },
+
+          ShouldPromptWizardArcaneTradition(character: CharacterRecord | null): boolean {
+            if (!character) {
+              return false;
+            }
+
+            const wizardLevel = this.GetTotalLevelsForClass(character, 'Wizard');
+            if (wizardLevel < 2) {
+              return false;
+            }
+
+            const hasArcaneTradition = (character.classLevels ?? []).some((entry: ClassLevel) => {
+              return entry.classId === 'Wizard' && (entry.subclassName ?? '').trim().length > 0;
+            });
+
+            return !hasArcaneTradition;
+          },
+
           GetCharacterArmorProficiencies(character: CharacterRecord | null): Set<string> {
             const proficiencies = new Set<string>();
             if (!character) {
@@ -1702,7 +1734,14 @@ const NpcEasyApp = (): any => {
 
         GetSubclassOptionsForClass(classId: string): string[] {
           const classEntry = this.catalogs.classes.find((entry: CatalogItem) => entry.name === classId);
-          return NormalizeClassSubclasses(classEntry?.classSubclasses).map((subclass) => subclass.name);
+          const catalogSubclassOptions = NormalizeClassSubclasses(classEntry?.classSubclasses);
+          if (catalogSubclassOptions.length > 0) {
+            return catalogSubclassOptions.map((subclass) => subclass.name);
+          }
+
+          const sourceClass = AllClasses.find((entry) => entry.classType === classId);
+          return NormalizeClassSubclasses(sourceClass?.subclasses as unknown as ClassSubclass[] | undefined)
+            .map((subclass) => subclass.name);
         },
 
         NormalizeSubclassSelection(entry: ClassLevel) {

@@ -503,22 +503,106 @@ Wizard.addFeature({ name: 'Arcane Tradition', level: 2, description: 'Choose spe
 Wizard.addFeature({ name: 'Spell Mastery', level: 18, description: 'Cast known spell without using spell slot' });
 
 Wizard.addSubclass({
-    name: 'Evocation',
+    name: 'Abjuration',
     source: 'PHB',
-    description: 'Master of explosive magical force',
+    description: 'Master of protective magical wards and defenses',
     features: [
-        { name: 'Sculpt Spells', level: 2, description: 'Evoke spells without harming allies' },
-        { name: 'Overchannel', level: 14, description: 'Increase spell damage with sorcery-like power' }
+        { name: 'Abjuration Savant', level: 2, description: 'Gold and time to copy abjuration spells into your spellbook are halved.' },
+        { name: 'Arcane Ward', level: 2, description: 'Casting an abjuration spell creates a magical ward that can absorb damage.' },
+        { name: 'Projected Ward', level: 6, description: 'Use your reaction to make your Arcane Ward absorb damage for a nearby ally.' },
+        { name: 'Improved Abjuration', level: 10, description: 'Add your proficiency bonus to ability checks made as part of casting abjuration spells.' },
+        { name: 'Spell Resistance', level: 14, description: 'You have advantage on saving throws against spells and resistance to spell damage.' }
     ]
 });
 
 Wizard.addSubclass({
-    name: 'Abjuration',
+    name: 'Conjuration',
     source: 'PHB',
-    description: 'Master of protective magical wards',
+    description: 'Master of summoning creatures and objects through space',
     features: [
-        { name: 'Arcane Ward', level: 2, description: 'Create protective barrier' },
-        { name: 'Projected Ward', level: 6, description: 'Extend ward to adjacent creature' }
+        { name: 'Conjuration Savant', level: 2, description: 'Gold and time to copy conjuration spells into your spellbook are halved.' },
+        { name: 'Minor Conjuration', level: 2, description: 'Conjure a small nonmagical object in your hand or on the ground nearby.' },
+        { name: 'Benign Transposition', level: 6, description: 'Teleport up to 30 feet or swap places with a willing creature you can see.' },
+        { name: 'Focused Conjuration', level: 10, description: 'Your concentration on conjuration spells cannot be broken by taking damage.' },
+        { name: 'Durable Summons', level: 14, description: 'Any creature you summon or create with a conjuration spell gains 30 temporary hit points.' }
+    ]
+});
+
+Wizard.addSubclass({
+    name: 'Divination',
+    source: 'PHB',
+    description: 'Master of foresight, omens, and hidden knowledge',
+    features: [
+        { name: 'Divination Savant', level: 2, description: 'Gold and time to copy divination spells into your spellbook are halved.' },
+        { name: 'Portent', level: 2, description: 'After a long rest, roll d20s and replace attack rolls, saves, or checks with these foretelling rolls.' },
+        { name: 'Expert Divination', level: 6, description: 'Casting divination spells of 2nd level or higher restores a lower-level spell slot.' },
+        { name: 'The Third Eye', level: 10, description: 'Use an action to gain darkvision, ethereal sight, greater reading, or see invisibility until rest.' },
+        { name: 'Greater Portent', level: 14, description: 'You roll three Portent dice instead of two after finishing a long rest.' }
+    ]
+});
+
+Wizard.addSubclass({
+    name: 'Enchantment',
+    source: 'PHB',
+    description: 'Master of influencing minds and bending wills',
+    features: [
+        { name: 'Enchantment Savant', level: 2, description: 'Gold and time to copy enchantment spells into your spellbook are halved.' },
+        { name: 'Hypnotic Gaze', level: 2, description: 'Charm and incapacitate a creature near you with a mesmerising gaze.' },
+        { name: 'Instinctive Charm', level: 6, description: 'Redirect an attack toward another target as a reaction.' },
+        { name: 'Split Enchantment', level: 10, description: 'Single-target enchantment spells can target a second creature.' },
+        { name: 'Alter Memories', level: 14, description: 'A charmed creature can lose memory of your influence or remember your casting as harmless.' }
+    ]
+});
+
+Wizard.addSubclass({
+    name: 'Evocation',
+    source: 'PHB',
+    description: 'Master of elemental and destructive magical force',
+    features: [
+        { name: 'Evocation Savant', level: 2, description: 'Gold and time to copy evocation spells into your spellbook are halved.' },
+        { name: 'Sculpt Spells', level: 2, description: 'Protect allies from your area evocation spells by granting automatic save success and no damage.' },
+        { name: 'Potent Cantrip', level: 6, description: 'Creatures take half damage from your cantrips even on a successful saving throw.' },
+        { name: 'Empowered Evocation', level: 10, description: 'Add your Intelligence modifier to one damage roll of any wizard evocation spell.' },
+        { name: 'Overchannel', level: 14, description: 'Deal maximum damage with lower-level wizard spells, at increasing personal cost when repeated.' }
+    ]
+});
+
+Wizard.addSubclass({
+    name: 'Illusion',
+    source: 'PHB',
+    description: 'Master of deception, phantasms, and altered perception',
+    features: [
+        { name: 'Illusion Savant', level: 2, description: 'Gold and time to copy illusion spells into your spellbook are halved.' },
+        { name: 'Improved Minor Illusion', level: 2, description: 'Learn minor illusion if needed, and create both image and sound with one casting.' },
+        { name: 'Malleable Illusions', level: 6, description: 'Change ongoing illusion spells with a duration of 1 minute or longer.' },
+        { name: 'Illusory Self', level: 10, description: 'Use a reaction to make an illusory duplicate take an attack that would hit you.' },
+        { name: 'Illusory Reality', level: 14, description: 'Make one nonmagical inanimate part of an illusion temporarily real.' }
+    ]
+});
+
+Wizard.addSubclass({
+    name: 'Necromancy',
+    source: 'PHB',
+    description: 'Master of life, death, and undeath',
+    features: [
+        { name: 'Necromancy Savant', level: 2, description: 'Gold and time to copy necromancy spells into your spellbook are halved.' },
+        { name: 'Grim Harvest', level: 2, description: 'When you kill with a spell, regain hit points based on spell level.' },
+        { name: 'Undead Thralls', level: 6, description: 'Animate dead adds an extra corpse/boned pile and your undead become tougher and hit harder.' },
+        { name: 'Inured to Undeath', level: 10, description: 'Gain resistance to necrotic damage and your hit point maximum cannot be reduced.' },
+        { name: 'Command Undead', level: 14, description: 'Use magic to seize control of an undead creature.' }
+    ]
+});
+
+Wizard.addSubclass({
+    name: 'Transmutation',
+    source: 'PHB',
+    description: 'Master of transformation and mutable matter',
+    features: [
+        { name: 'Transmutation Savant', level: 2, description: 'Gold and time to copy transmutation spells into your spellbook are halved.' },
+        { name: 'Minor Alchemy', level: 2, description: 'Temporarily transform one nonmagical substance into another.' },
+        { name: 'Transmuter\'s Stone', level: 6, description: 'Create a stone that grants a useful benefit while carried.' },
+        { name: 'Shapechanger', level: 10, description: 'Cast polymorph on yourself without expending a spell slot once per rest.' },
+        { name: 'Master Transmuter', level: 14, description: 'Consume your transmuter\'s stone to produce a powerful transmutation effect.' }
     ]
 });
 
