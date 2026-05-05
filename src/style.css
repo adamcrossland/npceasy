@@ -319,10 +319,34 @@ body {
   }
 }
 
-@media print
-{    
-    .no-print, .no-print *
-    {
-        display: none !important;
-    }
+@media print {
+  .no-print,
+  .no-print * {
+    display: none !important;
+  }
+
+  .sheet {
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    background: #fff;
+    padding: 0;
+  }
+
+  .sheet-card,
+  .sheet-card-spells,
+  .spell-list-item {
+    break-inside: avoid-page;
+    page-break-inside: avoid;
+  }
+
+  .sheet-card,
+  .sheet-card-spells,
+  .spell-list-item {
+    break-inside: avoid;
+  }
+
+  .sheet-card {
+    margin-bottom: 0.35rem;
+  }
 }
