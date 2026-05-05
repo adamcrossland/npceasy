@@ -60,7 +60,6 @@ type CharacterRecord = {
     name: string;
     raceId: string;
     classLevels: ClassLevel[];
-    level: number;
     experience: number;
     maxHitPoints: number;
     armorClass: number;
@@ -499,7 +498,6 @@ function BuildNewCharacter(raceId: string): CharacterRecord {
         name: 'New Character',
         raceId,
         classLevels: [],
-        level: 1,
         experience: 0,
         maxHitPoints: 8,
         armorClass: 10,
@@ -735,9 +733,6 @@ app.innerHTML = `
             </div>
 
             <div class="grid gap-3 md:grid-cols-4">
-              <label class="field-label">Level
-                <input x-model.number="editingCharacter.level" type="number" min="1" class="input-base" />
-              </label>
               <label class="field-label">Experience
                 <input x-model.number="editingCharacter.experience" type="number" min="0" class="input-base" />
               </label>
@@ -1584,7 +1579,7 @@ const NpcEasyApp = (): any => {
                     proficientSaves.add(save.toLowerCase());
                 }
             }
-            const profBonus = this.GetProficiencyBonus(character.level);
+            const profBonus = this.GetProficiencyBonus(this.GetTotalCharacterLevel(character));
             const entries: { key: keyof CharacterRecord['abilityScores']; label: string; abbr: string }[] = [
                 { key: 'strength', label: 'Strength', abbr: 'STR' },
                 { key: 'dexterity', label: 'Dexterity', abbr: 'DEX' },
@@ -1714,7 +1709,7 @@ const NpcEasyApp = (): any => {
                 abilityMod = strMod;
             }
 
-            const profBonus = this.GetProficiencyBonus(character.level);
+            const profBonus = this.GetProficiencyBonus(this.GetTotalCharacterLevel(character));
             const magicBonus = this.GetWeaponMagicBonus(character, weaponId);
             const toHit = abilityMod + profBonus + magicBonus;
             const toHitText = toHit >= 0 ? `+${toHit}` : `${toHit}`;
@@ -1795,7 +1790,7 @@ const NpcEasyApp = (): any => {
                 return 8;
             }
             const abilityMod = this.GetAbilityModifier(character.abilityScores[ability as keyof CharacterRecord['abilityScores']]);
-            const profBonus = this.GetProficiencyBonus(character.level);
+            const profBonus = this.GetProficiencyBonus(this.GetTotalCharacterLevel(character));
             return 8 + profBonus + abilityMod;
         },
 
@@ -1811,7 +1806,7 @@ const NpcEasyApp = (): any => {
 
             const abilityKey = ability as keyof CharacterRecord['abilityScores'];
             const abilityMod = this.GetAbilityModifier(character.abilityScores[abilityKey]);
-            const profBonus = this.GetProficiencyBonus(character.level);
+            const profBonus = this.GetProficiencyBonus(this.GetTotalCharacterLevel(character));
             const toHit = profBonus + abilityMod;
             const toHitText = toHit >= 0 ? `+${toHit}` : `${toHit}`;
             return `${toHitText} to hit | spell attack`;
