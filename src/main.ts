@@ -625,8 +625,8 @@ app.innerHTML = `
               </div>
               <div class="space-y-2">
                 <template x-for="(row, index) in editingCharacter.classLevels" :key="index">
-                  <div class="grid gap-2 md:grid-cols-[1fr_160px_90px_auto]">
-                    <select x-model="row.classId" class="input-base">
+                  <div class="grid gap-2" :class="GetSubclassOptionsForClass(row.classId).length > 0 ? 'md:grid-cols-[1fr_160px_90px_auto]' : 'md:grid-cols-[1fr_90px_auto]'">
+                    <select x-model="row.classId" class="input-base" @change="NormalizeSubclassSelection(row)">
                       <option value="">Choose class</option>
                       <template x-for="entry in catalogs.classes" :key="entry.name">
                         <option :value="entry.name" x-text="entry.name"></option>
@@ -639,9 +639,6 @@ app.innerHTML = `
                           <option :value="sc" x-text="sc"></option>
                         </template>
                       </select>
-                    </template>
-                    <template x-if="GetSubclassOptionsForClass(row.classId).length === 0">
-                      <input x-model="row.subclassName" type="text" placeholder="Subclass (optional)" class="input-base" />
                     </template>
                     <input x-model.number="row.level" type="number" min="1" class="input-base" />
                     <button type="button" class="btn-danger" @click="RemoveClassLevel(index)">Remove</button>
@@ -1076,8 +1073,24 @@ const NpcEasyApp = (): any => {
         },
 
         GetSubclassOptionsForClass(classId: string): string[] {
-            const charClass = AllClasses.find(c => c.classType === classId);
-            return charClass ? charClass.subclasses.map(sc => sc.name) : [];
+          if (classId !== 'Fighter' && classId !== 'Rogue') {
+            return [];
+          }
+
+          const charClass = AllClasses.find(c => c.classType === classId);
+          return charClass ? charClass.subclasses.map(sc => sc.name) : [];
+        },
+
+        NormalizeSubclassSelection(entry: ClassLevel) {
+          const subclassOptions = this.GetSubclassOptionsForClass(entry.classId);
+          if (subclassOptions.length === 0) {
+            entry.subclassName = '';
+            return;
+          }
+
+          if (entry.subclassName && !subclassOptions.includes(entry.subclassName)) {
+            entry.subclassName = '';
+          }
         },
 
         AddClassLevel() {
