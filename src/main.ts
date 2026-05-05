@@ -411,11 +411,46 @@ function BuildNewCharacter(raceId: string): CharacterRecord {
 }
 
 function MigrateClassId(classId: string, classItems: CatalogItem[]): string {
-    // Already a class name (new format)
-    if (AllClasses.some(c => c.classType === classId)) return classId;
-    // Old format: look up by catalog item ID
-    const match = classItems.find(c => c.id === classId);
-    return match ? match.name : classId;
+  if (!classId) {
+    return classId;
+  }
+
+  const directClassMatch = AllClasses.find(c => c.classType === classId);
+  if (directClassMatch) {
+    return directClassMatch.classType;
+  }
+
+  const slugMatch = AllClasses.find((c) => `class-${c.classType.toLowerCase().replace(/[^a-z0-9]+/g, '-')}` === classId);
+  if (slugMatch) {
+    return slugMatch.classType;
+  }
+
+  const savedCatalogMatch = classItems.find((c) => c.id === classId || c.name === classId);
+  return savedCatalogMatch?.name ?? classId;
+}
+
+function MigrateCatalogItemId(itemId: string, sourceItems: CatalogItem[], targetItems: CatalogItem[]): string {
+  if (!itemId) {
+    return itemId;
+  }
+
+  const directTargetMatch = targetItems.find((item) => item.id === itemId);
+  if (directTargetMatch) {
+    return itemId;
+  }
+
+  const targetByName = targetItems.find((item) => item.name === itemId);
+  if (targetByName) {
+    return targetByName.id;
+  }
+
+  const sourceItem = sourceItems.find((item) => item.id === itemId || item.name === itemId);
+  if (!sourceItem) {
+    return itemId;
+  }
+
+  const targetItem = targetItems.find((item) => item.name === sourceItem.name);
+  return targetItem?.id ?? itemId;
 }
 
 function LoadState(): AppState {
@@ -436,6 +471,8 @@ function LoadState(): AppState {
             && parsed.catalogs.spells.some((item) => item.id === 'spell-fireball');
 
         const freshCatalogs = BuildDefaultState().catalogs;
+        const savedClassCatalog = parsed.catalogs?.classes ?? freshCatalogs.classes;
+        const savedRaceCatalog = parsed.catalogs?.races ?? freshCatalogs.races;
         const mergedState = {
             ...BuildDefaultState(),
             ...parsed,
@@ -454,9 +491,10 @@ function LoadState(): AppState {
                 ...col,
                 characters: col.characters.map(char => ({
                     ...char,
+                raceId: MigrateCatalogItemId(char.raceId, savedRaceCatalog, freshCatalogs.races),
                     classLevels: char.classLevels.map(entry => ({
                         ...entry,
-                        classId: MigrateClassId(entry.classId, freshCatalogs.classes)
+                  classId: MigrateClassId(entry.classId, savedClassCatalog)
                     }))
                 }))
             }))
@@ -567,10 +605,10 @@ app.innerHTML = `
                 <input x-model="editingCharacter.name" type="text" class="input-base" />
               </label>
               <label class="field-label">Race
-                <select x-model="editingCharacter.raceId" class="input-base">
-                  <option value="">Choose a race</option>
+                <select x-model="editingCharacter.raceId" x-effect="$el.value = editingCharacter?.raceId ?? ''" class="input-base">
+                  <option value="" :selected="!editingCharacter?.raceId">Choose a race</option>
                   <template x-for="race in catalogs.races" :key="race.id">
-                    <option :value="race.id" x-text="race.name"></option>
+                    <option :value="race.id" :selected="editingCharacter?.raceId === race.id" x-text="race.name"></option>
                   </template>
                 </select>
               </label>
@@ -626,17 +664,17 @@ app.innerHTML = `
               <div class="space-y-2">
                 <template x-for="(row, index) in editingCharacter.classLevels" :key="index">
                   <div class="grid gap-2" :class="GetSubclassOptionsForClass(row.classId).length > 0 ? 'md:grid-cols-[1fr_160px_90px_auto]' : 'md:grid-cols-[1fr_90px_auto]'">
-                    <select x-model="row.classId" class="input-base" @change="NormalizeSubclassSelection(row)">
-                      <option value="">Choose class</option>
+                    <select x-model="row.classId" x-effect="$el.value = row.classId ?? ''" class="input-base" @change="NormalizeSubclassSelection(row)">
+                      <option value="" :selected="!row.classId">Choose class</option>
                       <template x-for="entry in catalogs.classes" :key="entry.name">
-                        <option :value="entry.name" x-text="entry.name"></option>
+                        <option :value="entry.name" :selected="row.classId === entry.name" x-text="entry.name"></option>
                       </template>
                     </select>
                     <template x-if="GetSubclassOptionsForClass(row.classId).length > 0">
-                      <select x-model="row.subclassName" class="input-base">
-                        <option value="">No subclass</option>
+                      <select x-model="row.subclassName" x-effect="$el.value = row.subclassName ?? ''" class="input-base">
+                        <option value="" :selected="!row.subclassName">No subclass</option>
                         <template x-for="sc in GetSubclassOptionsForClass(row.classId)" :key="sc">
-                          <option :value="sc" x-text="sc"></option>
+                          <option :value="sc" :selected="row.subclassName === sc" x-text="sc"></option>
                         </template>
                       </select>
                     </template>
