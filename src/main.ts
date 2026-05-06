@@ -970,7 +970,7 @@ app.innerHTML = `
                         :checked="editingCharacter?.spellIds?.includes(entry.id)"
                         @change="ToggleCharacterListSelection('spellIds', entry.id, $event.target.checked)"
                       />
-                      <span x-text="entry.name"></span>
+                      <span x-text="GetSpellBuilderLabel(entry)"></span>
                     </label>
                   </template>
                 </div>
@@ -1610,7 +1610,7 @@ const NpcEasyApp = (): any => {
             const warlockPactSlotLevel = (WarlockPactSlotsByLevel[Math.min(20, Math.max(0, warlockLevel))] ?? { slotLevel: 0 }).slotLevel ?? 0;
             const maxSpellLevel = Math.max(maxStandardSpellLevel, warlockPactSlotLevel);
 
-            return this.catalogs.spells.filter((spell: CatalogItem) => {
+            const filteredSpells = this.catalogs.spells.filter((spell: CatalogItem) => {
               const spellClasses = (spell.classes ?? []).map((name: string) => name.toLowerCase().trim()).filter((name: string) => name.length > 0);
               const classMatch = spellClasses.some((name: string) => selectedClasses.has(name));
               if (!classMatch) {
@@ -1620,6 +1620,23 @@ const NpcEasyApp = (): any => {
               const spellLevel = Number.isFinite(spell.level) ? (spell.level as number) : 0;
               return spellLevel === 0 || spellLevel <= maxSpellLevel;
             });
+
+            return filteredSpells.sort((left: CatalogItem, right: CatalogItem) => {
+              const leftLevel = Number.isFinite(left.level) ? (left.level as number) : Number.MAX_SAFE_INTEGER;
+              const rightLevel = Number.isFinite(right.level) ? (right.level as number) : Number.MAX_SAFE_INTEGER;
+
+              if (leftLevel !== rightLevel) {
+                return leftLevel - rightLevel;
+              }
+
+              return left.name.localeCompare(right.name);
+            });
+          },
+
+          GetSpellBuilderLabel(spell: CatalogItem): string {
+            const spellLevel = Number.isFinite(spell.level) ? (spell.level as number) : -1;
+            const levelPrefix = spellLevel === 0 ? 'C' : `${spellLevel}`;
+            return `${levelPrefix}: ${spell.name}`;
           },
 
           NormalizeEquippedLoadout() {
