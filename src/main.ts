@@ -962,7 +962,7 @@ app.innerHTML = `
               <div>
                 <p class="field-label">Spells</p>
                 <div class="input-base min-h-[180px] max-h-[260px] space-y-2 overflow-y-auto">
-                  <template x-for="entry in catalogs.spells" :key="entry.id">
+                  <template x-for="entry in GetAvailableSpellsForCharacter(editingCharacter)" :key="entry.id">
                     <label class="flex items-center gap-2 text-sm text-ink">
                       <input
                         type="checkbox"
@@ -1562,6 +1562,64 @@ const NpcEasyApp = (): any => {
             return this.GetLoadoutWeaponOptions(character)
               .filter((weapon: CatalogItem) => weapon.id !== character.primaryWeaponId)
               .filter((weapon: CatalogItem) => !this.IsRangedWeapon(weapon) && !this.IsTwoHandedWeapon(weapon));
+          },
+
+          GetAvailableSpellsForCharacter(character: CharacterRecord | null): CatalogItem[] {
+            if (!character) {
+              return [];
+            }
+
+            const classLevelsByName: Record<string, number> = {};
+            for (const entry of character.classLevels) {
+              const className = entry.classId.toLowerCase().trim();
+              if (!className) {
+                continue;
+              }
+
+              classLevelsByName[className] = (classLevelsByName[className] ?? 0) + Math.max(0, entry.level ?? 0);
+            }
+
+            const selectedClasses = new Set(Object.keys(classLevelsByName).filter((name) => (classLevelsByName[name] ?? 0) > 0));
+            if (selectedClasses.size === 0) {
+              return [];
+            }
+
+            const fullCasterClasses = new Set(['bard', 'cleric', 'druid', 'sorcerer', 'wizard']);
+            const halfCasterClasses = new Set(['paladin', 'ranger']);
+            let multiclassCasterLevel = 0;
+            for (const className of selectedClasses) {
+              const classLevel = classLevelsByName[className] ?? 0;
+              if (fullCasterClasses.has(className)) {
+                multiclassCasterLevel += classLevel;
+              } else if (halfCasterClasses.has(className)) {
+                multiclassCasterLevel += Math.floor(classLevel / 2);
+              }
+            }
+
+            const boundedCasterLevel = Math.min(20, Math.max(0, multiclassCasterLevel));
+            const slotProgression = SpellSlotsByCasterLevel[boundedCasterLevel] ?? [];
+            let maxStandardSpellLevel = 0;
+            for (let index = slotProgression.length - 1; index >= 0; index -= 1) {
+              if ((slotProgression[index] ?? 0) > 0) {
+                maxStandardSpellLevel = index + 1;
+                break;
+              }
+            }
+
+            const warlockLevel = classLevelsByName.warlock ?? 0;
+            const warlockPactSlotLevel = (WarlockPactSlotsByLevel[Math.min(20, Math.max(0, warlockLevel))] ?? { slotLevel: 0 }).slotLevel ?? 0;
+            const maxSpellLevel = Math.max(maxStandardSpellLevel, warlockPactSlotLevel);
+
+            return this.catalogs.spells.filter((spell: CatalogItem) => {
+              const spellClasses = (spell.classes ?? []).map((name: string) => name.toLowerCase().trim()).filter((name: string) => name.length > 0);
+              const classMatch = spellClasses.some((name: string) => selectedClasses.has(name));
+              if (!classMatch) {
+                return false;
+              }
+
+              const spellLevel = Number.isFinite(spell.level) ? (spell.level as number) : 0;
+              return spellLevel === 0 || spellLevel <= maxSpellLevel;
+            });
           },
 
           NormalizeEquippedLoadout() {
