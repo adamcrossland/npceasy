@@ -1332,6 +1332,7 @@ app.innerHTML = `
 
           <div class="sheet-card">
             <p><strong>Background:</strong> <span x-text="editingCharacter?.background"></span></p>
+            <p><strong>Languages:</strong> <span x-text="editingCharacter?.languages || 'None listed'"></span></p>
             <p><strong>Personality:</strong> <span x-text="editingCharacter?.personality"></span></p>
             <p><strong>Ideals:</strong> <span x-text="editingCharacter?.ideals"></span></p>
             <p><strong>Bonds:</strong> <span x-text="editingCharacter?.bonds"></span></p>
