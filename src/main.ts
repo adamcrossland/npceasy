@@ -62,6 +62,7 @@ type CharacterRecord = {
     id: string;
     name: string;
     raceId: string;
+  subraceName?: string;
     classLevels: ClassLevel[];
     fightingStyleId?: string;
     experience: number;
@@ -532,6 +533,7 @@ function BuildNewCharacter(raceId: string): CharacterRecord {
         id: NewId('char'),
         name: 'New Character',
         raceId,
+    subraceName: '',
         classLevels: [],
         fightingStyleId: '',
         experience: 0,
@@ -652,6 +654,7 @@ function LoadState(): AppState {
                 characters: col.characters.map(char => ({
                     ...char,
                   raceId: MigrateCatalogItemId(char.raceId, savedRaceCatalog, freshCatalogs.races),
+                  subraceName: char.subraceName ?? '',
                   fightingStyleId: (() => {
                     const migratedId = MigrateCatalogItemId(char.fightingStyleId ?? '', savedFightingStyleCatalog, freshCatalogs.fightingStyles);
                     return freshCatalogs.fightingStyles.some((item) => item.id === migratedId) ? migratedId : '';
@@ -780,10 +783,18 @@ app.innerHTML = `
                 <input x-model="editingCharacter.name" type="text" class="input-base" />
               </label>
               <label class="field-label">Race
-                <select x-model="editingCharacter.raceId" x-effect="$el.value = editingCharacter?.raceId ?? ''" class="input-base">
+                <select x-model="editingCharacter.raceId" x-effect="$el.value = editingCharacter?.raceId ?? ''" class="input-base" @change="NormalizeSelectedSubrace()">
                   <option value="" :selected="!editingCharacter?.raceId">Choose a race</option>
                   <template x-for="race in catalogs.races" :key="race.id">
                     <option :value="race.id" :selected="editingCharacter?.raceId === race.id" x-text="race.name"></option>
+                  </template>
+                </select>
+              </label>
+              <label class="field-label" x-show="GetSubraceOptions(editingCharacter).length > 0" x-cloak>Sub-race
+                <select x-model="editingCharacter.subraceName" x-effect="$el.value = editingCharacter?.subraceName ?? ''" class="input-base">
+                  <option value="" :selected="!editingCharacter?.subraceName">Choose a sub-race</option>
+                  <template x-for="subrace in GetSubraceOptions(editingCharacter)" :key="subrace.name">
+                    <option :value="subrace.name" :selected="editingCharacter?.subraceName === subrace.name" x-text="subrace.name"></option>
                   </template>
                 </select>
               </label>
@@ -1516,6 +1527,31 @@ const NpcEasyApp = (): any => {
             return this.catalogs.weapons.find((item: CatalogItem) => item.id === weaponId);
           },
 
+          GetSubraceOptions(character: CharacterRecord | null): Array<{ name: string }> {
+            if (!character?.raceId) {
+              return [];
+            }
+
+            const selectedRace = this.catalogs.races.find((item: CatalogItem) => item.id === character.raceId);
+            if (!selectedRace) {
+              return [];
+            }
+
+            const raceDefinition = Races.find((race) => race.name.toLowerCase() === selectedRace.name.toLowerCase());
+            return (raceDefinition?.subraces ?? []).map((subrace) => ({ name: subrace.name }));
+          },
+
+          NormalizeSelectedSubrace() {
+            if (!this.editingCharacter) {
+              return;
+            }
+
+            const availableSubraces = this.GetSubraceOptions(this.editingCharacter).map((subrace: { name: string }) => subrace.name);
+            if (!availableSubraces.includes(this.editingCharacter.subraceName ?? '')) {
+              this.editingCharacter.subraceName = '';
+            }
+          },
+
           IsRangedWeapon(weapon: CatalogItem | undefined): boolean {
             if (!weapon) {
               return false;
@@ -2063,6 +2099,7 @@ const NpcEasyApp = (): any => {
                 }
                 if (key === 'races' && this.editingCharacter.raceId === id) {
                     this.editingCharacter.raceId = '';
+                  this.editingCharacter.subraceName = '';
                 }
                 if (key === 'classes') {
                   const removedClassName = removedItem?.name;
