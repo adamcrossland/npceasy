@@ -1289,18 +1289,40 @@ app.innerHTML = `
                 <p x-text="line"></p>
               </template>
             </div>
-            <ul class="list-base spell-list-grid">
-              <template x-for="id in editingCharacter?.spellIds ?? []" :key="id">
-                <li class="spell-list-item">
-                  <p class="font-semibold" x-text="GetCatalogName('spells', id)"></p>
-                  <div class="mt-1 space-y-1 text-xs text-ink-soft">
-                    <template x-for="line in GetSpellFacts(id)" :key="id + '-' + line">
-                      <p x-text="line"></p>
-                    </template>
-                  </div>
-                </li>
-              </template>
-            </ul>
+            <div class="spell-table-wrap">
+              <table class="spell-table">
+                <thead>
+                  <tr class="spell-table-header-row">
+                    <th scope="col">Spell</th>
+                    <th scope="col">Casting Time</th>
+                    <th scope="col">Range</th>
+                    <th scope="col">Duration</th>
+                    <th scope="col">Components</th>
+                    <th scope="col">Type</th>
+                  </tr>
+                </thead>
+                <template x-for="id in editingCharacter?.spellIds ?? []" :key="id">
+                  <tbody>
+                      <tr class="spell-table-meta-row">
+                        <th scope="row" class="spell-name-cell" x-text="GetCatalogName('spells', id)"></th>
+                        <td x-text="GetSpellSheetRow(id).castingTime"></td>
+                        <td x-text="GetSpellSheetRow(id).range"></td>
+                        <td x-text="GetSpellSheetRow(id).duration"></td>
+                        <td x-text="GetSpellSheetRow(id).components"></td>
+                        <td x-text="GetSpellSheetRow(id).type"></td>
+                      </tr>
+                      <tr class="spell-table-detail-row">
+                        <td colspan="6">
+                          <p>
+                            <span class="mr-6"><span class="font-semibold">Damage:</span> <span x-text="GetSpellSheetRow(id).damage"></span></span>
+                            <span><span class="font-semibold">Effects:</span> <span x-text="GetSpellSheetRow(id).effects"></span></span>
+                          </p>
+                        </td>
+                      </tr>
+                  </tbody>
+                </template>
+              </table>
+            </div>
           </div>
 
           <div class="sheet-card">
@@ -2480,6 +2502,48 @@ const NpcEasyApp = (): any => {
                 `Effects: ${effect || 'See full text'}`
             ];
         },
+
+          GetSpellSheetRow(spellId: string): { castingTime: string; range: string; duration: string; components: string; type: string; damage: string; effects: string } {
+            const spell = this.catalogs.spells.find((item: CatalogItem) => item.id === spellId);
+            if (!spell) {
+              return {
+                castingTime: 'Action',
+                range: 'See description',
+                duration: 'See description',
+                components: 'None',
+                type: 'Unknown spell',
+                damage: 'None',
+                effects: 'See full text.'
+              };
+            }
+
+            const srcSpell = GetSpellByName(spell.name);
+            const descriptionText = (spell.description?.trim() || srcSpell?.description || '');
+            const school = srcSpell?.school
+              ? srcSpell.school.charAt(0).toUpperCase() + srcSpell.school.slice(1)
+              : 'Spell';
+            const levelText = srcSpell ? (srcSpell.level === 0 ? 'Cantrip' : `${this.FormatSpellLevel(srcSpell.level)}-level`) : 'Spell';
+            const tags: string[] = [];
+            if (srcSpell?.ritual) {
+              tags.push('Ritual');
+            }
+            if (srcSpell?.concentration) {
+              tags.push('Concentration');
+            }
+
+            const effect = spell.effect ?? srcSpell?.effect ?? SummarizeSpellEffect(descriptionText);
+            const damage = spell.damage ?? srcSpell?.damage ?? SummarizeSpellDamage(descriptionText) ?? 'None';
+
+            return {
+              castingTime: srcSpell?.castingTime ?? 'Action',
+              range: srcSpell?.range ?? 'See description',
+              duration: srcSpell?.duration ?? 'See description',
+              components: srcSpell?.components ?? 'None',
+              type: tags.length > 0 ? `${levelText} ${school} (${tags.join(', ')})` : `${levelText} ${school}`,
+              damage,
+              effects: effect || 'See full text.'
+            };
+          },
 
         FormatAbilityScore(score: number): string {
             const modifier = this.GetAbilityModifier(score);
