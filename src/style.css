@@ -343,6 +343,22 @@ body {
     display: none !important;
   }
 
+  .sheet-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .sheet-card-spells {
+    grid-column: 1 / -1;
+  }
+
+  .spell-table-wrap {
+    overflow: visible;
+  }
+
+  .spell-table {
+    min-width: 0;
+  }
+
   .sheet {
     border: 0;
     border-radius: 0;
