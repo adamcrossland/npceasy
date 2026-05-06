@@ -1301,10 +1301,10 @@ app.innerHTML = `
                     <th scope="col">Type</th>
                   </tr>
                 </thead>
-                <template x-for="id in editingCharacter?.spellIds ?? []" :key="id">
+                <template x-for="id in GetSortedCharacterSpellIds(editingCharacter)" :key="id">
                   <tbody>
                       <tr class="spell-table-meta-row">
-                        <th scope="row" class="spell-name-cell" x-text="GetCatalogName('spells', id)"></th>
+                        <th scope="row" class="spell-name-cell" x-text="GetSpellSheetRow(id).name"></th>
                         <td x-text="GetSpellSheetRow(id).castingTime"></td>
                         <td x-text="GetSpellSheetRow(id).range"></td>
                         <td x-text="GetSpellSheetRow(id).duration"></td>
@@ -2468,6 +2468,29 @@ const NpcEasyApp = (): any => {
             return spellSlotLines;
         },
 
+    GetSortedCharacterSpellIds(character: CharacterRecord | null): string[] {
+      if (!character) {
+        return [];
+      }
+
+      return [...(character.spellIds ?? [])].sort((leftId: string, rightId: string) => {
+        const leftSpell = this.catalogs.spells.find((item: CatalogItem) => item.id === leftId);
+        const rightSpell = this.catalogs.spells.find((item: CatalogItem) => item.id === rightId);
+        const leftSource = leftSpell ? GetSpellByName(leftSpell.name) : undefined;
+        const rightSource = rightSpell ? GetSpellByName(rightSpell.name) : undefined;
+        const leftLevel = leftSource?.level ?? Number.MAX_SAFE_INTEGER;
+        const rightLevel = rightSource?.level ?? Number.MAX_SAFE_INTEGER;
+
+        if (leftLevel !== rightLevel) {
+          return leftLevel - rightLevel;
+        }
+
+        const leftName = leftSpell?.name ?? '';
+        const rightName = rightSpell?.name ?? '';
+        return leftName.localeCompare(rightName);
+      });
+    },
+
         GetSpellFacts(spellId: string): string[] {
             const spell = this.catalogs.spells.find((item: CatalogItem) => item.id === spellId);
             if (!spell) {
@@ -2503,10 +2526,11 @@ const NpcEasyApp = (): any => {
             ];
         },
 
-          GetSpellSheetRow(spellId: string): { castingTime: string; range: string; duration: string; components: string; type: string; damage: string; effects: string } {
+          GetSpellSheetRow(spellId: string): { name: string; castingTime: string; range: string; duration: string; components: string; type: string; damage: string; effects: string } {
             const spell = this.catalogs.spells.find((item: CatalogItem) => item.id === spellId);
             if (!spell) {
               return {
+                name: '?: Unknown',
                 castingTime: 'Action',
                 range: 'See description',
                 duration: 'See description',
@@ -2522,7 +2546,7 @@ const NpcEasyApp = (): any => {
             const school = srcSpell?.school
               ? srcSpell.school.charAt(0).toUpperCase() + srcSpell.school.slice(1)
               : 'Spell';
-            const levelText = srcSpell ? (srcSpell.level === 0 ? 'Cantrip' : `${this.FormatSpellLevel(srcSpell.level)}-level`) : 'Spell';
+            const levelPrefix = srcSpell ? (srcSpell.level === 0 ? 'C' : `${srcSpell.level}`) : '?';
             const tags: string[] = [];
             if (srcSpell?.ritual) {
               tags.push('Ritual');
@@ -2535,11 +2559,12 @@ const NpcEasyApp = (): any => {
             const damage = spell.damage ?? srcSpell?.damage ?? SummarizeSpellDamage(descriptionText) ?? 'None';
 
             return {
+              name: `${levelPrefix}: ${spell.name}`,
               castingTime: srcSpell?.castingTime ?? 'Action',
               range: srcSpell?.range ?? 'See description',
               duration: srcSpell?.duration ?? 'See description',
               components: srcSpell?.components ?? 'None',
-              type: tags.length > 0 ? `${levelText} ${school} (${tags.join(', ')})` : `${levelText} ${school}`,
+              type: tags.length > 0 ? `${school} (${tags.join(', ')})` : school,
               damage,
               effects: effect || 'See full text.'
             };
