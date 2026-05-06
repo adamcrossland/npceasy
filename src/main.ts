@@ -2276,16 +2276,18 @@ const NpcEasyApp = (): any => {
               styleNotes.push('Protection reaction available while using a shield');
             }
 
+            const propertySummary = props.length > 0 ? `; ${props.join(', ')}` : '';
+
             if (weapon.weaponDamage === '—') {
               return styleNotes.length > 0
-                ? `${toHitText} to hit | special | ${styleNotes.join('; ')}`
-                : `${toHitText} to hit | special`;
+                ? `${toHitText} to hit | special${propertySummary} | ${styleNotes.join('; ')}`
+                : `${toHitText} to hit | special${propertySummary}`;
             }
 
             const offhandAbilityBonus = isOffhandWeapon && styleName !== 'Two-Weapon Fighting' ? 0 : abilityMod;
             const totalDamageBonus = offhandAbilityBonus + magicBonus + duelingBonus;
             const dmgBonus = totalDamageBonus !== 0 ? (totalDamageBonus > 0 ? `+${totalDamageBonus}` : `${totalDamageBonus}`) : '';
-            const attackSummary = `${toHitText} to hit | ${weapon.weaponDamage}${dmgBonus} ${weapon.weaponDamageType}`;
+            const attackSummary = `${toHitText} to hit | ${weapon.weaponDamage}${dmgBonus} ${weapon.weaponDamageType}${propertySummary}`;
             return styleNotes.length > 0
               ? `${attackSummary} | ${styleNotes.join('; ')}`
               : attackSummary;
