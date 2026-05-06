@@ -1235,6 +1235,19 @@ app.innerHTML = `
             </ul>
           </div>
 
+          <div class="sheet-card" x-show="GetRacialTraits(editingCharacter).length > 0" x-cloak>
+            <h4>Racial Traits</h4>
+            <div class="space-y-2">
+              <template x-for="trait in GetRacialTraits(editingCharacter)" :key="trait.source + '-' + trait.name">
+                <div class="rounded-lg border border-amber-100 p-2">
+                  <p class="text-xs font-semibold uppercase tracking-[0.08em] text-ink-soft" x-text="trait.source"></p>
+                  <p class="font-semibold text-ink" x-text="trait.name"></p>
+                  <p class="mt-1 text-sm text-ink-soft" x-text="trait.description"></p>
+                </div>
+              </template>
+            </div>
+          </div>
+
           <div class="sheet-card" x-show="(editingCharacter?.classLevels?.length ?? 0) > 0" x-cloak>
             <h4>Class Features</h4>
             <div class="space-y-2">
@@ -1539,6 +1552,37 @@ const NpcEasyApp = (): any => {
 
             const raceDefinition = Races.find((race) => race.name.toLowerCase() === selectedRace.name.toLowerCase());
             return (raceDefinition?.subraces ?? []).map((subrace) => ({ name: subrace.name }));
+          },
+
+          GetRacialTraits(character: CharacterRecord | null): Array<{ source: string; name: string; description: string }> {
+            if (!character?.raceId) {
+              return [];
+            }
+
+            const selectedRace = this.catalogs.races.find((item: CatalogItem) => item.id === character.raceId);
+            if (!selectedRace) {
+              return [];
+            }
+
+            const raceDefinition = Races.find((race) => race.name.toLowerCase() === selectedRace.name.toLowerCase());
+            if (!raceDefinition) {
+              return [];
+            }
+
+            const baseTraits = (raceDefinition.traits ?? []).map((trait) => ({
+              source: raceDefinition.name,
+              name: trait.name,
+              description: trait.description
+            }));
+
+            const selectedSubrace = (raceDefinition.subraces ?? []).find((subrace) => subrace.name === (character.subraceName ?? ''));
+            const subraceTraits = (selectedSubrace?.traits ?? []).map((trait) => ({
+              source: selectedSubrace?.name ?? raceDefinition.name,
+              name: trait.name,
+              description: trait.description
+            }));
+
+            return [...baseTraits, ...subraceTraits];
           },
 
           NormalizeSelectedSubrace() {
