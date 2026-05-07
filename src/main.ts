@@ -631,6 +631,42 @@ function MergeRaceCatalog(savedRaces: CatalogItem[] | undefined, defaultRaces: C
   return [...mergedDefaults, ...customRaces];
 }
 
+function IsLegacySpellDescription(description: string): boolean {
+    const trimmed = description.trim();
+    return /^(cantrip|\d+(?:st|nd|rd|th)-level|level\s+\d+) spell from the srd\.?$/i.test(trimmed);
+}
+
+function MergeSpellCatalog(savedSpells: CatalogItem[] | undefined, defaultSpells: CatalogItem[]): CatalogItem[] {
+    const saved = savedSpells ?? [];
+
+    const mergedDefaults = defaultSpells.map((defaultItem) => {
+        const savedMatch = saved.find((item) => item.name === defaultItem.name);
+        const savedDescription = (savedMatch?.description ?? '').trim();
+        const description = savedDescription.length > 0 && !IsLegacySpellDescription(savedDescription)
+            ? savedMatch?.description ?? defaultItem.description
+            : defaultItem.description;
+
+        return {
+            ...defaultItem,
+            description,
+            effect: savedMatch?.effect ?? defaultItem.effect,
+            damage: savedMatch?.damage ?? defaultItem.damage,
+            scaling: savedMatch?.scaling ?? defaultItem.scaling,
+            level: savedMatch?.level ?? defaultItem.level,
+            classes: savedMatch?.classes ?? defaultItem.classes
+        };
+    });
+
+    const customSpells = saved
+        .filter((item) => !defaultSpells.some((defaultItem) => defaultItem.name === item.name))
+        .map((item) => ({
+            ...item,
+            id: item.id || NewId('spell')
+        }));
+
+    return NormalizeSpellCatalog([...mergedDefaults, ...customSpells]);
+}
+
 function BuildDefaultState(): AppState {
     return {
         screen: 'Collections',
@@ -790,7 +826,7 @@ function LoadState(): AppState {
                 feats: freshCatalogs.feats,
               races: MergeRaceCatalog(parsed.catalogs?.races, freshCatalogs.races),
                 weapons: NormalizeWeaponCatalog(isLegacyWeaponCatalog ? DEFAULT_WEAPONS : (parsed.catalogs?.weapons ?? freshCatalogs.weapons)),
-                spells: NormalizeSpellCatalog(isLegacySpellCatalog ? DEFAULT_SPELLS : (parsed.catalogs?.spells ?? freshCatalogs.spells)),
+                spells: MergeSpellCatalog(isLegacySpellCatalog ? DEFAULT_SPELLS : parsed.catalogs?.spells, freshCatalogs.spells),
                 fightingStyles: parsed.catalogs?.fightingStyles ?? freshCatalogs.fightingStyles
             }
         };
