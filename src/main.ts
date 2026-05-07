@@ -1,7 +1,7 @@
 import './style.css';
 import { Armors } from './armors';
 import { AllClasses } from './classes';
-import { Feats } from './feats';
+import { Feats, GetFeatByName } from './feats';
 import { FightingStyles } from './fightingStyles';
 import { Races } from './races';
 import { Spells, GetSpellByName } from './spells';
@@ -514,7 +514,7 @@ function BuildDefaultState(): AppState {
             feats: Feats.map(item => ({
                 id: `feat-${item.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
                 name: item.name,
-                description: item.prerequisites ? `${item.description} Prereq: ${item.prerequisites}` : item.description
+                description: item.description
             })),
             weapons: DEFAULT_WEAPONS,
             spells: DEFAULT_SPELLS,
@@ -1266,9 +1266,8 @@ app.innerHTML = `
             <div class="space-y-2">
               <template x-for="id in editingCharacter?.featIds ?? []" :key="id">
                 <div class="rounded-lg border border-amber-100 p-2">
-                  <p class="text-xs font-semibold uppercase tracking-[0.08em] text-ink-soft">Feat</p>
                   <p class="font-semibold text-ink" x-text="GetCatalogName('feats', id)"></p>
-                  <p class="mt-1 text-sm text-ink-soft" x-text="GetCatalogDescription('feats', id) || 'No description available.'"></p>
+                  <p class="mt-1 text-sm text-ink-soft" x-text="GetFullFeatDescription(id)"></p>
                 </div>
               </template>
             </div>
@@ -2818,6 +2817,27 @@ const NpcEasyApp = (): any => {
 
         GetCatalogDescription(key: CatalogKey, id: string): string {
             return this.catalogs[key].find((item: CatalogItem) => item.id === id)?.description ?? '';
+        },
+
+        GetFullFeatDescription(id: string): string {
+            const featFromCatalog = this.catalogs.feats.find((item: CatalogItem) => item.id === id);
+            if (!featFromCatalog) {
+                return 'No description available.';
+            }
+
+            const fromCatalog = (featFromCatalog.description ?? '')
+                .replace(/\s*Prereq(?:uisite)?:.*$/i, '')
+                .trim();
+            if (fromCatalog.length > 0) {
+                return fromCatalog;
+            }
+
+            const sourceFeat = GetFeatByName(featFromCatalog.name);
+            if (!sourceFeat) {
+                return 'No description available.';
+            }
+
+            return sourceFeat.description;
         },
 
         GetTotalCharacterLevel(character?: CharacterRecord | null): number {
