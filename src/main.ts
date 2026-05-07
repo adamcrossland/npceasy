@@ -62,7 +62,7 @@ type CharacterRecord = {
     id: string;
     name: string;
     raceId: string;
-  subraceName?: string;
+    subraceName?: string;
     classLevels: ClassLevel[];
     fightingStyleId?: string;
     experience: number;
@@ -116,7 +116,7 @@ type AppState = {
         weapons: CatalogItem[];
         spells: CatalogItem[];
         races: CatalogItem[];
-      fightingStyles: CatalogItem[];
+        fightingStyles: CatalogItem[];
     };
 };
 
@@ -190,11 +190,11 @@ const DEFAULT_SPELLS: CatalogItem[] = Spells.map((item) => ({
     classes: item.classes
 }));
 
-  const DEFAULT_FIGHTING_STYLES: CatalogItem[] = FightingStyles.map((item) => ({
+const DEFAULT_FIGHTING_STYLES: CatalogItem[] = FightingStyles.map((item) => ({
     id: `fighting-style-${item.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
     name: item.name,
     description: item.description
-  }));
+}));
 
 function SummarizeSpellEffect(description: string): string {
     const text = (description ?? '').replace(/\r/g, '').trim();
@@ -342,7 +342,7 @@ function NormalizeWeaponCatalog(items: CatalogItem[]): CatalogItem[] {
 }
 
 function NormalizeCharacterWeaponData(character: CharacterRecord): CharacterRecord {
-  const { armorClass: _legacyArmorClass, ...characterWithoutLegacyArmorClass } = character;
+    const { armorClass: _legacyArmorClass, ...characterWithoutLegacyArmorClass } = character;
     const existingBonuses = character.weaponMagicBonuses ?? {};
     const normalizedCharacterWeapons = (character.characterWeapons ?? []).map((entry) => ({
         weaponId: entry.weaponId,
@@ -363,25 +363,25 @@ function NormalizeCharacterWeaponData(character: CharacterRecord): CharacterReco
     }
 
     const primaryWeaponId = mergedWeaponIds.includes(character.primaryWeaponId ?? '')
-      ? character.primaryWeaponId ?? ''
-      : '';
+        ? character.primaryWeaponId ?? ''
+        : '';
     const offhandWeaponId = mergedWeaponIds.includes(character.offhandWeaponId ?? '')
-      && character.offhandWeaponId !== primaryWeaponId
-      ? character.offhandWeaponId ?? ''
-      : '';
+        && character.offhandWeaponId !== primaryWeaponId
+        ? character.offhandWeaponId ?? ''
+        : '';
     const primaryWeaponGrip: WeaponGrip = character.primaryWeaponGrip === 'two-handed' ? 'two-handed' : 'one-handed';
     const equippedArmorId = Armors.some((armor) => armor.id === character.equippedArmorId)
-      ? character.equippedArmorId ?? ''
-      : '';
+        ? character.equippedArmorId ?? ''
+        : '';
 
     return {
         ...characterWithoutLegacyArmorClass,
         weaponIds: mergedWeaponIds,
-      primaryWeaponId,
-      offhandWeaponId,
-      primaryWeaponGrip,
-      equippedArmorId,
-      hasShield: Boolean(character.hasShield),
+        primaryWeaponId,
+        offhandWeaponId,
+        primaryWeaponGrip,
+        equippedArmorId,
+        hasShield: Boolean(character.hasShield),
         weaponMagicBonuses: normalizedBonuses,
         characterWeapons: mergedWeaponIds.map((weaponId) => ({
             weaponId,
@@ -503,13 +503,13 @@ function BuildDefaultState(): AppState {
             classes: AllClasses.map(item => ({
                 id: `${item.classType.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
                 name: item.classType,
-              description: `Hit Die: d${item.hitDice}`,
-              classFeatures: item.features.map((f) => ({ name: f.name, level: f.level, description: f.description })),
-              classSubclasses: item.subclasses.map((subclass) => ({
-                name: subclass.name,
-                description: subclass.description,
-                features: subclass.features.map((f) => ({ name: f.name, level: f.level, description: f.description }))
-              }))
+                description: `Hit Die: d${item.hitDice}`,
+                classFeatures: item.features.map((f) => ({ name: f.name, level: f.level, description: f.description })),
+                classSubclasses: item.subclasses.map((subclass) => ({
+                    name: subclass.name,
+                    description: subclass.description,
+                    features: subclass.features.map((f) => ({ name: f.name, level: f.level, description: f.description }))
+                }))
             })),
             feats: Feats.map(item => ({
                 id: `feat-${item.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
@@ -533,7 +533,7 @@ function BuildNewCharacter(raceId: string): CharacterRecord {
         id: NewId('char'),
         name: 'New Character',
         raceId,
-    subraceName: '',
+        subraceName: '',
         classLevels: [],
         fightingStyleId: '',
         experience: 0,
@@ -571,46 +571,46 @@ function BuildNewCharacter(raceId: string): CharacterRecord {
 }
 
 function MigrateClassId(classId: string, classItems: CatalogItem[]): string {
-  if (!classId) {
-    return classId;
-  }
+    if (!classId) {
+        return classId;
+    }
 
-  const directClassMatch = AllClasses.find(c => c.classType === classId);
-  if (directClassMatch) {
-    return directClassMatch.classType;
-  }
+    const directClassMatch = AllClasses.find(c => c.classType === classId);
+    if (directClassMatch) {
+        return directClassMatch.classType;
+    }
 
-  const slugMatch = AllClasses.find((c) => `class-${c.classType.toLowerCase().replace(/[^a-z0-9]+/g, '-')}` === classId);
-  if (slugMatch) {
-    return slugMatch.classType;
-  }
+    const slugMatch = AllClasses.find((c) => `class-${c.classType.toLowerCase().replace(/[^a-z0-9]+/g, '-')}` === classId);
+    if (slugMatch) {
+        return slugMatch.classType;
+    }
 
-  const savedCatalogMatch = classItems.find((c) => c.id === classId || c.name === classId);
-  return savedCatalogMatch?.name ?? classId;
+    const savedCatalogMatch = classItems.find((c) => c.id === classId || c.name === classId);
+    return savedCatalogMatch?.name ?? classId;
 }
 
 function MigrateCatalogItemId(itemId: string, sourceItems: CatalogItem[], targetItems: CatalogItem[]): string {
-  if (!itemId) {
-    return itemId;
-  }
+    if (!itemId) {
+        return itemId;
+    }
 
-  const directTargetMatch = targetItems.find((item) => item.id === itemId);
-  if (directTargetMatch) {
-    return itemId;
-  }
+    const directTargetMatch = targetItems.find((item) => item.id === itemId);
+    if (directTargetMatch) {
+        return itemId;
+    }
 
-  const targetByName = targetItems.find((item) => item.name === itemId);
-  if (targetByName) {
-    return targetByName.id;
-  }
+    const targetByName = targetItems.find((item) => item.name === itemId);
+    if (targetByName) {
+        return targetByName.id;
+    }
 
-  const sourceItem = sourceItems.find((item) => item.id === itemId || item.name === itemId);
-  if (!sourceItem) {
-    return itemId;
-  }
+    const sourceItem = sourceItems.find((item) => item.id === itemId || item.name === itemId);
+    if (!sourceItem) {
+        return itemId;
+    }
 
-  const targetItem = targetItems.find((item) => item.name === sourceItem.name);
-  return targetItem?.id ?? itemId;
+    const targetItem = targetItems.find((item) => item.name === sourceItem.name);
+    return targetItem?.id ?? itemId;
 }
 
 function LoadState(): AppState {
@@ -638,7 +638,7 @@ function LoadState(): AppState {
             ...BuildDefaultState(),
             ...parsed,
             catalogs: {
-              classes: MergeClassCatalog(parsed.catalogs?.classes, freshCatalogs.classes),
+                classes: MergeClassCatalog(parsed.catalogs?.classes, freshCatalogs.classes),
                 feats: freshCatalogs.feats,
                 races: freshCatalogs.races,
                 weapons: NormalizeWeaponCatalog(isLegacyWeaponCatalog ? DEFAULT_WEAPONS : (parsed.catalogs?.weapons ?? freshCatalogs.weapons)),
@@ -653,15 +653,15 @@ function LoadState(): AppState {
                 ...col,
                 characters: col.characters.map(char => ({
                     ...char,
-                  raceId: MigrateCatalogItemId(char.raceId, savedRaceCatalog, freshCatalogs.races),
-                  subraceName: char.subraceName ?? '',
-                  fightingStyleId: (() => {
-                    const migratedId = MigrateCatalogItemId(char.fightingStyleId ?? '', savedFightingStyleCatalog, freshCatalogs.fightingStyles);
-                    return freshCatalogs.fightingStyles.some((item) => item.id === migratedId) ? migratedId : '';
-                  })(),
+                    raceId: MigrateCatalogItemId(char.raceId, savedRaceCatalog, freshCatalogs.races),
+                    subraceName: char.subraceName ?? '',
+                    fightingStyleId: (() => {
+                        const migratedId = MigrateCatalogItemId(char.fightingStyleId ?? '', savedFightingStyleCatalog, freshCatalogs.fightingStyles);
+                        return freshCatalogs.fightingStyles.some((item) => item.id === migratedId) ? migratedId : '';
+                    })(),
                     classLevels: char.classLevels.map(entry => ({
                         ...entry,
-                    classId: MigrateClassId(entry.classId, savedClassCatalog)
+                        classId: MigrateClassId(entry.classId, savedClassCatalog)
                     }))
                 }))
             }))
@@ -1383,7 +1383,7 @@ const NpcEasyApp = (): any => {
 
     return {
         ...state,
-      armors: Armors,
+        armors: Armors,
         newCollectionName: '',
         editingCharacter: null as CharacterRecord | null,
         compendiumSections: [
@@ -1391,8 +1391,8 @@ const NpcEasyApp = (): any => {
             { key: 'feats', label: 'Feats' },
             { key: 'weapons', label: 'Weapons' },
             { key: 'spells', label: 'Spells' },
-          { key: 'races', label: 'Races' },
-          { key: 'fightingStyles', label: 'Fighting Styles' }
+            { key: 'races', label: 'Races' },
+            { key: 'fightingStyles', label: 'Fighting Styles' }
         ] as { key: CatalogKey; label: string }[],
 
         get activeCollection(): Collection | undefined {
@@ -1411,23 +1411,23 @@ const NpcEasyApp = (): any => {
             const selected = this.GetSelectedCharacter();
             this.editingCharacter = selected ?? null;
             this.NormalizeEquippedLoadout();
-      this.NormalizeFightingStyleSelection();
+            this.NormalizeFightingStyleSelection();
 
             window.addEventListener('beforeunload', () => this.SaveAll());
         },
 
         SaveAll() {
-          const collectionsWithoutLegacyArmorClass = this.collections.map((collection: Collection) => ({
-            ...collection,
-            characters: collection.characters.map((character: CharacterRecord) => {
-              const { armorClass: _legacyArmorClass, ...characterWithoutLegacyArmorClass } = character;
-              return characterWithoutLegacyArmorClass;
-            })
-          }));
+            const collectionsWithoutLegacyArmorClass = this.collections.map((collection: Collection) => ({
+                ...collection,
+                characters: collection.characters.map((character: CharacterRecord) => {
+                    const { armorClass: _legacyArmorClass, ...characterWithoutLegacyArmorClass } = character;
+                    return characterWithoutLegacyArmorClass;
+                })
+            }));
 
             const snapshot: AppState = {
                 screen: this.screen,
-            collections: collectionsWithoutLegacyArmorClass,
+                collections: collectionsWithoutLegacyArmorClass,
                 selectedCollectionId: this.selectedCollectionId,
                 selectedCharacterId: this.selectedCharacterId,
                 catalogs: this.catalogs
@@ -1492,8 +1492,8 @@ const NpcEasyApp = (): any => {
         SelectCharacter(characterId: string) {
             this.selectedCharacterId = characterId;
             this.editingCharacter = this.GetSelectedCharacter() ?? null;
-          this.NormalizeEquippedLoadout();
-          this.NormalizeFightingStyleSelection();
+            this.NormalizeEquippedLoadout();
+            this.NormalizeFightingStyleSelection();
             this.SaveAll();
         },
 
@@ -1507,7 +1507,7 @@ const NpcEasyApp = (): any => {
             const character = BuildNewCharacter(defaultRaceId);
             collection.characters.push(character);
             this.SelectCharacter(character.id);
-      this.NormalizeEquippedLoadout();
+            this.NormalizeEquippedLoadout();
             this.SaveAll();
         },
 
@@ -1527,164 +1527,164 @@ const NpcEasyApp = (): any => {
             this.SaveAll();
         },
 
-          GetWeaponCatalogItem(weaponId: string): CatalogItem | undefined {
+        GetWeaponCatalogItem(weaponId: string): CatalogItem | undefined {
             return this.catalogs.weapons.find((item: CatalogItem) => item.id === weaponId);
-          },
+        },
 
-          GetSubraceOptions(character: CharacterRecord | null): Array<{ name: string }> {
+        GetSubraceOptions(character: CharacterRecord | null): Array<{ name: string }> {
             if (!character?.raceId) {
-              return [];
+                return [];
             }
 
             const selectedRace = this.catalogs.races.find((item: CatalogItem) => item.id === character.raceId);
             if (!selectedRace) {
-              return [];
+                return [];
             }
 
             const raceDefinition = Races.find((race) => race.name.toLowerCase() === selectedRace.name.toLowerCase());
             return (raceDefinition?.subraces ?? []).map((subrace) => ({ name: subrace.name }));
-          },
+        },
 
-          GetRacialTraits(character: CharacterRecord | null): Array<{ source: string; name: string; description: string }> {
+        GetRacialTraits(character: CharacterRecord | null): Array<{ source: string; name: string; description: string }> {
             if (!character?.raceId) {
-              return [];
+                return [];
             }
 
             const selectedRace = this.catalogs.races.find((item: CatalogItem) => item.id === character.raceId);
             if (!selectedRace) {
-              return [];
+                return [];
             }
 
             const raceDefinition = Races.find((race) => race.name.toLowerCase() === selectedRace.name.toLowerCase());
             if (!raceDefinition) {
-              return [];
+                return [];
             }
 
             const baseTraits = (raceDefinition.traits ?? []).map((trait) => ({
-              source: raceDefinition.name,
-              name: trait.name,
-              description: trait.description
+                source: raceDefinition.name,
+                name: trait.name,
+                description: trait.description
             }));
 
             const selectedSubrace = (raceDefinition.subraces ?? []).find((subrace) => subrace.name === (character.subraceName ?? ''));
             const subraceTraits = (selectedSubrace?.traits ?? []).map((trait) => ({
-              source: selectedSubrace?.name ?? raceDefinition.name,
-              name: trait.name,
-              description: trait.description
+                source: selectedSubrace?.name ?? raceDefinition.name,
+                name: trait.name,
+                description: trait.description
             }));
 
             return [...baseTraits, ...subraceTraits];
-          },
+        },
 
-          NormalizeSelectedSubrace() {
+        NormalizeSelectedSubrace() {
             if (!this.editingCharacter) {
-              return;
+                return;
             }
 
             const availableSubraces = this.GetSubraceOptions(this.editingCharacter).map((subrace: { name: string }) => subrace.name);
             if (!availableSubraces.includes(this.editingCharacter.subraceName ?? '')) {
-              this.editingCharacter.subraceName = '';
+                this.editingCharacter.subraceName = '';
             }
-          },
+        },
 
-          IsRangedWeapon(weapon: CatalogItem | undefined): boolean {
+        IsRangedWeapon(weapon: CatalogItem | undefined): boolean {
             if (!weapon) {
-              return false;
+                return false;
             }
 
             const props: string[] = weapon.weaponProperties ?? [];
             return props.includes('ammunition') || ['Simple Ranged', 'Martial Ranged'].some((group) => weapon.description.startsWith(group));
-          },
+        },
 
-          IsTwoHandedWeapon(weapon: CatalogItem | undefined): boolean {
+        IsTwoHandedWeapon(weapon: CatalogItem | undefined): boolean {
             return Boolean(weapon?.weaponProperties?.includes('two-handed'));
-          },
+        },
 
-          IsVersatileWeapon(weapon: CatalogItem | undefined): boolean {
+        IsVersatileWeapon(weapon: CatalogItem | undefined): boolean {
             return Boolean(weapon?.weaponProperties?.includes('versatile'));
-          },
+        },
 
-          IsPrimaryWeaponLockedToTwoHands(character: CharacterRecord | null): boolean {
+        IsPrimaryWeaponLockedToTwoHands(character: CharacterRecord | null): boolean {
             if (!character?.primaryWeaponId) {
-              return false;
+                return false;
             }
 
             const primaryWeapon = this.GetWeaponCatalogItem(character.primaryWeaponId);
             if (this.IsTwoHandedWeapon(primaryWeapon)) {
-              return true;
+                return true;
             }
 
             return this.IsVersatileWeapon(primaryWeapon) && character.primaryWeaponGrip === 'two-handed';
-          },
+        },
 
-          ShouldShowPrimaryGrip(character: CharacterRecord | null): boolean {
+        ShouldShowPrimaryGrip(character: CharacterRecord | null): boolean {
             if (!character?.primaryWeaponId) {
-              return false;
+                return false;
             }
 
             return this.IsVersatileWeapon(this.GetWeaponCatalogItem(character.primaryWeaponId));
-          },
+        },
 
-          GetLoadoutWeaponOptions(character: CharacterRecord | null): CatalogItem[] {
+        GetLoadoutWeaponOptions(character: CharacterRecord | null): CatalogItem[] {
             if (!character) {
-              return [];
+                return [];
             }
 
             return character.weaponIds
-              .map((weaponId: string) => this.GetWeaponCatalogItem(weaponId))
-              .filter((weapon): weapon is CatalogItem => Boolean(weapon));
-          },
+                .map((weaponId: string) => this.GetWeaponCatalogItem(weaponId))
+                .filter((weapon): weapon is CatalogItem => Boolean(weapon));
+        },
 
-          GetOffhandWeaponOptions(character: CharacterRecord | null): CatalogItem[] {
+        GetOffhandWeaponOptions(character: CharacterRecord | null): CatalogItem[] {
             if (!character) {
-              return [];
+                return [];
             }
 
             return this.GetLoadoutWeaponOptions(character)
-              .filter((weapon: CatalogItem) => weapon.id !== character.primaryWeaponId)
-              .filter((weapon: CatalogItem) => !this.IsRangedWeapon(weapon) && !this.IsTwoHandedWeapon(weapon));
-          },
+                .filter((weapon: CatalogItem) => weapon.id !== character.primaryWeaponId)
+                .filter((weapon: CatalogItem) => !this.IsRangedWeapon(weapon) && !this.IsTwoHandedWeapon(weapon));
+        },
 
-          GetAvailableSpellsForCharacter(character: CharacterRecord | null): CatalogItem[] {
+        GetAvailableSpellsForCharacter(character: CharacterRecord | null): CatalogItem[] {
             if (!character) {
-              return [];
+                return [];
             }
 
             const classLevelsByName: Record<string, number> = {};
             for (const entry of character.classLevels) {
-              const className = entry.classId.toLowerCase().trim();
-              if (!className) {
-                continue;
-              }
+                const className = entry.classId.toLowerCase().trim();
+                if (!className) {
+                    continue;
+                }
 
-              classLevelsByName[className] = (classLevelsByName[className] ?? 0) + Math.max(0, entry.level ?? 0);
+                classLevelsByName[className] = (classLevelsByName[className] ?? 0) + Math.max(0, entry.level ?? 0);
             }
 
             const selectedClasses = new Set(Object.keys(classLevelsByName).filter((name) => (classLevelsByName[name] ?? 0) > 0));
             if (selectedClasses.size === 0) {
-              return [];
+                return [];
             }
 
             const fullCasterClasses = new Set(['bard', 'cleric', 'druid', 'sorcerer', 'wizard']);
             const halfCasterClasses = new Set(['paladin', 'ranger']);
             let multiclassCasterLevel = 0;
             for (const className of selectedClasses) {
-              const classLevel = classLevelsByName[className] ?? 0;
-              if (fullCasterClasses.has(className)) {
-                multiclassCasterLevel += classLevel;
-              } else if (halfCasterClasses.has(className)) {
-                multiclassCasterLevel += Math.floor(classLevel / 2);
-              }
+                const classLevel = classLevelsByName[className] ?? 0;
+                if (fullCasterClasses.has(className)) {
+                    multiclassCasterLevel += classLevel;
+                } else if (halfCasterClasses.has(className)) {
+                    multiclassCasterLevel += Math.floor(classLevel / 2);
+                }
             }
 
             const boundedCasterLevel = Math.min(20, Math.max(0, multiclassCasterLevel));
             const slotProgression = SpellSlotsByCasterLevel[boundedCasterLevel] ?? [];
             let maxStandardSpellLevel = 0;
             for (let index = slotProgression.length - 1; index >= 0; index -= 1) {
-              if ((slotProgression[index] ?? 0) > 0) {
-                maxStandardSpellLevel = index + 1;
-                break;
-              }
+                if ((slotProgression[index] ?? 0) > 0) {
+                    maxStandardSpellLevel = index + 1;
+                    break;
+                }
             }
 
             const warlockLevel = classLevelsByName.warlock ?? 0;
@@ -1692,158 +1692,158 @@ const NpcEasyApp = (): any => {
             const maxSpellLevel = Math.max(maxStandardSpellLevel, warlockPactSlotLevel);
 
             const filteredSpells = this.catalogs.spells.filter((spell: CatalogItem) => {
-              const spellClasses = (spell.classes ?? []).map((name: string) => name.toLowerCase().trim()).filter((name: string) => name.length > 0);
-              const classMatch = spellClasses.some((name: string) => selectedClasses.has(name));
-              if (!classMatch) {
-                return false;
-              }
+                const spellClasses = (spell.classes ?? []).map((name: string) => name.toLowerCase().trim()).filter((name: string) => name.length > 0);
+                const classMatch = spellClasses.some((name: string) => selectedClasses.has(name));
+                if (!classMatch) {
+                    return false;
+                }
 
-              const spellLevel = Number.isFinite(spell.level) ? (spell.level as number) : 0;
-              return spellLevel === 0 || spellLevel <= maxSpellLevel;
+                const spellLevel = Number.isFinite(spell.level) ? (spell.level as number) : 0;
+                return spellLevel === 0 || spellLevel <= maxSpellLevel;
             });
 
             return filteredSpells.sort((left: CatalogItem, right: CatalogItem) => {
-              const leftLevel = Number.isFinite(left.level) ? (left.level as number) : Number.MAX_SAFE_INTEGER;
-              const rightLevel = Number.isFinite(right.level) ? (right.level as number) : Number.MAX_SAFE_INTEGER;
+                const leftLevel = Number.isFinite(left.level) ? (left.level as number) : Number.MAX_SAFE_INTEGER;
+                const rightLevel = Number.isFinite(right.level) ? (right.level as number) : Number.MAX_SAFE_INTEGER;
 
-              if (leftLevel !== rightLevel) {
-                return leftLevel - rightLevel;
-              }
+                if (leftLevel !== rightLevel) {
+                    return leftLevel - rightLevel;
+                }
 
-              return left.name.localeCompare(right.name);
+                return left.name.localeCompare(right.name);
             });
-          },
+        },
 
-          GetSpellBuilderLabel(spell: CatalogItem): string {
+        GetSpellBuilderLabel(spell: CatalogItem): string {
             const spellLevel = Number.isFinite(spell.level) ? (spell.level as number) : -1;
             const levelPrefix = spellLevel === 0 ? 'C' : `${spellLevel}`;
             return `${levelPrefix}: ${spell.name}`;
-          },
+        },
 
-          NormalizeEquippedLoadout() {
+        NormalizeEquippedLoadout() {
             if (!this.editingCharacter) {
-              return;
+                return;
             }
 
             const availableWeaponIds = new Set(this.editingCharacter.weaponIds);
             if (!availableWeaponIds.has(this.editingCharacter.primaryWeaponId ?? '')) {
-              this.editingCharacter.primaryWeaponId = '';
+                this.editingCharacter.primaryWeaponId = '';
             }
             if (!availableWeaponIds.has(this.editingCharacter.offhandWeaponId ?? '') || this.editingCharacter.offhandWeaponId === this.editingCharacter.primaryWeaponId) {
-              this.editingCharacter.offhandWeaponId = '';
+                this.editingCharacter.offhandWeaponId = '';
             }
             if (!Armors.some((armor) => armor.id === this.editingCharacter?.equippedArmorId)) {
-              this.editingCharacter.equippedArmorId = '';
+                this.editingCharacter.equippedArmorId = '';
             }
 
             const primaryWeapon = this.GetWeaponCatalogItem(this.editingCharacter.primaryWeaponId ?? '');
             if (!primaryWeapon) {
-              this.editingCharacter.primaryWeaponGrip = 'one-handed';
+                this.editingCharacter.primaryWeaponGrip = 'one-handed';
             } else if (this.IsTwoHandedWeapon(primaryWeapon)) {
-              this.editingCharacter.primaryWeaponGrip = 'two-handed';
+                this.editingCharacter.primaryWeaponGrip = 'two-handed';
             } else if (!this.IsVersatileWeapon(primaryWeapon)) {
-              this.editingCharacter.primaryWeaponGrip = 'one-handed';
+                this.editingCharacter.primaryWeaponGrip = 'one-handed';
             }
 
             if (this.IsPrimaryWeaponLockedToTwoHands(this.editingCharacter)) {
-              this.editingCharacter.offhandWeaponId = '';
-              this.editingCharacter.hasShield = false;
+                this.editingCharacter.offhandWeaponId = '';
+                this.editingCharacter.hasShield = false;
             }
 
             if (this.editingCharacter.hasShield) {
-              this.editingCharacter.offhandWeaponId = '';
+                this.editingCharacter.offhandWeaponId = '';
             }
-          },
+        },
 
-          GetTotalLevelsForClass(character: CharacterRecord | null, className: string): number {
+        GetTotalLevelsForClass(character: CharacterRecord | null, className: string): number {
             if (!character) {
-              return 0;
+                return 0;
             }
 
             return (character.classLevels ?? []).reduce((total: number, entry: ClassLevel) => {
-              if (entry.classId !== className) {
-                return total;
-              }
+                if (entry.classId !== className) {
+                    return total;
+                }
 
-              return total + Math.max(0, entry.level ?? 0);
+                return total + Math.max(0, entry.level ?? 0);
             }, 0);
-          },
+        },
 
-          ShouldPromptWizardArcaneTradition(character: CharacterRecord | null): boolean {
+        ShouldPromptWizardArcaneTradition(character: CharacterRecord | null): boolean {
             if (!character) {
-              return false;
+                return false;
             }
 
             const wizardLevel = this.GetTotalLevelsForClass(character, 'Wizard');
             if (wizardLevel < 2) {
-              return false;
+                return false;
             }
 
             const hasArcaneTradition = (character.classLevels ?? []).some((entry: ClassLevel) => {
-              return entry.classId === 'Wizard' && (entry.subclassName ?? '').trim().length > 0;
+                return entry.classId === 'Wizard' && (entry.subclassName ?? '').trim().length > 0;
             });
 
             return !hasArcaneTradition;
-          },
+        },
 
-          GetCharacterArmorProficiencies(character: CharacterRecord | null): Set<string> {
+        GetCharacterArmorProficiencies(character: CharacterRecord | null): Set<string> {
             const proficiencies = new Set<string>();
             if (!character) {
-              return proficiencies;
+                return proficiencies;
             }
 
             for (const classLevel of character.classLevels) {
-              if (!classLevel.classId || classLevel.level <= 0) {
-                continue;
-              }
+                if (!classLevel.classId || classLevel.level <= 0) {
+                    continue;
+                }
 
-              const charClass = AllClasses.find((entry) => entry.classType === classLevel.classId);
-              if (!charClass) {
-                continue;
-              }
+                const charClass = AllClasses.find((entry) => entry.classType === classLevel.classId);
+                if (!charClass) {
+                    continue;
+                }
 
-              for (const armorProficiency of charClass.proficiencies.armor) {
-                proficiencies.add(armorProficiency.toLowerCase());
-              }
+                for (const armorProficiency of charClass.proficiencies.armor) {
+                    proficiencies.add(armorProficiency.toLowerCase());
+                }
             }
 
             return proficiencies;
-          },
+        },
 
-          HasArmorProficiency(character: CharacterRecord | null): boolean {
+        HasArmorProficiency(character: CharacterRecord | null): boolean {
             const equippedArmor = this.GetEquippedArmor(character);
             if (!equippedArmor) {
-              return true;
+                return true;
             }
 
             const proficiencies = this.GetCharacterArmorProficiencies(character);
             if (proficiencies.has('all armor')) {
-              return true;
+                return true;
             }
 
             if (equippedArmor.category === 'Light') {
-              return proficiencies.has('light armor');
+                return proficiencies.has('light armor');
             }
 
             if (equippedArmor.category === 'Medium') {
-              return proficiencies.has('medium armor');
+                return proficiencies.has('medium armor');
             }
 
             return proficiencies.has('heavy armor');
-          },
+        },
 
-          HasShieldProficiency(character: CharacterRecord | null): boolean {
+        HasShieldProficiency(character: CharacterRecord | null): boolean {
             if (!character?.hasShield) {
-              return true;
+                return true;
             }
 
             const proficiencies = this.GetCharacterArmorProficiencies(character);
             return proficiencies.has('shields');
-          },
+        },
 
-          GetLoadoutWarnings(character: CharacterRecord | null): string[] {
+        GetLoadoutWarnings(character: CharacterRecord | null): string[] {
             if (!character) {
-              return [];
+                return [];
             }
 
             const warnings: string[] = [];
@@ -1852,138 +1852,138 @@ const NpcEasyApp = (): any => {
             const primaryWeapon = this.GetWeaponCatalogItem(character.primaryWeaponId ?? '');
 
             if (equippedArmor && !this.HasArmorProficiency(character)) {
-              warnings.push(`No proficiency with ${equippedArmor.name}.`);
+                warnings.push(`No proficiency with ${equippedArmor.name}.`);
             }
 
             if (character.hasShield && !this.HasShieldProficiency(character)) {
-              warnings.push('No proficiency with shields.');
+                warnings.push('No proficiency with shields.');
             }
 
             if (styleName === 'Defense' && !equippedArmor) {
-              warnings.push('Defense style requires wearing armor for its AC bonus.');
+                warnings.push('Defense style requires wearing armor for its AC bonus.');
             }
 
             if (styleName === 'Protection' && !character.hasShield) {
-              warnings.push('Protection style requires a shield.');
+                warnings.push('Protection style requires a shield.');
             }
 
             if (styleName === 'Archery' && primaryWeapon && !this.IsRangedWeapon(primaryWeapon)) {
-              warnings.push('Archery style applies only to ranged weapon attacks.');
+                warnings.push('Archery style applies only to ranged weapon attacks.');
             }
 
             if (styleName === 'Great Weapon Fighting' && !this.IsPrimaryWeaponLockedToTwoHands(character)) {
-              warnings.push('Great Weapon Fighting applies only when wielding the primary weapon with two hands.');
+                warnings.push('Great Weapon Fighting applies only when wielding the primary weapon with two hands.');
             }
 
             if (styleName === 'Two-Weapon Fighting' && !character.offhandWeaponId) {
-              warnings.push('Two-Weapon Fighting requires an off-hand weapon attack.');
+                warnings.push('Two-Weapon Fighting requires an off-hand weapon attack.');
             }
 
             return warnings;
-          },
+        },
 
-          CanSelectFightingStyle(character: CharacterRecord | null): boolean {
+        CanSelectFightingStyle(character: CharacterRecord | null): boolean {
             if (!character) {
-              return false;
+                return false;
             }
 
             const classLevelsByName = character.classLevels.reduce((levels: Record<string, number>, entry: ClassLevel) => {
-              if (!entry.classId) {
-                return levels;
-              }
+                if (!entry.classId) {
+                    return levels;
+                }
 
-              levels[entry.classId] = (levels[entry.classId] ?? 0) + Math.max(0, entry.level ?? 0);
-              return levels;
+                levels[entry.classId] = (levels[entry.classId] ?? 0) + Math.max(0, entry.level ?? 0);
+                return levels;
             }, {});
 
             return (classLevelsByName.Fighter ?? 0) >= 1
-              || (classLevelsByName.Paladin ?? 0) >= 2
-              || (classLevelsByName.Ranger ?? 0) >= 2;
-          },
+                || (classLevelsByName.Paladin ?? 0) >= 2
+                || (classLevelsByName.Ranger ?? 0) >= 2;
+        },
 
-          NormalizeFightingStyleSelection() {
+        NormalizeFightingStyleSelection() {
             if (!this.editingCharacter) {
-              return;
+                return;
             }
 
             if (!this.CanSelectFightingStyle(this.editingCharacter)) {
-              this.editingCharacter.fightingStyleId = '';
+                this.editingCharacter.fightingStyleId = '';
             }
-          },
+        },
 
         GetSubclassOptionsForClass(classId: string): string[] {
-          const classEntry = this.catalogs.classes.find((entry: CatalogItem) => entry.name === classId);
-          const catalogSubclassOptions = NormalizeClassSubclasses(classEntry?.classSubclasses);
-          if (catalogSubclassOptions.length > 0) {
-            return catalogSubclassOptions.map((subclass) => subclass.name);
-          }
+            const classEntry = this.catalogs.classes.find((entry: CatalogItem) => entry.name === classId);
+            const catalogSubclassOptions = NormalizeClassSubclasses(classEntry?.classSubclasses);
+            if (catalogSubclassOptions.length > 0) {
+                return catalogSubclassOptions.map((subclass) => subclass.name);
+            }
 
-          const sourceClass = AllClasses.find((entry) => entry.classType === classId);
-          return NormalizeClassSubclasses(sourceClass?.subclasses as unknown as ClassSubclass[] | undefined)
-            .map((subclass) => subclass.name);
+            const sourceClass = AllClasses.find((entry) => entry.classType === classId);
+            return NormalizeClassSubclasses(sourceClass?.subclasses as unknown as ClassSubclass[] | undefined)
+                .map((subclass) => subclass.name);
         },
 
         NormalizeSubclassSelection(entry: ClassLevel) {
-          const subclassOptions = this.GetSubclassOptionsForClass(entry.classId);
-          if (subclassOptions.length === 0) {
-            entry.subclassName = '';
-            return;
-          }
+            const subclassOptions = this.GetSubclassOptionsForClass(entry.classId);
+            if (subclassOptions.length === 0) {
+                entry.subclassName = '';
+                return;
+            }
 
-          if (entry.subclassName && !subclassOptions.includes(entry.subclassName)) {
-            entry.subclassName = '';
-          }
+            if (entry.subclassName && !subclassOptions.includes(entry.subclassName)) {
+                entry.subclassName = '';
+            }
         },
 
         AddClassSubclass(item: CatalogItem) {
-          item.classSubclasses = NormalizeClassSubclasses(item.classSubclasses);
-          item.classSubclasses.push({
-            name: 'New Subclass',
-            description: '',
-            features: []
-          });
-          this.SaveAll();
+            item.classSubclasses = NormalizeClassSubclasses(item.classSubclasses);
+            item.classSubclasses.push({
+                name: 'New Subclass',
+                description: '',
+                features: []
+            });
+            this.SaveAll();
         },
 
         RemoveClassSubclass(item: CatalogItem, index: number) {
-          item.classSubclasses = NormalizeClassSubclasses(item.classSubclasses);
-          item.classSubclasses.splice(index, 1);
-          this.SaveAll();
+            item.classSubclasses = NormalizeClassSubclasses(item.classSubclasses);
+            item.classSubclasses.splice(index, 1);
+            this.SaveAll();
         },
 
         AddClassFeature(item: CatalogItem) {
-          if (!item.classFeatures) item.classFeatures = [];
-          item.classFeatures.push({ name: 'New Feature', level: 1, description: '' });
-          this.SaveAll();
+            if (!item.classFeatures) item.classFeatures = [];
+            item.classFeatures.push({ name: 'New Feature', level: 1, description: '' });
+            this.SaveAll();
         },
 
         RemoveClassFeature(item: CatalogItem, index: number) {
-          if (!item.classFeatures) return;
-          item.classFeatures.splice(index, 1);
-          this.SaveAll();
+            if (!item.classFeatures) return;
+            item.classFeatures.splice(index, 1);
+            this.SaveAll();
         },
 
         AddSubclassFeature(subclass: ClassSubclass) {
-          if (!subclass.features) subclass.features = [];
-          subclass.features.push({ name: 'New Feature', level: 1, description: '' });
-          this.SaveAll();
+            if (!subclass.features) subclass.features = [];
+            subclass.features.push({ name: 'New Feature', level: 1, description: '' });
+            this.SaveAll();
         },
 
         RemoveSubclassFeature(subclass: ClassSubclass, index: number) {
-          if (!subclass.features) return;
-          subclass.features.splice(index, 1);
-          this.SaveAll();
+            if (!subclass.features) return;
+            subclass.features.splice(index, 1);
+            this.SaveAll();
         },
 
-          RollAbilityScore(): number {
+        RollAbilityScore(): number {
             const rolls = Array.from({ length: 4 }, () => Math.floor(Math.random() * 6) + 1);
             rolls.sort((a, b) => b - a);
             return rolls[0] + rolls[1] + rolls[2];
-          },
+        },
 
-          RollAbilityScores() {
+        RollAbilityScores() {
             if (!this.editingCharacter) {
-              return;
+                return;
             }
 
             this.editingCharacter.abilityScores.strength = this.RollAbilityScore();
@@ -1993,7 +1993,7 @@ const NpcEasyApp = (): any => {
             this.editingCharacter.abilityScores.wisdom = this.RollAbilityScore();
             this.editingCharacter.abilityScores.charisma = this.RollAbilityScore();
             this.SaveAll();
-          },
+        },
 
         AddClassLevel() {
             if (!this.editingCharacter) {
@@ -2016,7 +2016,7 @@ const NpcEasyApp = (): any => {
             }
 
             this.editingCharacter.classLevels.splice(index, 1);
-      this.NormalizeEquippedLoadout();
+            this.NormalizeEquippedLoadout();
             this.NormalizeFightingStyleSelection();
             this.SaveAll();
         },
@@ -2037,11 +2037,11 @@ const NpcEasyApp = (): any => {
             }
 
             if (this.editingCharacter.primaryWeaponId === weaponId) {
-              this.editingCharacter.primaryWeaponId = '';
-              this.editingCharacter.primaryWeaponGrip = 'one-handed';
+                this.editingCharacter.primaryWeaponId = '';
+                this.editingCharacter.primaryWeaponGrip = 'one-handed';
             }
             if (this.editingCharacter.offhandWeaponId === weaponId) {
-              this.editingCharacter.offhandWeaponId = '';
+                this.editingCharacter.offhandWeaponId = '';
             }
 
             this.NormalizeEquippedLoadout();
@@ -2076,10 +2076,10 @@ const NpcEasyApp = (): any => {
                 if (!this.editingCharacter.weaponIds.includes(weaponId)) {
                     this.editingCharacter.weaponIds.push(weaponId);
                 }
-              if (!this.editingCharacter.primaryWeaponId) {
-                this.editingCharacter.primaryWeaponId = weaponId;
-              }
-              this.NormalizeEquippedLoadout();
+                if (!this.editingCharacter.primaryWeaponId) {
+                    this.editingCharacter.primaryWeaponId = weaponId;
+                }
+                this.NormalizeEquippedLoadout();
                 this.SaveAll();
                 return;
             }
@@ -2088,10 +2088,10 @@ const NpcEasyApp = (): any => {
         },
 
         AddCompendiumItem(key: CatalogKey) {
-          const singularLabel = key === 'fightingStyles' ? 'Fighting Style' : key.slice(0, -1);
+            const singularLabel = key === 'fightingStyles' ? 'Fighting Style' : key.slice(0, -1);
             const item: CatalogItem = {
                 id: NewId(key.slice(0, -1)),
-            name: `New ${singularLabel}`,
+                name: `New ${singularLabel}`,
                 description: ''
             };
 
@@ -2119,7 +2119,7 @@ const NpcEasyApp = (): any => {
         },
 
         RemoveCompendiumItem(key: CatalogKey, id: string) {
-          const removedItem = this.catalogs[key].find((item: CatalogItem) => item.id === id);
+            const removedItem = this.catalogs[key].find((item: CatalogItem) => item.id === id);
             this.catalogs[key] = this.catalogs[key].filter((item: CatalogItem) => item.id !== id);
 
             if (this.editingCharacter) {
@@ -2134,11 +2134,11 @@ const NpcEasyApp = (): any => {
                 }
                 if (key === 'races' && this.editingCharacter.raceId === id) {
                     this.editingCharacter.raceId = '';
-                  this.editingCharacter.subraceName = '';
+                    this.editingCharacter.subraceName = '';
                 }
                 if (key === 'classes') {
-                  const removedClassName = removedItem?.name;
-                  this.editingCharacter.classLevels = this.editingCharacter.classLevels.filter((entry: ClassLevel) => entry.classId !== removedClassName);
+                    const removedClassName = removedItem?.name;
+                    this.editingCharacter.classLevels = this.editingCharacter.classLevels.filter((entry: ClassLevel) => entry.classId !== removedClassName);
                 }
             }
 
@@ -2225,85 +2225,85 @@ const NpcEasyApp = (): any => {
             });
         },
 
-          GetClassFeatureSummary(character: CharacterRecord | null): ClassFeatureSummary[] {
+        GetClassFeatureSummary(character: CharacterRecord | null): ClassFeatureSummary[] {
             if (!character) {
-              return [];
+                return [];
             }
 
             const groupedEntries = new Map<string, { className: string; subclassName: string; classLevel: number }>();
             for (const classLevelEntry of character.classLevels ?? []) {
-              if (!classLevelEntry.classId || classLevelEntry.level <= 0) {
-                continue;
-              }
+                if (!classLevelEntry.classId || classLevelEntry.level <= 0) {
+                    continue;
+                }
 
-              const className = classLevelEntry.classId;
-              const subclassName = classLevelEntry.subclassName ?? '';
-              const key = `${className}::${subclassName}`;
-              const existing = groupedEntries.get(key);
-              if (existing) {
-                existing.classLevel += classLevelEntry.level;
-              } else {
-                groupedEntries.set(key, {
-                  className,
-                  subclassName,
-                  classLevel: classLevelEntry.level
-                });
-              }
+                const className = classLevelEntry.classId;
+                const subclassName = classLevelEntry.subclassName ?? '';
+                const key = `${className}::${subclassName}`;
+                const existing = groupedEntries.get(key);
+                if (existing) {
+                    existing.classLevel += classLevelEntry.level;
+                } else {
+                    groupedEntries.set(key, {
+                        className,
+                        subclassName,
+                        classLevel: classLevelEntry.level
+                    });
+                }
             }
 
             return Array.from(groupedEntries.values())
-              .sort((a, b) => {
-                  const classCompare = a.className.localeCompare(b.className);
-                  return classCompare !== 0 ? classCompare : a.subclassName.localeCompare(b.subclassName);
-              })
-              .map((entry) => {
-                const className = entry.className;
-                const classLevel = entry.classLevel;
-                const subclassName = entry.subclassName;
+                .sort((a, b) => {
+                    const classCompare = a.className.localeCompare(b.className);
+                    return classCompare !== 0 ? classCompare : a.subclassName.localeCompare(b.subclassName);
+                })
+                .map((entry) => {
+                    const className = entry.className;
+                    const classLevel = entry.classLevel;
+                    const subclassName = entry.subclassName;
 
-                const sourceClass = AllClasses.find((item) => item.classType === className);
-                const classCatalogItem = this.catalogs.classes.find((item: CatalogItem) => item.name === className);
+                    const sourceClass = AllClasses.find((item) => item.classType === className);
+                    const classCatalogItem = this.catalogs.classes.find((item: CatalogItem) => item.name === className);
 
-                // Prefer catalog-stored features (user-edited); fall back to SRD data
-                const catalogFeatures = NormalizeFeatureRecords(classCatalogItem?.classFeatures);
-                const baseFeaturesToUse = catalogFeatures.length > 0
-                  ? catalogFeatures
-                  : (sourceClass?.features ?? []);
-                const classFeatures = baseFeaturesToUse
-                  .filter((feature) => feature.level <= classLevel)
-                  .map((feature) => `Lv ${feature.level}: ${feature.name} - ${feature.description}`);
+                    // Prefer catalog-stored features (user-edited); fall back to SRD data
+                    const catalogFeatures = NormalizeFeatureRecords(classCatalogItem?.classFeatures);
+                    const baseFeaturesToUse = catalogFeatures.length > 0
+                        ? catalogFeatures
+                        : (sourceClass?.features ?? []);
+                    const classFeatures = baseFeaturesToUse
+                        .filter((feature) => feature.level <= classLevel)
+                        .map((feature) => `Lv ${feature.level}: ${feature.name} - ${feature.description}`);
 
-                let subclassFeatures: string[] = [];
-                if (subclassName) {
-                  const subclassCatalogItem = NormalizeClassSubclasses(classCatalogItem?.classSubclasses)
-                    .find((subclass) => subclass.name === subclassName);
+                    let subclassFeatures: string[] = [];
+                    if (subclassName) {
+                        const subclassCatalogItem = NormalizeClassSubclasses(classCatalogItem?.classSubclasses)
+                            .find((subclass) => subclass.name === subclassName);
 
-                  const catalogSubclassFeatures = NormalizeFeatureRecords(subclassCatalogItem?.features);
-                  if (catalogSubclassFeatures.length > 0) {
-                    subclassFeatures = catalogSubclassFeatures
-                      .filter((feature) => feature.level <= classLevel)
-                      .map((feature) => `Lv ${feature.level}: ${feature.name} - ${feature.description}`);
-                  } else {
-                    const sourceSubclass = sourceClass?.subclasses.find((subclass) => subclass.name === subclassName);
-                    subclassFeatures = (sourceSubclass?.features ?? [])
-                      .filter((feature) => feature.level <= classLevel)
-                      .map((feature) => `Lv ${feature.level}: ${feature.name} - ${feature.description}`);
-                  }
-                }
+                        const catalogSubclassFeatures = NormalizeFeatureRecords(subclassCatalogItem?.features);
+                        if (catalogSubclassFeatures.length > 0) {
+                            subclassFeatures = catalogSubclassFeatures
+                                .filter((feature) => feature.level <= classLevel)
+                                .map((feature) => `Lv ${feature.level}: ${feature.name} - ${feature.description}`);
+                        } else {
+                            const sourceSubclass = sourceClass?.subclasses.find((subclass) => subclass.name === subclassName);
+                            subclassFeatures = (sourceSubclass?.features ?? [])
+                                .filter((feature) => feature.level <= classLevel)
+                                .map((feature) => `Lv ${feature.level}: ${feature.name} - ${feature.description}`);
+                        }
+                    }
 
-                const uniqueClassFeatures = [...new Set(classFeatures)];
-                const uniqueSubclassFeatures = [...new Set(subclassFeatures)];
+                    const uniqueClassFeatures = [...new Set(classFeatures)];
+                    const uniqueSubclassFeatures = [...new Set(subclassFeatures)];
 
-                return {
-                  className,
-                  classLevel,
-                  subclassName,
-                  classFeatures: uniqueClassFeatures,
-                  subclassFeatures: uniqueSubclassFeatures
-                };
-              })
-              .filter((entry) => entry.classFeatures.length > 0 || entry.subclassFeatures.length > 0);
-          },
+                    return {
+                        className,
+                        classLevel,
+                        subclassName,
+                        classFeatures: uniqueClassFeatures,
+                        subclassFeatures: uniqueSubclassFeatures
+                    };
+                })
+                .filter((entry) => entry.classFeatures.length > 0 || entry.subclassFeatures.length > 0);
+        },
 
         FormatWeaponName(character: CharacterRecord, weaponId: string): string {
             const weaponName = this.GetCatalogName('weapons', weaponId);
@@ -2316,88 +2316,88 @@ const NpcEasyApp = (): any => {
             return `${weaponName} +${magicBonus}`;
         },
 
-    GetSelectedFightingStyleName(character: CharacterRecord | null): string {
-      if (!character?.fightingStyleId) {
-        return '';
-      }
+        GetSelectedFightingStyleName(character: CharacterRecord | null): string {
+            if (!character?.fightingStyleId) {
+                return '';
+            }
 
-      return this.GetCatalogName('fightingStyles', character.fightingStyleId);
-    },
+            return this.GetCatalogName('fightingStyles', character.fightingStyleId);
+        },
 
-    GetEquippedArmor(character: CharacterRecord | null) {
-      if (!character?.equippedArmorId) {
-        return undefined;
-      }
+        GetEquippedArmor(character: CharacterRecord | null) {
+            if (!character?.equippedArmorId) {
+                return undefined;
+            }
 
-      return this.armors.find((armor: typeof Armors[number]) => armor.id === character.equippedArmorId);
-    },
+            return this.armors.find((armor: typeof Armors[number]) => armor.id === character.equippedArmorId);
+        },
 
-    GetEquippedArmorName(character: CharacterRecord | null): string {
-      return this.GetEquippedArmor(character)?.name ?? 'No armor';
-    },
+        GetEquippedArmorName(character: CharacterRecord | null): string {
+            return this.GetEquippedArmor(character)?.name ?? 'No armor';
+        },
 
-    GetEquippedWeaponLabel(character: CharacterRecord | null, weaponId: string, fallback: string): string {
-      if (!character || !weaponId) {
-        return fallback;
-      }
+        GetEquippedWeaponLabel(character: CharacterRecord | null, weaponId: string, fallback: string): string {
+            if (!character || !weaponId) {
+                return fallback;
+            }
 
-      const weaponName = this.GetCatalogName('weapons', weaponId);
-      if (weaponId === character.primaryWeaponId && this.IsPrimaryWeaponLockedToTwoHands(character)) {
-        return `${weaponName} (two-handed)`;
-      }
-      if (weaponId === character.primaryWeaponId) {
-        return `${weaponName} (primary)`;
-      }
-      if (weaponId === character.offhandWeaponId) {
-        return `${weaponName} (off-hand)`;
-      }
+            const weaponName = this.GetCatalogName('weapons', weaponId);
+            if (weaponId === character.primaryWeaponId && this.IsPrimaryWeaponLockedToTwoHands(character)) {
+                return `${weaponName} (two-handed)`;
+            }
+            if (weaponId === character.primaryWeaponId) {
+                return `${weaponName} (primary)`;
+            }
+            if (weaponId === character.offhandWeaponId) {
+                return `${weaponName} (off-hand)`;
+            }
 
-      return weaponName;
-    },
+            return weaponName;
+        },
 
-    GetDisplayedArmorClass(character: CharacterRecord | null): number {
-      if (!character) {
-        return 0;
-      }
+        GetDisplayedArmorClass(character: CharacterRecord | null): number {
+            if (!character) {
+                return 0;
+            }
 
-      const styleName = this.GetSelectedFightingStyleName(character);
-      const armor = this.GetEquippedArmor(character);
-      const dexterityModifier = this.GetAbilityModifier(character.abilityScores.dexterity);
-      const armorBase = armor
-        ? armor.baseArmorClass + Math.min(dexterityModifier, armor.maxDexBonus ?? dexterityModifier)
-        : 10 + dexterityModifier;
-      const shieldBonus = character.hasShield ? 2 : 0;
-      const defenseBonus = styleName === 'Defense' && armor ? 1 : 0;
+            const styleName = this.GetSelectedFightingStyleName(character);
+            const armor = this.GetEquippedArmor(character);
+            const dexterityModifier = this.GetAbilityModifier(character.abilityScores.dexterity);
+            const armorBase = armor
+                ? armor.baseArmorClass + Math.min(dexterityModifier, armor.maxDexBonus ?? dexterityModifier)
+                : 10 + dexterityModifier;
+            const shieldBonus = character.hasShield ? 2 : 0;
+            const defenseBonus = styleName === 'Defense' && armor ? 1 : 0;
 
-      return armorBase + shieldBonus + defenseBonus;
-    },
+            return armorBase + shieldBonus + defenseBonus;
+        },
 
-    GetArmorClassNote(character: CharacterRecord | null): string {
-      if (!character) {
-        return '';
-      }
+        GetArmorClassNote(character: CharacterRecord | null): string {
+            if (!character) {
+                return '';
+            }
 
-      const styleName = this.GetSelectedFightingStyleName(character);
-      const armor = this.GetEquippedArmor(character);
-      const notes: string[] = [];
+            const styleName = this.GetSelectedFightingStyleName(character);
+            const armor = this.GetEquippedArmor(character);
+            const notes: string[] = [];
 
-      if (armor) {
-        notes.push(armor.description);
-      } else {
-        notes.push(`No armor equipped. Using unarmored AC 10 + Dex modifier (${10 + this.GetAbilityModifier(character.abilityScores.dexterity)}).`);
-      }
-      if (character.hasShield) {
-        notes.push('Shield equipped: +2 AC.');
-      }
-      if (styleName === 'Defense' && armor) {
-        notes.push('Defense fighting style: +1 AC while armored.');
-      }
-      if (styleName === 'Protection' && character.hasShield) {
-        notes.push('Protection fighting style is active while the shield is equipped.');
-      }
+            if (armor) {
+                notes.push(armor.description);
+            } else {
+                notes.push(`No armor equipped. Using unarmored AC 10 + Dex modifier (${10 + this.GetAbilityModifier(character.abilityScores.dexterity)}).`);
+            }
+            if (character.hasShield) {
+                notes.push('Shield equipped: +2 AC.');
+            }
+            if (styleName === 'Defense' && armor) {
+                notes.push('Defense fighting style: +1 AC while armored.');
+            }
+            if (styleName === 'Protection' && character.hasShield) {
+                notes.push('Protection fighting style is active while the shield is equipped.');
+            }
 
-      return notes.join(' ');
-    },
+            return notes.join(' ');
+        },
 
         FormatWeaponAttack(character: CharacterRecord, weaponId: string): string {
             const weapon = this.catalogs.weapons.find((item: CatalogItem) => item.id === weaponId);
@@ -2406,13 +2406,13 @@ const NpcEasyApp = (): any => {
             }
 
             const props: string[] = weapon.weaponProperties ?? [];
-      const isRanged = this.IsRangedWeapon(weapon);
+            const isRanged = this.IsRangedWeapon(weapon);
             const isFinesse = props.includes('finesse');
-      const isTwoHanded = props.includes('two-handed');
+            const isTwoHanded = props.includes('two-handed');
             const styleName = this.GetSelectedFightingStyleName(character);
-      const isPrimaryWeapon = character.primaryWeaponId === weaponId;
-      const isOffhandWeapon = character.offhandWeaponId === weaponId;
-      const isUsedTwoHanded = isPrimaryWeapon && this.IsPrimaryWeaponLockedToTwoHands(character);
+            const isPrimaryWeapon = character.primaryWeaponId === weaponId;
+            const isOffhandWeapon = character.offhandWeaponId === weaponId;
+            const isUsedTwoHanded = isPrimaryWeapon && this.IsPrimaryWeaponLockedToTwoHands(character);
 
             const strMod = this.GetAbilityModifier(character.abilityScores.strength);
             const dexMod = this.GetAbilityModifier(character.abilityScores.dexterity);
@@ -2429,39 +2429,39 @@ const NpcEasyApp = (): any => {
             const profBonus = this.GetProficiencyBonus(this.GetTotalCharacterLevel(character));
             const magicBonus = this.GetWeaponMagicBonus(character, weaponId);
             const archeryBonus = styleName === 'Archery' && isRanged ? 2 : 0;
-      const duelingBonus = styleName === 'Dueling'
-        && isPrimaryWeapon
-        && !isRanged
-        && !isUsedTwoHanded
-        && !character.offhandWeaponId
-        ? 2
-        : 0;
+            const duelingBonus = styleName === 'Dueling'
+                && isPrimaryWeapon
+                && !isRanged
+                && !isUsedTwoHanded
+                && !character.offhandWeaponId
+                ? 2
+                : 0;
             const toHit = abilityMod + profBonus + magicBonus + archeryBonus;
             const toHitText = toHit >= 0 ? `+${toHit}` : `${toHit}`;
             const styleNotes: string[] = [];
 
             if (archeryBonus > 0) {
-              styleNotes.push('Archery +2');
+                styleNotes.push('Archery +2');
             }
             if (duelingBonus > 0) {
-              styleNotes.push('Dueling +2 damage');
+                styleNotes.push('Dueling +2 damage');
             }
             if (styleName === 'Great Weapon Fighting' && isPrimaryWeapon && !isRanged && (isTwoHanded || isUsedTwoHanded)) {
-              styleNotes.push('Great Weapon Fighting rerolls 1s and 2s');
+                styleNotes.push('Great Weapon Fighting rerolls 1s and 2s');
             }
             if (styleName === 'Two-Weapon Fighting' && isOffhandWeapon) {
-              styleNotes.push('Off-hand attack adds ability modifier');
+                styleNotes.push('Off-hand attack adds ability modifier');
             }
             if (styleName === 'Protection' && character.hasShield) {
-              styleNotes.push('Protection reaction available while using a shield');
+                styleNotes.push('Protection reaction available while using a shield');
             }
 
             const propertySummary = props.length > 0 ? `; ${props.join(', ')}` : '';
 
             if (weapon.weaponDamage === '—') {
-              return styleNotes.length > 0
-                ? `${toHitText} to hit | special${propertySummary} | ${styleNotes.join('; ')}`
-                : `${toHitText} to hit | special${propertySummary}`;
+                return styleNotes.length > 0
+                    ? `${toHitText} to hit | special${propertySummary} | ${styleNotes.join('; ')}`
+                    : `${toHitText} to hit | special${propertySummary}`;
             }
 
             const offhandAbilityBonus = isOffhandWeapon && styleName !== 'Two-Weapon Fighting' ? 0 : abilityMod;
@@ -2469,8 +2469,8 @@ const NpcEasyApp = (): any => {
             const dmgBonus = totalDamageBonus !== 0 ? (totalDamageBonus > 0 ? `+${totalDamageBonus}` : `${totalDamageBonus}`) : '';
             const attackSummary = `${toHitText} to hit | ${weapon.weaponDamage}${dmgBonus} ${weapon.weaponDamageType}${propertySummary}`;
             return styleNotes.length > 0
-              ? `${attackSummary} | ${styleNotes.join('; ')}`
-              : attackSummary;
+                ? `${attackSummary} | ${styleNotes.join('; ')}`
+                : attackSummary;
         },
 
         GetSpellcastingAbilityForClassEntry(entry: ClassLevel): keyof CharacterRecord['abilityScores'] | undefined {
@@ -2626,28 +2626,28 @@ const NpcEasyApp = (): any => {
             return spellSlotLines;
         },
 
-    GetSortedCharacterSpellIds(character: CharacterRecord | null): string[] {
-      if (!character) {
-        return [];
-      }
+        GetSortedCharacterSpellIds(character: CharacterRecord | null): string[] {
+            if (!character) {
+                return [];
+            }
 
-      return [...(character.spellIds ?? [])].sort((leftId: string, rightId: string) => {
-        const leftSpell = this.catalogs.spells.find((item: CatalogItem) => item.id === leftId);
-        const rightSpell = this.catalogs.spells.find((item: CatalogItem) => item.id === rightId);
-        const leftSource = leftSpell ? GetSpellByName(leftSpell.name) : undefined;
-        const rightSource = rightSpell ? GetSpellByName(rightSpell.name) : undefined;
-        const leftLevel = leftSource?.level ?? Number.MAX_SAFE_INTEGER;
-        const rightLevel = rightSource?.level ?? Number.MAX_SAFE_INTEGER;
+            return [...(character.spellIds ?? [])].sort((leftId: string, rightId: string) => {
+                const leftSpell = this.catalogs.spells.find((item: CatalogItem) => item.id === leftId);
+                const rightSpell = this.catalogs.spells.find((item: CatalogItem) => item.id === rightId);
+                const leftSource = leftSpell ? GetSpellByName(leftSpell.name) : undefined;
+                const rightSource = rightSpell ? GetSpellByName(rightSpell.name) : undefined;
+                const leftLevel = leftSource?.level ?? Number.MAX_SAFE_INTEGER;
+                const rightLevel = rightSource?.level ?? Number.MAX_SAFE_INTEGER;
 
-        if (leftLevel !== rightLevel) {
-          return leftLevel - rightLevel;
-        }
+                if (leftLevel !== rightLevel) {
+                    return leftLevel - rightLevel;
+                }
 
-        const leftName = leftSpell?.name ?? '';
-        const rightName = rightSpell?.name ?? '';
-        return leftName.localeCompare(rightName);
-      });
-    },
+                const leftName = leftSpell?.name ?? '';
+                const rightName = rightSpell?.name ?? '';
+                return leftName.localeCompare(rightName);
+            });
+        },
 
         GetSpellFacts(spellId: string): string[] {
             const spell = this.catalogs.spells.find((item: CatalogItem) => item.id === spellId);
@@ -2684,49 +2684,49 @@ const NpcEasyApp = (): any => {
             ];
         },
 
-          GetSpellSheetRow(spellId: string): { name: string; castingTime: string; range: string; duration: string; components: string; type: string; damage: string; effects: string } {
+        GetSpellSheetRow(spellId: string): { name: string; castingTime: string; range: string; duration: string; components: string; type: string; damage: string; effects: string } {
             const spell = this.catalogs.spells.find((item: CatalogItem) => item.id === spellId);
             if (!spell) {
-              return {
-                name: '?: Unknown',
-                castingTime: 'Action',
-                range: 'See description',
-                duration: 'See description',
-                components: 'None',
-                type: 'Unknown spell',
-                damage: 'None',
-                effects: 'See full text.'
-              };
+                return {
+                    name: '?: Unknown',
+                    castingTime: 'Action',
+                    range: 'See description',
+                    duration: 'See description',
+                    components: 'None',
+                    type: 'Unknown spell',
+                    damage: 'None',
+                    effects: 'See full text.'
+                };
             }
 
             const srcSpell = GetSpellByName(spell.name);
             const descriptionText = (spell.description?.trim() || srcSpell?.description || '');
             const school = srcSpell?.school
-              ? srcSpell.school.charAt(0).toUpperCase() + srcSpell.school.slice(1)
-              : 'Spell';
+                ? srcSpell.school.charAt(0).toUpperCase() + srcSpell.school.slice(1)
+                : 'Spell';
             const levelPrefix = srcSpell ? (srcSpell.level === 0 ? 'C' : `${srcSpell.level}`) : '?';
             const tags: string[] = [];
             if (srcSpell?.ritual) {
-              tags.push('Ritual');
+                tags.push('Ritual');
             }
             if (srcSpell?.concentration) {
-              tags.push('Concentration');
+                tags.push('Concentration');
             }
 
             const effect = spell.effect ?? srcSpell?.effect ?? SummarizeSpellEffect(descriptionText);
             const damage = spell.damage ?? srcSpell?.damage ?? SummarizeSpellDamage(descriptionText) ?? 'None';
 
             return {
-              name: `${levelPrefix}: ${spell.name}`,
-              castingTime: srcSpell?.castingTime ?? 'Action',
-              range: srcSpell?.range ?? 'See description',
-              duration: srcSpell?.duration ?? 'See description',
-              components: srcSpell?.components ?? 'None',
-              type: tags.length > 0 ? `${school} (${tags.join(', ')})` : school,
-              damage,
-              effects: effect || 'See full text.'
+                name: `${levelPrefix}: ${spell.name}`,
+                castingTime: srcSpell?.castingTime ?? 'Action',
+                range: srcSpell?.range ?? 'See description',
+                duration: srcSpell?.duration ?? 'See description',
+                components: srcSpell?.components ?? 'None',
+                type: tags.length > 0 ? `${school} (${tags.join(', ')})` : school,
+                damage,
+                effects: effect || 'See full text.'
             };
-          },
+        },
 
         FormatAbilityScore(score: number): string {
             const modifier = this.GetAbilityModifier(score);
@@ -2739,19 +2739,19 @@ const NpcEasyApp = (): any => {
         },
 
         GetCatalogDescription(key: CatalogKey, id: string): string {
-          return this.catalogs[key].find((item: CatalogItem) => item.id === id)?.description ?? '';
+            return this.catalogs[key].find((item: CatalogItem) => item.id === id)?.description ?? '';
         },
 
         GetTotalCharacterLevel(character?: CharacterRecord | null): number {
-          const targetCharacter = character ?? this.editingCharacter;
-          if (!targetCharacter) {
-            return 0;
-          }
+            const targetCharacter = character ?? this.editingCharacter;
+            if (!targetCharacter) {
+                return 0;
+            }
 
             let totalCharLvl: number = 0;
-          targetCharacter.classLevels.forEach((classLevel: ClassLevel) => {
+            targetCharacter.classLevels.forEach((classLevel: ClassLevel) => {
                 if (classLevel.level < 0) {
-              console.warn(`Character ${targetCharacter.name} has a class level entry with negative level (${classLevel.classId} Lv ${classLevel.level}). Treating it as 0 for total level calculation.`);
+                    console.warn(`Character ${targetCharacter.name} has a class level entry with negative level (${classLevel.classId} Lv ${classLevel.level}). Treating it as 0 for total level calculation.`);
                 }
                 totalCharLvl += classLevel.level > 0 ? classLevel.level : 0;
             });
