@@ -1277,18 +1277,18 @@ app.innerHTML = `
 
           <div class="sheet-card" x-show="(editingCharacter?.featIds?.length ?? 0) > 0" x-cloak>
             <h4>Feats</h4>
-            <div class="space-y-1">
+            <div class="">
               <template x-for="id in editingCharacter?.featIds ?? []" :key="id">
-                <div class="rounded-lg border border-amber-100 p-2">
+                <div class="rounded-lg border border-amber-100">
                   <p class="font-semibold text-ink" x-text="GetCatalogName('feats', id)"></p>
                   <p class="mt-1 text-sm text-ink-soft" x-text="GetFullFeatDescription(id)"></p>
                 </div>
               </template>
             </div>
             <h4>Racial Traits</h4>
-            <div class="space-y-1">
+            <div class="">
               <template x-for="trait in GetRacialTraits(editingCharacter)" :key="trait.source + '-' + trait.name">
-                <div class="rounded-lg border border-amber-100 p-2">
+                <div class="rounded-lg border border-amber-100">
                   <p class="font-semibold text-ink" x-text="trait.name"></p>
                   <p class="mt-1 text-sm text-ink-soft" x-text="trait.description"></p>
                 </div>
