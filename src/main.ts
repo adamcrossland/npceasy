@@ -1212,9 +1212,6 @@ app.innerHTML = `
               <div><dt>WIS</dt><dd x-text="FormatAbilityScore(editingCharacter?.abilityScores.wisdom ?? 10)"></dd></div>
               <div><dt>CHA</dt><dd x-text="FormatAbilityScore(editingCharacter?.abilityScores.charisma ?? 10)"></dd></div>
             </dl>
-          </div>
-
-          <div class="sheet-card">
             <h4>Saving Throws</h4>
             <dl class="score-grid">
               <template x-for="save in GetSavingThrows(editingCharacter)" :key="save.label">
@@ -1226,6 +1223,36 @@ app.innerHTML = `
             </dl>
           </div>
 
+        <div class="sheet-card">
+            <h4>Weapons</h4>
+            <ul class="list-base">
+              <template x-for="id in editingCharacter?.weaponIds ?? []" :key="id">
+                <li>
+                  <span class="font-semibold" x-text="FormatWeaponName(editingCharacter, id)"></span>
+                  <span class="block text-xs text-ink-soft" x-text="FormatWeaponAttack(editingCharacter, id)"></span>
+                </li>
+              </template>
+              <template x-if="editingCharacter && ShouldShowSpellAttack(editingCharacter)">
+                <li>
+                  <span class="font-semibold">Attack Spell</span>
+                  <span class="block text-xs text-ink-soft" x-text="FormatSpellAttack(editingCharacter)"></span>
+                </li>
+              </template>
+            </ul>
+            <h4>Armor</h4>
+            <ul class="list-base text-sm">
+              <li><span class="font-semibold">Armor:</span> <span x-text="GetEquippedArmorName(editingCharacter)"></span></li>
+              <li><span class="font-semibold">Shield:</span> <span x-text="editingCharacter?.hasShield ? 'Equipped' : 'Not equipped'"></span></li>
+              <li><span class="font-semibold">Primary:</span> <span x-text="GetEquippedWeaponLabel(editingCharacter, editingCharacter?.primaryWeaponId || '', 'None')"></span></li>
+              <li><span class="font-semibold">Off-Hand:</span> <span x-text="GetEquippedWeaponLabel(editingCharacter, editingCharacter?.offhandWeaponId || '', 'None')"></span></li>
+            </ul>
+            <ul class="mt-2 list-base text-sm text-red-700" x-show="GetLoadoutWarnings(editingCharacter).length > 0" x-cloak>
+              <template x-for="warning in GetLoadoutWarnings(editingCharacter)" :key="'sheet-' + warning">
+                <li x-text="warning"></li>
+              </template>
+            </ul>
+          </div>
+
           <div class="sheet-card" x-show="(editingCharacter?.featIds?.length ?? 0) > 0" x-cloak>
             <h4>Feats</h4>
             <ul class="list-base">
@@ -1233,9 +1260,6 @@ app.innerHTML = `
                 <li x-text="GetCatalogName('feats', id)"></li>
               </template>
             </ul>
-          </div>
-
-          <div class="sheet-card" x-show="GetRacialTraits(editingCharacter).length > 0" x-cloak>
             <h4>Racial Traits</h4>
             <div class="space-y-2">
               <template x-for="trait in GetRacialTraits(editingCharacter)" :key="trait.source + '-' + trait.name">
@@ -1248,7 +1272,7 @@ app.innerHTML = `
             </div>
           </div>
 
-          <div class="sheet-card" x-show="(editingCharacter?.classLevels?.length ?? 0) > 0" x-cloak>
+          <div class="sheet-card" x-show="GetRacialTraits(editingCharacter).length > 0" x-cloak>
             <h4>Class Features</h4>
             <div class="space-y-2">
               <template x-for="entry in GetClassFeatureSummary(editingCharacter)" :key="entry.className + '-' + entry.classLevel + '-' + entry.subclassName">
@@ -1267,39 +1291,6 @@ app.innerHTML = `
             </div>
           </div>
 
-          <div class="sheet-card">
-            <h4>Weapons</h4>
-            <ul class="list-base">
-              <template x-for="id in editingCharacter?.weaponIds ?? []" :key="id">
-                <li>
-                  <span class="font-semibold" x-text="FormatWeaponName(editingCharacter, id)"></span>
-                  <span class="block text-xs text-ink-soft" x-text="FormatWeaponAttack(editingCharacter, id)"></span>
-                </li>
-              </template>
-              <template x-if="editingCharacter && ShouldShowSpellAttack(editingCharacter)">
-                <li>
-                  <span class="font-semibold">Attack Spell</span>
-                  <span class="block text-xs text-ink-soft" x-text="FormatSpellAttack(editingCharacter)"></span>
-                </li>
-              </template>
-            </ul>
-          </div>
-
-          <div class="sheet-card">
-            <h4>Armor & Loadout</h4>
-            <ul class="list-base text-sm">
-              <li><span class="font-semibold">Armor:</span> <span x-text="GetEquippedArmorName(editingCharacter)"></span></li>
-              <li><span class="font-semibold">Shield:</span> <span x-text="editingCharacter?.hasShield ? 'Equipped' : 'Not equipped'"></span></li>
-              <li><span class="font-semibold">Primary:</span> <span x-text="GetEquippedWeaponLabel(editingCharacter, editingCharacter?.primaryWeaponId || '', 'None')"></span></li>
-              <li><span class="font-semibold">Off-Hand:</span> <span x-text="GetEquippedWeaponLabel(editingCharacter, editingCharacter?.offhandWeaponId || '', 'None')"></span></li>
-            </ul>
-            <ul class="mt-2 list-base text-sm text-red-700" x-show="GetLoadoutWarnings(editingCharacter).length > 0" x-cloak>
-              <template x-for="warning in GetLoadoutWarnings(editingCharacter)" :key="'sheet-' + warning">
-                <li x-text="warning"></li>
-              </template>
-            </ul>
-          </div>
-
           <div class="sheet-card" x-show="editingCharacter?.fightingStyleId || CanSelectFightingStyle(editingCharacter)" x-cloak>
             <h4>Fighting Style</h4>
             <template x-if="editingCharacter?.fightingStyleId">
@@ -1312,6 +1303,20 @@ app.innerHTML = `
               <p class="text-sm text-ink-soft">No fighting style selected.</p>
             </template>
           </div>
+
+          <div class="sheet-card">
+            <p><strong>Background:</strong> <span x-text="editingCharacter?.background"></span></p>
+            <p><strong>Languages:</strong> <span x-text="editingCharacter?.languages || 'None listed'"></span></p>
+            <p><strong>Personality:</strong> <span x-text="editingCharacter?.personality"></span></p>
+            <p><strong>Ideals:</strong> <span x-text="editingCharacter?.ideals"></span></p>
+            <p><strong>Bonds:</strong> <span x-text="editingCharacter?.bonds"></span></p>
+            <p><strong>Flaws:</strong> <span x-text="editingCharacter?.flaws"></span></p>
+          </div>
+
+        <div class="sheet-card">
+            <h4>Equipment</h4>
+            <p class="text-sm text-ink whitespace-pre-wrap" x-text="editingCharacter?.equipment || '(none specified)'"></p>
+        </div>
 
           <div class="sheet-card sheet-card-spells" x-show="(editingCharacter?.spellIds?.length ?? 0) > 0" x-cloak>
             <h4>Spells</h4>
@@ -1357,20 +1362,6 @@ app.innerHTML = `
                 </template>
               </table>
             </div>
-          </div>
-
-          <div class="sheet-card">
-            <h4>Equipment</h4>
-            <p class="text-sm text-ink whitespace-pre-wrap" x-text="editingCharacter?.equipment || '(none specified)'"></p>
-          </div>
-
-          <div class="sheet-card">
-            <p><strong>Background:</strong> <span x-text="editingCharacter?.background"></span></p>
-            <p><strong>Languages:</strong> <span x-text="editingCharacter?.languages || 'None listed'"></span></p>
-            <p><strong>Personality:</strong> <span x-text="editingCharacter?.personality"></span></p>
-            <p><strong>Ideals:</strong> <span x-text="editingCharacter?.ideals"></span></p>
-            <p><strong>Bonds:</strong> <span x-text="editingCharacter?.bonds"></span></p>
-            <p><strong>Flaws:</strong> <span x-text="editingCharacter?.flaws"></span></p>
           </div>
         </section>
       </article>
