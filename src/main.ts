@@ -1263,11 +1263,15 @@ app.innerHTML = `
 
           <div class="sheet-card" x-show="(editingCharacter?.featIds?.length ?? 0) > 0" x-cloak>
             <h4>Feats</h4>
-            <ul class="list-base">
+            <div class="space-y-2">
               <template x-for="id in editingCharacter?.featIds ?? []" :key="id">
-                <li x-text="GetCatalogName('feats', id)"></li>
+                <div class="rounded-lg border border-amber-100 p-2">
+                  <p class="text-xs font-semibold uppercase tracking-[0.08em] text-ink-soft">Feat</p>
+                  <p class="font-semibold text-ink" x-text="GetCatalogName('feats', id)"></p>
+                  <p class="mt-1 text-sm text-ink-soft" x-text="GetCatalogDescription('feats', id) || 'No description available.'"></p>
+                </div>
               </template>
-            </ul>
+            </div>
             <h4>Racial Traits</h4>
             <div class="space-y-2">
               <template x-for="trait in GetRacialTraits(editingCharacter)" :key="trait.source + '-' + trait.name">
