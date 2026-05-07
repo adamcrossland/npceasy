@@ -3,7 +3,7 @@ import { Armors } from './armors';
 import { AllClasses } from './classes';
 import { Feats, GetFeatByName } from './feats';
 import { FightingStyles } from './fightingStyles';
-import { Races, type RaceAbilityScores } from './races';
+import { Races, type RaceAbilityScores, type RaceTraits } from './races';
 import { Spells, GetSpellByName } from './spells';
 import { SrdWeapons } from './weapons';
 
@@ -28,6 +28,7 @@ type RaceSubrace = {
   description: string;
   abilityScoreBonuses?: RaceAbilityScores;
   languages?: string[];
+  traits?: RaceTraits[];
 };
 
 type ClassFeatureSummary = {
@@ -47,6 +48,7 @@ type CatalogItem = {
   raceSubraces?: RaceSubrace[];
     raceAbilityScoreBonuses?: RaceAbilityScores;
     raceLanguages?: string[];
+    raceTraits?: RaceTraits[];
     effect?: string;
     damage?: string;
     scaling?: string;
@@ -511,11 +513,41 @@ function NormalizeRaceAbilityScoreBonuses(bonuses?: RaceAbilityScores): RaceAbil
     return normalized;
 }
 
+  function NormalizeRaceTraits(traits?: Array<RaceTraits | string>): RaceTraits[] {
+    const normalized = (traits ?? []).map((trait): RaceTraits | null => {
+      if (typeof trait === 'string') {
+        const name = trait.trim();
+        return name ? { name, description: '' } : null;
+      }
+
+      const name = (trait.name ?? '').trim();
+      if (!name) {
+        return null;
+      }
+
+      return {
+        name,
+        description: (trait.description ?? '').trim()
+      };
+    }).filter((trait): trait is RaceTraits => trait !== null);
+
+    const seen = new Set<string>();
+    return normalized.filter((trait) => {
+      const key = trait.name.toLowerCase();
+      if (seen.has(key)) {
+        return false;
+      }
+
+      seen.add(key);
+      return true;
+    });
+  }
+
 function NormalizeRaceSubraces(subraces?: Array<RaceSubrace | string>): RaceSubrace[] {
   const normalized = (subraces ?? []).map((subrace): RaceSubrace | null => {
     if (typeof subrace === 'string') {
       const name = subrace.trim();
-      return name ? { name, description: '', abilityScoreBonuses: {}, languages: [] } : null;
+      return name ? { name, description: '', abilityScoreBonuses: {}, languages: [], traits: [] } : null;
     }
 
     const name = (subrace.name ?? '').trim();
@@ -525,7 +557,8 @@ function NormalizeRaceSubraces(subraces?: Array<RaceSubrace | string>): RaceSubr
       name,
       description: (subrace.description ?? '').trim(),
       abilityScoreBonuses: NormalizeRaceAbilityScoreBonuses((subrace as RaceSubrace).abilityScoreBonuses),
-      languages: NormalizeStringList((subrace as RaceSubrace).languages)
+      languages: NormalizeStringList((subrace as RaceSubrace).languages),
+      traits: NormalizeRaceTraits((subrace as RaceSubrace).traits)
     };
   }).filter((subrace): subrace is RaceSubrace => subrace !== null);
 
@@ -579,6 +612,7 @@ function MergeRaceCatalog(savedRaces: CatalogItem[] | undefined, defaultRaces: C
       description: savedMatch?.description ?? defaultItem.description,
       raceAbilityScoreBonuses: NormalizeRaceAbilityScoreBonuses(savedMatch?.raceAbilityScoreBonuses ?? defaultItem.raceAbilityScoreBonuses),
       raceLanguages: NormalizeStringList(savedMatch?.raceLanguages ?? defaultItem.raceLanguages),
+      raceTraits: NormalizeRaceTraits(savedMatch?.raceTraits ?? defaultItem.raceTraits),
       raceSubraces: NormalizeRaceSubraces(savedMatch?.raceSubraces ?? defaultItem.raceSubraces)
     };
   });
@@ -590,6 +624,7 @@ function MergeRaceCatalog(savedRaces: CatalogItem[] | undefined, defaultRaces: C
       id: item.id || NewId('race'),
       raceAbilityScoreBonuses: NormalizeRaceAbilityScoreBonuses(item.raceAbilityScoreBonuses),
       raceLanguages: NormalizeStringList(item.raceLanguages),
+      raceTraits: NormalizeRaceTraits(item.raceTraits),
       raceSubraces: NormalizeRaceSubraces(item.raceSubraces)
     }));
 
@@ -627,11 +662,13 @@ function BuildDefaultState(): AppState {
               description: item.description,
               raceAbilityScoreBonuses: NormalizeRaceAbilityScoreBonuses(item.abilityScoreIncreases),
               raceLanguages: NormalizeStringList(item.languages),
+              raceTraits: NormalizeRaceTraits(item.traits),
               raceSubraces: (item.subraces ?? []).map((subrace) => ({
                 name: subrace.name,
                 description: subrace.description,
                 abilityScoreBonuses: NormalizeRaceAbilityScoreBonuses(subrace.abilityScoreIncreases),
-                languages: NormalizeStringList(subrace.languages)
+                languages: NormalizeStringList(subrace.languages),
+                traits: NormalizeRaceTraits(subrace.traits)
               }))
             })),
             fightingStyles: DEFAULT_FIGHTING_STYLES
@@ -1313,6 +1350,23 @@ app.innerHTML = `
                     </div>
                   </div>
 
+                  <div class="rounded-xl border border-amber-200/70 p-3">
+                    <div class="mb-2 flex items-center justify-between">
+                      <p class="field-label !mb-0">Race Traits</p>
+                      <button type="button" class="btn-secondary" @click="AddRaceTrait(item)">Add Trait</button>
+                    </div>
+                    <div class="space-y-2" x-show="(item.raceTraits ?? []).length > 0" x-cloak>
+                      <template x-for="(trait, traitIndex) in item.raceTraits ?? []" :key="item.id + '-trait-' + traitIndex">
+                        <div class="grid gap-2 rounded-lg border border-amber-100 p-2 md:grid-cols-[1fr_1fr_auto]">
+                          <input x-model="trait.name" type="text" class="input-base" placeholder="Trait name" />
+                          <input x-model="trait.description" type="text" class="input-base" placeholder="Trait description" />
+                          <button type="button" class="btn-danger self-end" @click="RemoveRaceTrait(item, traitIndex)">Remove</button>
+                        </div>
+                      </template>
+                    </div>
+                    <p class="text-sm text-ink-soft" x-show="(item.raceTraits ?? []).length === 0" x-cloak>No traits yet.</p>
+                  </div>
+
                   <div class="rounded-xl border border-amber-200/70 p-3 space-y-2">
                     <label class="field-label !mb-0">Race Languages</label>
                     <input
@@ -1356,6 +1410,22 @@ app.innerHTML = `
                                 />
                               </label>
                             </template>
+                          </div>
+                          <div class="space-y-2 rounded-lg border border-amber-100/80 p-2">
+                            <div class="flex items-center justify-between">
+                              <p class="text-xs font-semibold uppercase tracking-wide text-ink-soft">Sub-race Traits</p>
+                              <button type="button" class="btn-secondary text-xs py-1 px-2" @click="AddRaceSubraceTrait(subrace)">Add Trait</button>
+                            </div>
+                            <div class="space-y-2" x-show="(subrace.traits ?? []).length > 0" x-cloak>
+                              <template x-for="(trait, traitIndex) in subrace.traits ?? []" :key="item.id + '-subrace-' + subraceIndex + '-trait-' + traitIndex">
+                                <div class="grid gap-2 md:grid-cols-[1fr_1fr_auto]">
+                                  <input x-model="trait.name" type="text" class="input-base" placeholder="Trait name" />
+                                  <input x-model="trait.description" type="text" class="input-base" placeholder="Trait description" />
+                                  <button type="button" class="btn-danger self-end" @click="RemoveRaceSubraceTrait(subrace, traitIndex)">Remove</button>
+                                </div>
+                              </template>
+                            </div>
+                            <p class="text-xs text-ink-soft" x-show="(subrace.traits ?? []).length === 0" x-cloak>No traits yet.</p>
                           </div>
                         </div>
                       </template>
@@ -1852,25 +1922,20 @@ const NpcEasyApp = (): any => {
                 return [];
             }
 
-            const selectedRace = this.catalogs.races.find((item: CatalogItem) => item.id === character.raceId);
+          const selectedRace = this.GetSelectedRaceCatalogItem(character);
             if (!selectedRace) {
                 return [];
             }
 
-            const raceDefinition = Races.find((race) => race.name.toLowerCase() === selectedRace.name.toLowerCase());
-            if (!raceDefinition) {
-                return [];
-            }
-
-            const baseTraits = (raceDefinition.traits ?? []).map((trait) => ({
-                source: raceDefinition.name,
+          const selectedSubrace = this.GetSelectedRaceSubrace(character);
+          const baseTraits = NormalizeRaceTraits(selectedRace.raceTraits).map((trait) => ({
+            source: selectedRace.name,
                 name: trait.name,
                 description: trait.description
             }));
 
-            const selectedSubrace = (raceDefinition.subraces ?? []).find((subrace) => subrace.name === (character.subraceName ?? ''));
-            const subraceTraits = (selectedSubrace?.traits ?? []).map((trait) => ({
-                source: selectedSubrace?.name ?? raceDefinition.name,
+          const subraceTraits = NormalizeRaceTraits(selectedSubrace?.traits).map((trait) => ({
+            source: selectedSubrace?.name ?? selectedRace.name,
                 name: trait.name,
                 description: trait.description
             }));
@@ -2267,14 +2332,45 @@ const NpcEasyApp = (): any => {
             this.SaveAll();
         },
 
+        AddRaceTrait(item: CatalogItem) {
+          item.raceTraits = NormalizeRaceTraits(item.raceTraits);
+          item.raceTraits.push({
+            name: 'New Trait',
+            description: ''
+          });
+          this.SaveAll();
+        },
+
+        RemoveRaceTrait(item: CatalogItem, index: number) {
+          item.raceTraits = NormalizeRaceTraits(item.raceTraits);
+          item.raceTraits.splice(index, 1);
+          this.SaveAll();
+        },
+
         AddRaceSubrace(item: CatalogItem) {
           item.raceSubraces = NormalizeRaceSubraces(item.raceSubraces);
           item.raceSubraces.push({
             name: 'New Sub-race',
             description: '',
             abilityScoreBonuses: {},
-            languages: []
+            languages: [],
+            traits: []
           });
+          this.SaveAll();
+        },
+
+        AddRaceSubraceTrait(subrace: RaceSubrace) {
+          subrace.traits = NormalizeRaceTraits(subrace.traits);
+          subrace.traits.push({
+            name: 'New Trait',
+            description: ''
+          });
+          this.SaveAll();
+        },
+
+        RemoveRaceSubraceTrait(subrace: RaceSubrace, index: number) {
+          subrace.traits = NormalizeRaceTraits(subrace.traits);
+          subrace.traits.splice(index, 1);
           this.SaveAll();
         },
 
@@ -2435,6 +2531,7 @@ const NpcEasyApp = (): any => {
             if (key === 'races') {
               item.raceAbilityScoreBonuses = {};
               item.raceLanguages = [];
+              item.raceTraits = [];
               item.raceSubraces = [];
             }
 
