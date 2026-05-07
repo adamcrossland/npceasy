@@ -23,6 +23,11 @@ type ClassSubclass = {
     features: ClassFeatureRecord[];
 };
 
+type RaceSubrace = {
+  name: string;
+  description: string;
+};
+
 type ClassFeatureSummary = {
     className: string;
     classLevel: number;
@@ -37,6 +42,7 @@ type CatalogItem = {
     description: string;
     classFeatures?: ClassFeatureRecord[];
     classSubclasses?: ClassSubclass[];
+  raceSubraces?: RaceSubrace[];
     effect?: string;
     damage?: string;
     scaling?: string;
@@ -462,6 +468,31 @@ function NormalizeClassSubclasses(subclasses?: Array<ClassSubclass | string>): C
     });
 }
 
+function NormalizeRaceSubraces(subraces?: Array<RaceSubrace | string>): RaceSubrace[] {
+  const normalized = (subraces ?? []).map((subrace): RaceSubrace | null => {
+    if (typeof subrace === 'string') {
+      const name = subrace.trim();
+      return name ? { name, description: '' } : null;
+    }
+
+    const name = (subrace.name ?? '').trim();
+    if (!name) return null;
+
+    return {
+      name,
+      description: (subrace.description ?? '').trim()
+    };
+  }).filter((subrace): subrace is RaceSubrace => subrace !== null);
+
+  const seen = new Set<string>();
+  return normalized.filter((subrace) => {
+    const key = subrace.name.toLowerCase();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
 function NewId(prefix: string): string {
     return `${prefix}-${crypto.randomUUID()}`;
 }
@@ -493,6 +524,29 @@ function MergeClassCatalog(savedClasses: CatalogItem[] | undefined, defaultClass
     return [...mergedDefaults, ...customClasses];
 }
 
+function MergeRaceCatalog(savedRaces: CatalogItem[] | undefined, defaultRaces: CatalogItem[]): CatalogItem[] {
+  const saved = savedRaces ?? [];
+
+  const mergedDefaults = defaultRaces.map((defaultItem) => {
+    const savedMatch = saved.find((item) => item.name === defaultItem.name);
+    return {
+      ...defaultItem,
+      description: savedMatch?.description ?? defaultItem.description,
+      raceSubraces: NormalizeRaceSubraces(savedMatch?.raceSubraces ?? defaultItem.raceSubraces)
+    };
+  });
+
+  const customRaces = saved
+    .filter((item) => !defaultRaces.some((defaultItem) => defaultItem.name === item.name))
+    .map((item) => ({
+      ...item,
+      id: item.id || NewId('race'),
+      raceSubraces: NormalizeRaceSubraces(item.raceSubraces)
+    }));
+
+  return [...mergedDefaults, ...customRaces];
+}
+
 function BuildDefaultState(): AppState {
     return {
         screen: 'Collections',
@@ -521,7 +575,11 @@ function BuildDefaultState(): AppState {
             races: Races.map(item => ({
                 id: `race-${item.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
                 name: item.name,
-                description: item.description
+              description: item.description,
+              raceSubraces: (item.subraces ?? []).map((subrace) => ({
+                name: subrace.name,
+                description: subrace.description
+              }))
             })),
             fightingStyles: DEFAULT_FIGHTING_STYLES
         }
@@ -640,7 +698,7 @@ function LoadState(): AppState {
             catalogs: {
                 classes: MergeClassCatalog(parsed.catalogs?.classes, freshCatalogs.classes),
                 feats: freshCatalogs.feats,
-                races: freshCatalogs.races,
+              races: MergeRaceCatalog(parsed.catalogs?.races, freshCatalogs.races),
                 weapons: NormalizeWeaponCatalog(isLegacyWeaponCatalog ? DEFAULT_WEAPONS : (parsed.catalogs?.weapons ?? freshCatalogs.weapons)),
                 spells: NormalizeSpellCatalog(isLegacySpellCatalog ? DEFAULT_SPELLS : (parsed.catalogs?.spells ?? freshCatalogs.spells)),
                 fightingStyles: parsed.catalogs?.fightingStyles ?? freshCatalogs.fightingStyles
@@ -1161,6 +1219,25 @@ app.innerHTML = `
                   </div>
 
                 </div>
+
+                <div x-show="group.key === 'races'" class="space-y-3">
+                  <div class="rounded-xl border border-amber-200/70 p-3">
+                    <div class="mb-2 flex items-center justify-between">
+                      <p class="field-label !mb-0">Sub-races</p>
+                      <button type="button" class="btn-secondary" @click="AddRaceSubrace(item)">Add Sub-race</button>
+                    </div>
+                    <div class="space-y-2" x-show="(item.raceSubraces ?? []).length > 0" x-cloak>
+                      <template x-for="(subrace, subraceIndex) in item.raceSubraces ?? []" :key="item.id + '-subrace-' + subraceIndex">
+                        <div class="grid gap-2 rounded-lg border border-amber-100 p-2 md:grid-cols-[1fr_1fr_auto]">
+                          <input x-model="subrace.name" type="text" class="input-base" placeholder="Sub-race name" />
+                          <input x-model="subrace.description" type="text" class="input-base" placeholder="Sub-race description" />
+                          <button type="button" class="btn-danger self-end" @click="RemoveRaceSubrace(item, subraceIndex)">Remove</button>
+                        </div>
+                      </template>
+                    </div>
+                    <p class="text-sm text-ink-soft" x-show="(item.raceSubraces ?? []).length === 0" x-cloak>No sub-races yet.</p>
+                  </div>
+                </div>
               </div>
             </template>
           </div>
@@ -1550,6 +1627,11 @@ const NpcEasyApp = (): any => {
             const selectedRace = this.catalogs.races.find((item: CatalogItem) => item.id === character.raceId);
             if (!selectedRace) {
                 return [];
+            }
+
+            const catalogSubraces = NormalizeRaceSubraces(selectedRace.raceSubraces);
+            if (catalogSubraces.length > 0) {
+              return catalogSubraces.map((subrace) => ({ name: subrace.name }));
             }
 
             const raceDefinition = Races.find((race) => race.name.toLowerCase() === selectedRace.name.toLowerCase());
@@ -1992,6 +2074,21 @@ const NpcEasyApp = (): any => {
             this.SaveAll();
         },
 
+        AddRaceSubrace(item: CatalogItem) {
+          item.raceSubraces = NormalizeRaceSubraces(item.raceSubraces);
+          item.raceSubraces.push({
+            name: 'New Sub-race',
+            description: ''
+          });
+          this.SaveAll();
+        },
+
+        RemoveRaceSubrace(item: CatalogItem, index: number) {
+          item.raceSubraces = NormalizeRaceSubraces(item.raceSubraces);
+          item.raceSubraces.splice(index, 1);
+          this.SaveAll();
+        },
+
         AddClassFeature(item: CatalogItem) {
             if (!item.classFeatures) item.classFeatures = [];
             item.classFeatures.push({ name: 'New Feature', level: 1, description: '' });
@@ -2138,6 +2235,10 @@ const NpcEasyApp = (): any => {
 
             if (key === 'classes') {
                 item.classSubclasses = [];
+            }
+
+            if (key === 'races') {
+              item.raceSubraces = [];
             }
 
             if (key === 'spells') {
