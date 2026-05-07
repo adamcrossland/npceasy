@@ -1239,7 +1239,21 @@ app.innerHTML = `
                 </li>
               </template>
             </ul>
-            <h4>Armor</h4>
+            <div x-show="editingCharacter?.fightingStyleId || CanSelectFightingStyle(editingCharacter)" x-cloak>
+              <h4>Fighting Style</h4>
+              <template x-if="editingCharacter?.fightingStyleId">
+                <ul class="list-base text-sm">
+                  <li>
+                    <span class="font-semibold" x-text="GetCatalogName('fightingStyles', editingCharacter?.fightingStyleId || '')"></span>
+                    <span class="block text-xs text-ink-soft" x-text="GetCatalogDescription('fightingStyles', editingCharacter?.fightingStyleId || '')"></span>
+                  </li>
+                </ul>
+              </template>
+              <template x-if="!editingCharacter?.fightingStyleId">
+                <p class="list-base text-sm text-ink-soft">No fighting style selected.</p>
+              </template>
+            </div>
+            <h4 class="mt-3">Armor</h4>
             <ul class="list-base text-sm">
               <li><span class="font-semibold">Armor:</span> <span x-text="GetEquippedArmorName(editingCharacter)"></span></li>
               <li><span class="font-semibold">Shield:</span> <span x-text="editingCharacter?.hasShield ? 'Equipped' : 'Not equipped'"></span></li>
@@ -1299,19 +1313,6 @@ app.innerHTML = `
                 </div>
               </template>
             </div>
-          </div>
-
-          <div class="sheet-card" x-show="editingCharacter?.fightingStyleId || CanSelectFightingStyle(editingCharacter)" x-cloak>
-            <h4>Fighting Style</h4>
-            <template x-if="editingCharacter?.fightingStyleId">
-              <div>
-                <p class="font-semibold" x-text="GetCatalogName('fightingStyles', editingCharacter?.fightingStyleId || '')"></p>
-                <p class="mt-1 text-sm text-ink-soft" x-text="GetCatalogDescription('fightingStyles', editingCharacter?.fightingStyleId || '')"></p>
-              </div>
-            </template>
-            <template x-if="!editingCharacter?.fightingStyleId">
-              <p class="text-sm text-ink-soft">No fighting style selected.</p>
-            </template>
           </div>
 
           <div class="sheet-card">
