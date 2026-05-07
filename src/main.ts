@@ -1246,6 +1246,14 @@ app.innerHTML = `
               <li><span class="font-semibold">Primary:</span> <span x-text="GetEquippedWeaponLabel(editingCharacter, editingCharacter?.primaryWeaponId || '', 'None')"></span></li>
               <li><span class="font-semibold">Off-Hand:</span> <span x-text="GetEquippedWeaponLabel(editingCharacter, editingCharacter?.offhandWeaponId || '', 'None')"></span></li>
             </ul>
+
+            <div x-show="GetHasMagicalProtection(editingCharacter)" x-cloak>
+                <h4>Magical Protection</h4>
+                <ul class="list-base text-sm">
+                <li x-show="GetArcaneWardValue(editingCharacter) !== null" x-cloak><span class="font-semibold">Arcane Ward:</span> <span x-text="GetArcaneWardValue(editingCharacter)"></span></li>
+                </ul>
+            </div>
+
             <ul class="mt-2 list-base text-sm text-red-700" x-show="GetLoadoutWarnings(editingCharacter).length > 0" x-cloak>
               <template x-for="warning in GetLoadoutWarnings(editingCharacter)" :key="'sheet-' + warning">
                 <li x-text="warning"></li>
@@ -2334,6 +2342,45 @@ const NpcEasyApp = (): any => {
 
         GetEquippedArmorName(character: CharacterRecord | null): string {
             return this.GetEquippedArmor(character)?.name ?? 'No armor';
+        },
+
+        GetArcaneWardValue(character: CharacterRecord | null): number | null {
+            if (!character) {
+                return null;
+            }
+
+            const wizardEntries = character.classLevels.filter((entry) => entry.classId.toLowerCase().includes('wizard'));
+            if (wizardEntries.length === 0) {
+                return null;
+            }
+
+            const hasAbjurationSubclass = wizardEntries.some((entry) => (entry.subclassName ?? '').toLowerCase().includes('abjuration'));
+            if (!hasAbjurationSubclass) {
+                return null;
+            }
+
+            const hasArcaneWardFeature = this.GetClassFeatureSummary(character).some((entry: ClassFeatureSummary) => {
+                const isWizardAbjuration = entry.className.toLowerCase().includes('wizard')
+                    && entry.subclassName.toLowerCase().includes('abjuration');
+                if (!isWizardAbjuration) {
+                    return false;
+                }
+
+                return [...entry.classFeatures, ...entry.subclassFeatures]
+                  .some((feature) => /\barcane ward\b/i.test(feature));
+            });
+
+            if (!hasArcaneWardFeature) {
+                return null;
+            }
+
+            const wizardLevel = wizardEntries.reduce((total, entry) => total + entry.level, 0);
+            const intelligenceModifier = this.GetAbilityModifier(character.abilityScores.intelligence);
+            return (wizardLevel * 2) + intelligenceModifier;
+        },
+
+        GetHasMagicalProtection(character: CharacterRecord | null): boolean {
+            return this.GetArcaneWardValue(character) !== null;
         },
 
         GetEquippedWeaponLabel(character: CharacterRecord | null, weaponId: string, fallback: string): string {
