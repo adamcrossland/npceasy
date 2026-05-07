@@ -1323,7 +1323,7 @@ app.innerHTML = `
 
         <div class="sheet-card">
             <h4>Equipment</h4>
-            <p class="text-sm text-ink whitespace-pre-wrap" x-text="editingCharacter?.equipment || '(none specified)'"></p>
+          <p class="text-sm text-ink whitespace-pre-wrap" x-text="GetEquipmentSummary(editingCharacter)"></p>
         </div>
 
           <div class="sheet-card sheet-card-spells" x-show="(editingCharacter?.spellIds?.length ?? 0) > 0" x-cloak>
@@ -2401,6 +2401,33 @@ const NpcEasyApp = (): any => {
 
             return weaponName;
         },
+
+    GetEquipmentSummary(character: CharacterRecord | null): string {
+      if (!character) {
+        return '(none specified)';
+      }
+
+      const lines: string[] = [];
+      const notes = (character.equipment ?? '').trim();
+      if (notes.length > 0) {
+        lines.push(notes);
+      }
+
+      lines.push(`Armor: ${this.GetEquippedArmorName(character)}`);
+      lines.push(`Shield: ${character.hasShield ? 'Equipped' : 'Not equipped'}`);
+
+      const weaponLabels = (character.weaponIds ?? [])
+        .map((weaponId) => this.GetEquippedWeaponLabel(character, weaponId, ''))
+        .filter((label) => label.trim().length > 0);
+
+      if (weaponLabels.length > 0) {
+        lines.push(`Weapons: ${weaponLabels.join(', ')}`);
+      } else {
+        lines.push('Weapons: None');
+      }
+
+      return lines.join('\n');
+    },
 
         GetDisplayedArmorClass(character: CharacterRecord | null): number {
             if (!character) {
