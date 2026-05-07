@@ -3,7 +3,7 @@ import { Armors } from './armors';
 import { AllClasses } from './classes';
 import { Feats, GetFeatByName } from './feats';
 import { FightingStyles } from './fightingStyles';
-import { Races } from './races';
+import { Races, type RaceAbilityScores } from './races';
 import { Spells, GetSpellByName } from './spells';
 import { SrdWeapons } from './weapons';
 
@@ -26,6 +26,7 @@ type ClassSubclass = {
 type RaceSubrace = {
   name: string;
   description: string;
+  abilityScoreBonuses?: RaceAbilityScores;
   languages?: string[];
 };
 
@@ -44,6 +45,7 @@ type CatalogItem = {
     classFeatures?: ClassFeatureRecord[];
     classSubclasses?: ClassSubclass[];
   raceSubraces?: RaceSubrace[];
+    raceAbilityScoreBonuses?: RaceAbilityScores;
     raceLanguages?: string[];
     effect?: string;
     damage?: string;
@@ -203,6 +205,15 @@ const DEFAULT_FIGHTING_STYLES: CatalogItem[] = FightingStyles.map((item) => ({
     name: item.name,
     description: item.description
 }));
+
+const AbilityScoreKeys: Array<keyof CharacterRecord['abilityScores']> = [
+  'strength',
+  'dexterity',
+  'constitution',
+  'intelligence',
+  'wisdom',
+  'charisma'
+];
 
 function SummarizeSpellEffect(description: string): string {
     const text = (description ?? '').replace(/\r/g, '').trim();
@@ -487,11 +498,24 @@ function NormalizeClassSubclasses(subclasses?: Array<ClassSubclass | string>): C
     });
   }
 
+function NormalizeRaceAbilityScoreBonuses(bonuses?: RaceAbilityScores): RaceAbilityScores {
+    const normalized: RaceAbilityScores = {};
+
+    for (const key of AbilityScoreKeys) {
+        const value = bonuses?.[key];
+        if (typeof value === 'number' && Number.isFinite(value) && value !== 0) {
+            normalized[key] = value;
+        }
+    }
+
+    return normalized;
+}
+
 function NormalizeRaceSubraces(subraces?: Array<RaceSubrace | string>): RaceSubrace[] {
   const normalized = (subraces ?? []).map((subrace): RaceSubrace | null => {
     if (typeof subrace === 'string') {
       const name = subrace.trim();
-      return name ? { name, description: '', languages: [] } : null;
+      return name ? { name, description: '', abilityScoreBonuses: {}, languages: [] } : null;
     }
 
     const name = (subrace.name ?? '').trim();
@@ -500,6 +524,7 @@ function NormalizeRaceSubraces(subraces?: Array<RaceSubrace | string>): RaceSubr
     return {
       name,
       description: (subrace.description ?? '').trim(),
+      abilityScoreBonuses: NormalizeRaceAbilityScoreBonuses((subrace as RaceSubrace).abilityScoreBonuses),
       languages: NormalizeStringList((subrace as RaceSubrace).languages)
     };
   }).filter((subrace): subrace is RaceSubrace => subrace !== null);
@@ -552,6 +577,7 @@ function MergeRaceCatalog(savedRaces: CatalogItem[] | undefined, defaultRaces: C
     return {
       ...defaultItem,
       description: savedMatch?.description ?? defaultItem.description,
+      raceAbilityScoreBonuses: NormalizeRaceAbilityScoreBonuses(savedMatch?.raceAbilityScoreBonuses ?? defaultItem.raceAbilityScoreBonuses),
       raceLanguages: NormalizeStringList(savedMatch?.raceLanguages ?? defaultItem.raceLanguages),
       raceSubraces: NormalizeRaceSubraces(savedMatch?.raceSubraces ?? defaultItem.raceSubraces)
     };
@@ -562,6 +588,7 @@ function MergeRaceCatalog(savedRaces: CatalogItem[] | undefined, defaultRaces: C
     .map((item) => ({
       ...item,
       id: item.id || NewId('race'),
+      raceAbilityScoreBonuses: NormalizeRaceAbilityScoreBonuses(item.raceAbilityScoreBonuses),
       raceLanguages: NormalizeStringList(item.raceLanguages),
       raceSubraces: NormalizeRaceSubraces(item.raceSubraces)
     }));
@@ -598,10 +625,12 @@ function BuildDefaultState(): AppState {
                 id: `race-${item.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
                 name: item.name,
               description: item.description,
+              raceAbilityScoreBonuses: NormalizeRaceAbilityScoreBonuses(item.abilityScoreIncreases),
               raceLanguages: NormalizeStringList(item.languages),
               raceSubraces: (item.subraces ?? []).map((subrace) => ({
                 name: subrace.name,
                 description: subrace.description,
+                abilityScoreBonuses: NormalizeRaceAbilityScoreBonuses(subrace.abilityScoreIncreases),
                 languages: NormalizeStringList(subrace.languages)
               }))
             })),
@@ -902,21 +931,27 @@ app.innerHTML = `
               <div class="grid gap-3 sm:grid-cols-3 lg:grid-cols-6">
                 <label class="field-label">STR
                   <input x-model.number="editingCharacter.abilityScores.strength" type="number" class="input-base" />
+                  <span class="text-xs text-ink-soft" x-text="GetAbilityScoreWithBonusSummary(editingCharacter, 'strength')"></span>
                 </label>
                 <label class="field-label">DEX
                   <input x-model.number="editingCharacter.abilityScores.dexterity" type="number" class="input-base" />
+                  <span class="text-xs text-ink-soft" x-text="GetAbilityScoreWithBonusSummary(editingCharacter, 'dexterity')"></span>
                 </label>
                 <label class="field-label">CON
                   <input x-model.number="editingCharacter.abilityScores.constitution" type="number" class="input-base" />
+                  <span class="text-xs text-ink-soft" x-text="GetAbilityScoreWithBonusSummary(editingCharacter, 'constitution')"></span>
                 </label>
                 <label class="field-label">INT
                   <input x-model.number="editingCharacter.abilityScores.intelligence" type="number" class="input-base" />
+                  <span class="text-xs text-ink-soft" x-text="GetAbilityScoreWithBonusSummary(editingCharacter, 'intelligence')"></span>
                 </label>
                 <label class="field-label">WIS
                   <input x-model.number="editingCharacter.abilityScores.wisdom" type="number" class="input-base" />
+                  <span class="text-xs text-ink-soft" x-text="GetAbilityScoreWithBonusSummary(editingCharacter, 'wisdom')"></span>
                 </label>
                 <label class="field-label">CHA
                   <input x-model.number="editingCharacter.abilityScores.charisma" type="number" class="input-base" />
+                  <span class="text-xs text-ink-soft" x-text="GetAbilityScoreWithBonusSummary(editingCharacter, 'charisma')"></span>
                 </label>
               </div>
             </div>
@@ -1171,6 +1206,10 @@ app.innerHTML = `
           <div class="space-y-2" @input.debounce.300ms="SaveAll()">
             <template x-for="item in catalogs[group.key]" :key="item.id">
               <div class="space-y-2">
+                <div x-show="group.key === 'races'" class="rounded-xl border border-amber-300/80 bg-amber-50/80 px-4 py-3" x-cloak>
+                  <h4 class="font-display text-xl text-ink" x-text="item.name || 'New Race'"></h4>
+                </div>
+
                 <div
                   class="grid gap-2 rounded-xl border border-amber-200 p-3"
                   :class="group.key === 'spells' ? 'md:grid-cols-[180px_1fr_90px_260px_auto]' : 'md:grid-cols-[220px_1fr_auto]'"
@@ -1258,6 +1297,23 @@ app.innerHTML = `
 
                 <div x-show="group.key === 'races'" class="space-y-3">
                   <div class="rounded-xl border border-amber-200/70 p-3 space-y-2">
+                    <label class="field-label !mb-0">Race Ability Bonuses</label>
+                    <div class="grid gap-2 sm:grid-cols-3 lg:grid-cols-6">
+                      <template x-for="ability in GetAbilityScoreEditorFields()" :key="item.id + '-race-bonus-' + ability.key">
+                        <label class="field-label !mb-0">
+                          <span x-text="ability.label"></span>
+                          <input
+                            :value="item.raceAbilityScoreBonuses?.[ability.key] ?? 0"
+                            @input="SetRaceAbilityScoreBonus(item, ability.key, $event.target.value)"
+                            type="number"
+                            class="input-base"
+                          />
+                        </label>
+                      </template>
+                    </div>
+                  </div>
+
+                  <div class="rounded-xl border border-amber-200/70 p-3 space-y-2">
                     <label class="field-label !mb-0">Race Languages</label>
                     <input
                       :value="(item.raceLanguages ?? []).join(', ')"
@@ -1275,7 +1331,8 @@ app.innerHTML = `
                     </div>
                     <div class="space-y-2" x-show="(item.raceSubraces ?? []).length > 0" x-cloak>
                       <template x-for="(subrace, subraceIndex) in item.raceSubraces ?? []" :key="item.id + '-subrace-' + subraceIndex">
-                        <div class="grid gap-2 rounded-lg border border-amber-100 p-2 md:grid-cols-[1fr_1fr_1fr_auto]">
+                        <div class="space-y-2 rounded-lg border border-amber-100 p-2">
+                          <div class="grid gap-2 md:grid-cols-[1fr_1fr_1fr_auto]">
                           <input x-model="subrace.name" type="text" class="input-base" placeholder="Sub-race name" />
                           <input x-model="subrace.description" type="text" class="input-base" placeholder="Sub-race description" />
                           <input
@@ -1286,6 +1343,20 @@ app.innerHTML = `
                             placeholder="Sub-race languages"
                           />
                           <button type="button" class="btn-danger self-end" @click="RemoveRaceSubrace(item, subraceIndex)">Remove</button>
+                          </div>
+                          <div class="grid gap-2 sm:grid-cols-3 lg:grid-cols-6">
+                            <template x-for="ability in GetAbilityScoreEditorFields()" :key="item.id + '-subrace-' + subraceIndex + '-' + ability.key">
+                              <label class="field-label !mb-0">
+                                <span x-text="ability.label"></span>
+                                <input
+                                  :value="subrace.abilityScoreBonuses?.[ability.key] ?? 0"
+                                  @input="SetRaceSubraceAbilityScoreBonus(subrace, ability.key, $event.target.value)"
+                                  type="number"
+                                  class="input-base"
+                                />
+                              </label>
+                            </template>
+                          </div>
                         </div>
                       </template>
                     </div>
@@ -1336,12 +1407,12 @@ app.innerHTML = `
           <div class="sheet-card">
             <h4>Ability Scores</h4>
             <dl class="score-grid">
-              <div><dt>STR</dt><dd x-text="FormatAbilityScore(editingCharacter?.abilityScores.strength ?? 10)"></dd></div>
-              <div><dt>DEX</dt><dd x-text="FormatAbilityScore(editingCharacter?.abilityScores.dexterity ?? 10)"></dd></div>
-              <div><dt>CON</dt><dd x-text="FormatAbilityScore(editingCharacter?.abilityScores.constitution ?? 10)"></dd></div>
-              <div><dt>INT</dt><dd x-text="FormatAbilityScore(editingCharacter?.abilityScores.intelligence ?? 10)"></dd></div>
-              <div><dt>WIS</dt><dd x-text="FormatAbilityScore(editingCharacter?.abilityScores.wisdom ?? 10)"></dd></div>
-              <div><dt>CHA</dt><dd x-text="FormatAbilityScore(editingCharacter?.abilityScores.charisma ?? 10)"></dd></div>
+              <div><dt>STR</dt><dd x-text="FormatAbilityScore(GetEffectiveAbilityScore(editingCharacter, 'strength'))"></dd></div>
+              <div><dt>DEX</dt><dd x-text="FormatAbilityScore(GetEffectiveAbilityScore(editingCharacter, 'dexterity'))"></dd></div>
+              <div><dt>CON</dt><dd x-text="FormatAbilityScore(GetEffectiveAbilityScore(editingCharacter, 'constitution'))"></dd></div>
+              <div><dt>INT</dt><dd x-text="FormatAbilityScore(GetEffectiveAbilityScore(editingCharacter, 'intelligence'))"></dd></div>
+              <div><dt>WIS</dt><dd x-text="FormatAbilityScore(GetEffectiveAbilityScore(editingCharacter, 'wisdom'))"></dd></div>
+              <div><dt>CHA</dt><dd x-text="FormatAbilityScore(GetEffectiveAbilityScore(editingCharacter, 'charisma'))"></dd></div>
             </dl>
             <h4>Saving Throws</h4>
             <dl class="score-grid">
@@ -1692,6 +1763,74 @@ const NpcEasyApp = (): any => {
             return (raceDefinition?.subraces ?? []).map((subrace) => ({ name: subrace.name }));
         },
 
+          GetSelectedRaceCatalogItem(character: CharacterRecord | null): CatalogItem | undefined {
+            if (!character?.raceId) {
+              return undefined;
+            }
+
+            return this.catalogs.races.find((item: CatalogItem) => item.id === character.raceId);
+          },
+
+          GetSelectedRaceSubrace(character: CharacterRecord | null): RaceSubrace | undefined {
+            const selectedRace = this.GetSelectedRaceCatalogItem(character);
+            if (!selectedRace) {
+              return undefined;
+            }
+
+            return NormalizeRaceSubraces(selectedRace.raceSubraces)
+              .find((subrace) => subrace.name === (character?.subraceName ?? ''));
+          },
+
+          GetAbilityScoreEditorFields(): Array<{ key: keyof CharacterRecord['abilityScores']; label: string }> {
+            return [
+              { key: 'strength', label: 'STR' },
+              { key: 'dexterity', label: 'DEX' },
+              { key: 'constitution', label: 'CON' },
+              { key: 'intelligence', label: 'INT' },
+              { key: 'wisdom', label: 'WIS' },
+              { key: 'charisma', label: 'CHA' }
+            ];
+          },
+
+          GetRaceAbilityScoreBonuses(character: CharacterRecord | null): RaceAbilityScores {
+            const selectedRace = this.GetSelectedRaceCatalogItem(character);
+            const selectedSubrace = this.GetSelectedRaceSubrace(character);
+            const combined: RaceAbilityScores = {};
+
+            for (const key of AbilityScoreKeys) {
+              const total = (selectedRace?.raceAbilityScoreBonuses?.[key] ?? 0) + (selectedSubrace?.abilityScoreBonuses?.[key] ?? 0);
+              if (total !== 0) {
+                combined[key] = total;
+              }
+            }
+
+            return combined;
+          },
+
+          GetEffectiveAbilityScore(character: CharacterRecord | null, key: keyof CharacterRecord['abilityScores']): number {
+            if (!character) {
+              return 10;
+            }
+
+            return (character.abilityScores[key] ?? 10) + (this.GetRaceAbilityScoreBonuses(character)[key] ?? 0);
+          },
+
+          GetAbilityScoreWithBonusSummary(character: CharacterRecord | null, key: keyof CharacterRecord['abilityScores']): string {
+            if (!character) {
+              return '10';
+            }
+
+            const baseScore = character.abilityScores[key] ?? 10;
+            const bonus = this.GetRaceAbilityScoreBonuses(character)[key] ?? 0;
+            if (bonus === 0) {
+              return `${baseScore}`;
+            }
+
+            const total = baseScore + bonus;
+            const bonusText = bonus > 0 ? `+${bonus}` : `${bonus}`;
+            return `${baseScore} ${bonusText} = ${total}`;
+          },
+
           GetDisplayedAncestryName(character: CharacterRecord | null): string {
             if (!character?.raceId) {
               return 'Unknown';
@@ -1749,14 +1888,13 @@ const NpcEasyApp = (): any => {
                 this.editingCharacter.subraceName = '';
             }
 
-            const selectedRace = this.catalogs.races.find((item: CatalogItem) => item.id === this.editingCharacter?.raceId);
+            const selectedRace = this.GetSelectedRaceCatalogItem(this.editingCharacter);
             if (!selectedRace) {
               this.editingCharacter.languages = '';
               return;
             }
 
-            const selectedSubrace = NormalizeRaceSubraces(selectedRace.raceSubraces)
-              .find((subrace) => subrace.name === (this.editingCharacter.subraceName ?? ''));
+            const selectedSubrace = this.GetSelectedRaceSubrace(this.editingCharacter);
             const combinedLanguages = NormalizeStringList([
               ...(selectedRace.raceLanguages ?? []),
               ...(selectedSubrace?.languages ?? [])
@@ -2134,6 +2272,7 @@ const NpcEasyApp = (): any => {
           item.raceSubraces.push({
             name: 'New Sub-race',
             description: '',
+            abilityScoreBonuses: {},
             languages: []
           });
           this.SaveAll();
@@ -2294,6 +2433,7 @@ const NpcEasyApp = (): any => {
             }
 
             if (key === 'races') {
+              item.raceAbilityScoreBonuses = {};
               item.raceLanguages = [];
               item.raceSubraces = [];
             }
@@ -2322,8 +2462,36 @@ const NpcEasyApp = (): any => {
           this.SaveAll();
         },
 
+        SetRaceAbilityScoreBonus(item: CatalogItem, key: keyof CharacterRecord['abilityScores'], value: string) {
+          const parsed = Number.parseInt(value, 10);
+          const bonuses = NormalizeRaceAbilityScoreBonuses(item.raceAbilityScoreBonuses);
+
+          if (Number.isFinite(parsed) && parsed !== 0) {
+            bonuses[key] = parsed;
+          } else {
+            delete bonuses[key];
+          }
+
+          item.raceAbilityScoreBonuses = bonuses;
+          this.SaveAll();
+        },
+
         SetRaceSubraceLanguages(subrace: RaceSubrace, value: string) {
           subrace.languages = NormalizeStringList(value.split(','));
+          this.SaveAll();
+        },
+
+        SetRaceSubraceAbilityScoreBonus(subrace: RaceSubrace, key: keyof CharacterRecord['abilityScores'], value: string) {
+          const parsed = Number.parseInt(value, 10);
+          const bonuses = NormalizeRaceAbilityScoreBonuses(subrace.abilityScoreBonuses);
+
+          if (Number.isFinite(parsed) && parsed !== 0) {
+            bonuses[key] = parsed;
+          } else {
+            delete bonuses[key];
+          }
+
+          subrace.abilityScoreBonuses = bonuses;
           this.SaveAll();
         },
 
@@ -2428,7 +2596,7 @@ const NpcEasyApp = (): any => {
             ];
             return entries.map(({ key, label, abbr }) => {
                 const proficient = proficientSaves.has(label.toLowerCase());
-                const mod = this.GetAbilityModifier(character.abilityScores[key]) + (proficient ? profBonus : 0);
+              const mod = this.GetAbilityModifier(this.GetEffectiveAbilityScore(character, key)) + (proficient ? profBonus : 0);
                 const value = mod >= 0 ? `+${mod}` : `${mod}`;
                 return { label: abbr, value, proficient };
             });
@@ -2576,7 +2744,7 @@ const NpcEasyApp = (): any => {
             }
 
             const wizardLevel = wizardEntries.reduce((total, entry) => total + entry.level, 0);
-            const intelligenceModifier = this.GetAbilityModifier(character.abilityScores.intelligence);
+            const intelligenceModifier = this.GetAbilityModifier(this.GetEffectiveAbilityScore(character, 'intelligence'));
             return (wizardLevel * 2) + intelligenceModifier;
         },
 
@@ -2637,7 +2805,7 @@ const NpcEasyApp = (): any => {
 
             const styleName = this.GetSelectedFightingStyleName(character);
             const armor = this.GetEquippedArmor(character);
-            const dexterityModifier = this.GetAbilityModifier(character.abilityScores.dexterity);
+            const dexterityModifier = this.GetAbilityModifier(this.GetEffectiveAbilityScore(character, 'dexterity'));
             const armorBase = armor
                 ? armor.baseArmorClass + Math.min(dexterityModifier, armor.maxDexBonus ?? dexterityModifier)
                 : 10 + dexterityModifier;
@@ -2659,7 +2827,7 @@ const NpcEasyApp = (): any => {
             if (armor) {
                 notes.push(armor.description);
             } else {
-                notes.push(`No armor equipped. Using unarmored AC 10 + Dex modifier (${10 + this.GetAbilityModifier(character.abilityScores.dexterity)}).`);
+              notes.push(`No armor equipped. Using unarmored AC 10 + Dex modifier (${10 + this.GetAbilityModifier(this.GetEffectiveAbilityScore(character, 'dexterity'))}).`);
             }
             if (character.hasShield) {
                 notes.push('Shield equipped: +2 AC.');
@@ -2689,8 +2857,8 @@ const NpcEasyApp = (): any => {
             const isOffhandWeapon = character.offhandWeaponId === weaponId;
             const isUsedTwoHanded = isPrimaryWeapon && this.IsPrimaryWeaponLockedToTwoHands(character);
 
-            const strMod = this.GetAbilityModifier(character.abilityScores.strength);
-            const dexMod = this.GetAbilityModifier(character.abilityScores.dexterity);
+            const strMod = this.GetAbilityModifier(this.GetEffectiveAbilityScore(character, 'strength'));
+            const dexMod = this.GetAbilityModifier(this.GetEffectiveAbilityScore(character, 'dexterity'));
 
             let abilityMod: number;
             if (isFinesse) {
@@ -2786,8 +2954,8 @@ const NpcEasyApp = (): any => {
             }
 
             return abilities.reduce((best, current) => {
-                const bestMod = this.GetAbilityModifier(character.abilityScores[best]);
-                const currentMod = this.GetAbilityModifier(character.abilityScores[current]);
+              const bestMod = this.GetAbilityModifier(this.GetEffectiveAbilityScore(character, best));
+              const currentMod = this.GetAbilityModifier(this.GetEffectiveAbilityScore(character, current));
                 return currentMod > bestMod ? current : best;
             });
         },
@@ -2814,7 +2982,7 @@ const NpcEasyApp = (): any => {
             if (!ability) {
                 return 8;
             }
-            const abilityMod = this.GetAbilityModifier(character.abilityScores[ability as keyof CharacterRecord['abilityScores']]);
+            const abilityMod = this.GetAbilityModifier(this.GetEffectiveAbilityScore(character, ability as keyof CharacterRecord['abilityScores']));
             const profBonus = this.GetProficiencyBonus(this.GetTotalCharacterLevel(character));
             return 8 + profBonus + abilityMod;
         },
@@ -2830,7 +2998,7 @@ const NpcEasyApp = (): any => {
             }
 
             const abilityKey = ability as keyof CharacterRecord['abilityScores'];
-            const abilityMod = this.GetAbilityModifier(character.abilityScores[abilityKey]);
+            const abilityMod = this.GetAbilityModifier(this.GetEffectiveAbilityScore(character, abilityKey));
             const profBonus = this.GetProficiencyBonus(this.GetTotalCharacterLevel(character));
             const toHit = profBonus + abilityMod;
             const toHitText = toHit >= 0 ? `+${toHit}` : `${toHit}`;
