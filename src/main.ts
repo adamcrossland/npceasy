@@ -1120,16 +1120,28 @@ app.innerHTML = `
     </section>
 
     <section x-show="screen === 'Compendium'" class="space-y-5" x-cloak>
-      <div class="panel">
+      <div class="panel" id="compendium-top">
         <h2 class="panel-title">Editable Compendium</h2>
         <p class="panel-subtitle">Add, remove, or update classes, feats, weapons, spells, and races. Changes are used everywhere in the app.</p>
+        <div class="mt-4 flex flex-wrap gap-2">
+          <template x-for="entry in compendiumSections" :key="'jump-' + entry.key">
+            <a
+              class="btn-secondary px-3 py-2 text-xs"
+              :href="'#' + GetCompendiumSectionAnchor(entry.key)"
+              x-text="entry.label"
+            ></a>
+          </template>
+        </div>
       </div>
 
       <template x-for="group in compendiumSections" :key="group.key">
-        <div class="panel">
+        <div class="panel" :id="GetCompendiumSectionAnchor(group.key)">
           <div class="mb-4 flex flex-wrap items-center justify-between gap-2">
             <h3 class="font-display text-2xl text-ink" x-text="group.label"></h3>
-            <button class="btn-primary" @click="AddCompendiumItem(group.key)">Add Item</button>
+            <div class="flex flex-wrap items-center gap-2">
+              <a x-show="group.key !== 'classes'" class="btn-secondary px-3 py-2 text-xs" href="#compendium-top">Back to top</a>
+              <button class="btn-primary" @click="AddCompendiumItem(group.key)">Add Item</button>
+            </div>
           </div>
 
           <div class="space-y-2" @input.debounce.300ms="SaveAll()">
@@ -2948,6 +2960,10 @@ const NpcEasyApp = (): any => {
 
         GetCatalogDescription(key: CatalogKey, id: string): string {
             return this.catalogs[key].find((item: CatalogItem) => item.id === id)?.description ?? '';
+        },
+
+        GetCompendiumSectionAnchor(key: CatalogKey): string {
+          return `compendium-${key}`;
         },
 
         GetFullFeatDescription(id: string): string {
