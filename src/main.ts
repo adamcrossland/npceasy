@@ -1184,7 +1184,7 @@ app.innerHTML = `
             <p class="sheet-eyebrow">Character</p>
             <h3 class="sheet-name" x-text="editingCharacter?.name || 'Unnamed Character'"></h3>
             <p class="sheet-subline">
-              <span x-text="GetCatalogName('races', editingCharacter?.raceId || '')"></span>
+              <span x-text="GetDisplayedAncestryName(editingCharacter)"></span>
               <span> | Level </span><span x-text="GetTotalCharacterLevel(editingCharacter)"></span>
               <span> | </span><span x-text="editingCharacter?.alignment || 'Unaligned'"></span>
             </p>
@@ -1555,6 +1555,22 @@ const NpcEasyApp = (): any => {
             const raceDefinition = Races.find((race) => race.name.toLowerCase() === selectedRace.name.toLowerCase());
             return (raceDefinition?.subraces ?? []).map((subrace) => ({ name: subrace.name }));
         },
+
+          GetDisplayedAncestryName(character: CharacterRecord | null): string {
+            if (!character?.raceId) {
+              return 'Unknown';
+            }
+
+            const subraceName = (character.subraceName ?? '').trim();
+            if (subraceName.length > 0) {
+              const hasSelectedSubrace = this.GetSubraceOptions(character).some((subrace: { name: string }) => subrace.name === subraceName);
+              if (hasSelectedSubrace) {
+                return subraceName;
+              }
+            }
+
+            return this.GetCatalogName('races', character.raceId);
+          },
 
         GetRacialTraits(character: CharacterRecord | null): Array<{ source: string; name: string; description: string }> {
             if (!character?.raceId) {
