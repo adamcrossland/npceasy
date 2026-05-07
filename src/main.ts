@@ -704,8 +704,8 @@ app.innerHTML = `
         <h2 class="panel-title">Character Collections</h2>
         <p class="panel-subtitle">Choose an existing group of characters, or start a new collection for a campaign, location, or faction.</p>
         <div class="mt-4 flex flex-col gap-3 md:flex-row">
-          <input x-model="newCollectionName" type="text" placeholder="Example: Storm Coast NPCs" class="input-base" />
-          <button class="btn-primary md:w-auto" @click="CreateCollection()">Create Collection</button>
+          <input x-model="newCollectionName" @keydown.enter.prevent="newCollectionName.trim() && CreateCollection()" type="text" placeholder="Example: Storm Coast NPCs" class="input-base" />
+          <button class="btn-primary md:w-auto" :disabled="!newCollectionName.trim()" :class="{ 'opacity-50 cursor-not-allowed': !newCollectionName.trim() }" @click="CreateCollection()">Create Collection</button>
         </div>
       </div>
 
