@@ -1612,6 +1612,20 @@ const NpcEasyApp = (): any => {
             if (!availableSubraces.includes(this.editingCharacter.subraceName ?? '')) {
                 this.editingCharacter.subraceName = '';
             }
+
+            const selectedRace = this.catalogs.races.find((item: CatalogItem) => item.id === this.editingCharacter?.raceId);
+            if (!selectedRace) {
+              this.editingCharacter.languages = '';
+              return;
+            }
+
+            const raceDefinition = Races.find((race) => race.name.toLowerCase() === selectedRace.name.toLowerCase());
+            if (!raceDefinition) {
+              this.editingCharacter.languages = '';
+              return;
+            }
+
+            this.editingCharacter.languages = (raceDefinition.languages ?? []).join(', ');
         },
 
         IsRangedWeapon(weapon: CatalogItem | undefined): boolean {
