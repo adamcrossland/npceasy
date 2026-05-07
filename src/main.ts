@@ -26,6 +26,7 @@ type ClassSubclass = {
 type RaceSubrace = {
   name: string;
   description: string;
+  languages?: string[];
 };
 
 type ClassFeatureSummary = {
@@ -43,6 +44,7 @@ type CatalogItem = {
     classFeatures?: ClassFeatureRecord[];
     classSubclasses?: ClassSubclass[];
   raceSubraces?: RaceSubrace[];
+    raceLanguages?: string[];
     effect?: string;
     damage?: string;
     scaling?: string;
@@ -468,11 +470,28 @@ function NormalizeClassSubclasses(subclasses?: Array<ClassSubclass | string>): C
     });
 }
 
+  function NormalizeStringList(values?: Array<string | null | undefined>): string[] {
+    const normalized = (values ?? [])
+      .map((value) => (value ?? '').trim())
+      .filter((value) => value.length > 0);
+
+    const seen = new Set<string>();
+    return normalized.filter((value) => {
+      const key = value.toLowerCase();
+      if (seen.has(key)) {
+        return false;
+      }
+
+      seen.add(key);
+      return true;
+    });
+  }
+
 function NormalizeRaceSubraces(subraces?: Array<RaceSubrace | string>): RaceSubrace[] {
   const normalized = (subraces ?? []).map((subrace): RaceSubrace | null => {
     if (typeof subrace === 'string') {
       const name = subrace.trim();
-      return name ? { name, description: '' } : null;
+      return name ? { name, description: '', languages: [] } : null;
     }
 
     const name = (subrace.name ?? '').trim();
@@ -480,7 +499,8 @@ function NormalizeRaceSubraces(subraces?: Array<RaceSubrace | string>): RaceSubr
 
     return {
       name,
-      description: (subrace.description ?? '').trim()
+      description: (subrace.description ?? '').trim(),
+      languages: NormalizeStringList((subrace as RaceSubrace).languages)
     };
   }).filter((subrace): subrace is RaceSubrace => subrace !== null);
 
@@ -532,6 +552,7 @@ function MergeRaceCatalog(savedRaces: CatalogItem[] | undefined, defaultRaces: C
     return {
       ...defaultItem,
       description: savedMatch?.description ?? defaultItem.description,
+      raceLanguages: NormalizeStringList(savedMatch?.raceLanguages ?? defaultItem.raceLanguages),
       raceSubraces: NormalizeRaceSubraces(savedMatch?.raceSubraces ?? defaultItem.raceSubraces)
     };
   });
@@ -541,6 +562,7 @@ function MergeRaceCatalog(savedRaces: CatalogItem[] | undefined, defaultRaces: C
     .map((item) => ({
       ...item,
       id: item.id || NewId('race'),
+      raceLanguages: NormalizeStringList(item.raceLanguages),
       raceSubraces: NormalizeRaceSubraces(item.raceSubraces)
     }));
 
@@ -576,9 +598,11 @@ function BuildDefaultState(): AppState {
                 id: `race-${item.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
                 name: item.name,
               description: item.description,
+              raceLanguages: NormalizeStringList(item.languages),
               raceSubraces: (item.subraces ?? []).map((subrace) => ({
                 name: subrace.name,
-                description: subrace.description
+                description: subrace.description,
+                languages: NormalizeStringList(subrace.languages)
               }))
             })),
             fightingStyles: DEFAULT_FIGHTING_STYLES
@@ -1233,6 +1257,17 @@ app.innerHTML = `
                 </div>
 
                 <div x-show="group.key === 'races'" class="space-y-3">
+                  <div class="rounded-xl border border-amber-200/70 p-3 space-y-2">
+                    <label class="field-label !mb-0">Race Languages</label>
+                    <input
+                      :value="(item.raceLanguages ?? []).join(', ')"
+                      @input="SetRaceLanguages(item, $event.target.value)"
+                      type="text"
+                      class="input-base"
+                      placeholder="Common, Elvish"
+                    />
+                  </div>
+
                   <div class="rounded-xl border border-amber-200/70 p-3">
                     <div class="mb-2 flex items-center justify-between">
                       <p class="field-label !mb-0">Sub-races</p>
@@ -1240,9 +1275,16 @@ app.innerHTML = `
                     </div>
                     <div class="space-y-2" x-show="(item.raceSubraces ?? []).length > 0" x-cloak>
                       <template x-for="(subrace, subraceIndex) in item.raceSubraces ?? []" :key="item.id + '-subrace-' + subraceIndex">
-                        <div class="grid gap-2 rounded-lg border border-amber-100 p-2 md:grid-cols-[1fr_1fr_auto]">
+                        <div class="grid gap-2 rounded-lg border border-amber-100 p-2 md:grid-cols-[1fr_1fr_1fr_auto]">
                           <input x-model="subrace.name" type="text" class="input-base" placeholder="Sub-race name" />
                           <input x-model="subrace.description" type="text" class="input-base" placeholder="Sub-race description" />
+                          <input
+                            :value="(subrace.languages ?? []).join(', ')"
+                            @input="SetRaceSubraceLanguages(subrace, $event.target.value)"
+                            type="text"
+                            class="input-base"
+                            placeholder="Sub-race languages"
+                          />
                           <button type="button" class="btn-danger self-end" @click="RemoveRaceSubrace(item, subraceIndex)">Remove</button>
                         </div>
                       </template>
@@ -1713,13 +1755,14 @@ const NpcEasyApp = (): any => {
               return;
             }
 
-            const raceDefinition = Races.find((race) => race.name.toLowerCase() === selectedRace.name.toLowerCase());
-            if (!raceDefinition) {
-              this.editingCharacter.languages = '';
-              return;
-            }
+            const selectedSubrace = NormalizeRaceSubraces(selectedRace.raceSubraces)
+              .find((subrace) => subrace.name === (this.editingCharacter.subraceName ?? ''));
+            const combinedLanguages = NormalizeStringList([
+              ...(selectedRace.raceLanguages ?? []),
+              ...(selectedSubrace?.languages ?? [])
+            ]);
 
-            this.editingCharacter.languages = (raceDefinition.languages ?? []).join(', ');
+            this.editingCharacter.languages = combinedLanguages.join(', ');
         },
 
         IsRangedWeapon(weapon: CatalogItem | undefined): boolean {
@@ -2090,7 +2133,8 @@ const NpcEasyApp = (): any => {
           item.raceSubraces = NormalizeRaceSubraces(item.raceSubraces);
           item.raceSubraces.push({
             name: 'New Sub-race',
-            description: ''
+            description: '',
+            languages: []
           });
           this.SaveAll();
         },
@@ -2250,6 +2294,7 @@ const NpcEasyApp = (): any => {
             }
 
             if (key === 'races') {
+              item.raceLanguages = [];
               item.raceSubraces = [];
             }
 
@@ -2270,6 +2315,16 @@ const NpcEasyApp = (): any => {
                 .filter((className: string) => className.length > 0);
 
             this.SaveAll();
+        },
+
+        SetRaceLanguages(item: CatalogItem, value: string) {
+          item.raceLanguages = NormalizeStringList(value.split(','));
+          this.SaveAll();
+        },
+
+        SetRaceSubraceLanguages(subrace: RaceSubrace, value: string) {
+          subrace.languages = NormalizeStringList(value.split(','));
+          this.SaveAll();
         },
 
         RemoveCompendiumItem(key: CatalogKey, id: string) {
