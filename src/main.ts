@@ -1502,7 +1502,12 @@ app.innerHTML = `
                 <textarea x-model="editingCharacter.traits" class="input-base min-h-[90px]"></textarea>
               </label>
               <label class="field-label">Equipment
-                <textarea x-model="editingCharacter.equipment" class="input-base min-h-[90px]"></textarea>
+                <textarea
+                  class="input-base min-h-[90px]"
+                  x-effect="$el.value = GetBuilderEquipmentValue(editingCharacter)"
+                  @input="SetEquipmentNotesFromBuilder($event.target.value)"
+                ></textarea>
+                <span class="mt-1 text-xs text-ink-soft">Selected armor, shield, and weapons are managed automatically. Add other gear below them.</span>
               </label>
             </div>
 
@@ -3640,18 +3645,12 @@ const NpcEasyApp = (): any => {
             return weaponName;
         },
 
-    GetEquipmentSummary(character: CharacterRecord | null): string {
+    GetAutoEquipmentLines(character: CharacterRecord | null): string[] {
       if (!character) {
-        return '(none specified)';
+        return [];
       }
 
-      const lines: string[] = [];
-      const notes = (character.equipment ?? '').trim();
-      if (notes.length > 0) {
-        lines.push(notes);
-      }
-
-      lines.push(`Armor: ${this.GetEquippedArmorName(character)}`);
+      const lines = [`Armor: ${this.GetEquippedArmorName(character)}`];
       if (character.hasShield) {
         lines.push(`Shield: ${this.GetShieldLabel(character)}`);
       }
@@ -3666,7 +3665,51 @@ const NpcEasyApp = (): any => {
         lines.push('Weapons: None');
       }
 
-      return lines.join('\n');
+      return lines;
+    },
+
+    GetBuilderEquipmentValue(character: CharacterRecord | null): string {
+      if (!character) {
+        return '';
+      }
+
+      const autoText = this.GetAutoEquipmentLines(character).join('\n');
+      const notes = (character.equipment ?? '').trim();
+      if (notes.length === 0) {
+        return autoText;
+      }
+
+      return `${autoText}\n\n${notes}`;
+    },
+
+    SetEquipmentNotesFromBuilder(value: string) {
+      if (!this.editingCharacter) {
+        return;
+      }
+
+      const normalizedValue = value.replace(/\r\n/g, '\n').trim();
+      const autoText = this.GetAutoEquipmentLines(this.editingCharacter).join('\n');
+      let notes = normalizedValue;
+
+      if (autoText.length > 0 && normalizedValue.startsWith(autoText)) {
+        notes = normalizedValue.slice(autoText.length).replace(/^\n+/, '');
+      }
+
+      this.editingCharacter.equipment = notes.trim();
+    },
+
+    GetEquipmentSummary(character: CharacterRecord | null): string {
+      if (!character) {
+        return '(none specified)';
+      }
+
+      const lines = this.GetAutoEquipmentLines(character);
+      const notes = (character.equipment ?? '').trim();
+      if (notes.length > 0) {
+        lines.push(notes);
+      }
+
+      return lines.length > 0 ? lines.join('\n') : '(none specified)';
     },
 
         GetDisplayedArmorClass(character: CharacterRecord | null): number {
