@@ -1078,6 +1078,14 @@ app.innerHTML = `
               </label>
               <label class="field-label">Max HP
                 <input x-model.number="editingCharacter.maxHitPoints" type="number" min="0" class="input-base" />
+                <button
+                  type="button"
+                  class="btn-secondary mt-2 w-full"
+                  @click="RollHitPointsFromLevels()"
+                  :disabled="!CanRollHitPointsFromLevels(editingCharacter)"
+                >
+                  Roll HP from Levels
+                </button>
               </label>
               <label class="field-label">Speed
                 <input x-model.number="editingCharacter.speed" type="number" min="0" class="input-base" />
@@ -2612,6 +2620,69 @@ const NpcEasyApp = (): any => {
             this.editingCharacter.abilityScores.charisma = this.RollAbilityScore();
             this.SaveAll();
         },
+
+          GetClassHitDie(classId: string): number {
+            if (!classId) {
+              return 0;
+            }
+
+            const sourceClass = AllClasses.find((entry) => entry.classType === classId);
+            if (sourceClass?.hitDice) {
+              return sourceClass.hitDice;
+            }
+
+            const catalogClass = this.catalogs.classes.find((entry: CatalogItem) => entry.name === classId);
+            const hitDieMatch = (catalogClass?.description ?? '').match(/hit\s*die:\s*d(\d+)/i);
+            if (!hitDieMatch) {
+              return 0;
+            }
+
+            const parsed = Number.parseInt(hitDieMatch[1], 10);
+            return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+          },
+
+          CanRollHitPointsFromLevels(character: CharacterRecord | null): boolean {
+            if (!character) {
+              return false;
+            }
+
+            return (character.classLevels ?? []).some((entry: ClassLevel) => {
+              if (!entry.classId || (entry.level ?? 0) <= 0) {
+                return false;
+              }
+
+              return this.GetClassHitDie(entry.classId) > 0;
+            });
+          },
+
+          RollHitPointsFromLevels() {
+            if (!this.editingCharacter || !this.CanRollHitPointsFromLevels(this.editingCharacter)) {
+              return;
+            }
+
+            const totalLevels = this.GetTotalCharacterLevel(this.editingCharacter);
+            if (totalLevels <= 0) {
+              return;
+            }
+
+            let rolledHitPoints = 0;
+            for (const entry of this.editingCharacter.classLevels) {
+              const levelCount = Math.max(0, entry.level ?? 0);
+              const hitDie = this.GetClassHitDie(entry.classId);
+              if (hitDie <= 0 || levelCount === 0) {
+                continue;
+              }
+
+              for (let index = 0; index < levelCount; index += 1) {
+                rolledHitPoints += Math.floor(Math.random() * hitDie) + 1;
+              }
+            }
+
+            const constitutionModifier = this.GetAbilityModifier(this.GetEffectiveAbilityScore(this.editingCharacter, 'constitution'));
+            const totalHitPoints = rolledHitPoints + (constitutionModifier * totalLevels);
+            this.editingCharacter.maxHitPoints = Math.max(totalLevels, totalHitPoints);
+            this.SaveAll();
+          },
 
         AddClassLevel() {
             if (!this.editingCharacter) {
