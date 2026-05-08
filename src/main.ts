@@ -1829,6 +1829,7 @@ app.innerHTML = `
             <span>Max HP <strong x-text="editingCharacter?.maxHitPoints ?? 0"></strong></span>
             <span :title="GetArmorClassNote(editingCharacter)">AC <strong x-text="GetDisplayedArmorClass(editingCharacter)"></strong></span>
             <span>Speed <strong x-text="editingCharacter?.speed ?? 0"></strong> ft</span>
+            <span>Initiative <strong x-text="FormatSignedValue(GetInitiativeBonus(editingCharacter))"></strong></span>
             <span>Prof Bonus <strong x-text="'+' + GetProficiencyBonus(GetTotalCharacterLevel(editingCharacter))"></strong></span>
             <span>Hero Points <strong x-text="GetHeroPoints(editingCharacter)"></strong></span>
           </div>
@@ -2390,6 +2391,14 @@ const NpcEasyApp = (): any => {
         GetHeroPoints(character?: CharacterRecord | null): number {
             const totalLevel = this.GetTotalCharacterLevel(character);
             return 5 + Math.floor(totalLevel / 2);
+        },
+
+        GetInitiativeBonus(character: CharacterRecord | null): number {
+            if (!character) {
+                return 0;
+            }
+
+            return this.GetAbilityModifier(this.GetEffectiveAbilityScore(character, 'dexterity'));
         },
           
         GetRacialTraits(character: CharacterRecord | null): Array<{ source: string; name: string; description: string }> {
@@ -4092,6 +4101,10 @@ const NpcEasyApp = (): any => {
             const modifier = this.GetAbilityModifier(score);
             const modifierText = modifier >= 0 ? `+${modifier}` : `${modifier}`;
             return `${score} (${modifierText})`;
+        },
+
+        FormatSignedValue(value: number): string {
+            return value >= 0 ? `+${value}` : `${value}`;
         },
 
         GetCatalogName(key: CatalogKey, id: string): string {
