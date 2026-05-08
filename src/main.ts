@@ -1830,6 +1830,7 @@ app.innerHTML = `
             <span :title="GetArmorClassNote(editingCharacter)">AC <strong x-text="GetDisplayedArmorClass(editingCharacter)"></strong></span>
             <span>Speed <strong x-text="editingCharacter?.speed ?? 0"></strong> ft</span>
             <span>Initiative <strong x-text="FormatSignedValue(GetInitiativeBonus(editingCharacter))"></strong></span>
+            <span>Passive Perception <strong x-text="GetPassivePerception(editingCharacter)"></strong></span>
             <span>Prof Bonus <strong x-text="'+' + GetProficiencyBonus(GetTotalCharacterLevel(editingCharacter))"></strong></span>
             <span>Hero Points <strong x-text="GetHeroPoints(editingCharacter)"></strong></span>
           </div>
@@ -2408,6 +2409,20 @@ const NpcEasyApp = (): any => {
             }
 
             return this.GetAbilityModifier(this.GetEffectiveAbilityScore(character, 'dexterity'));
+        },
+
+        GetPassivePerceptionOtherModifiers(_character: CharacterRecord | null): number {
+          // Placeholder for future sources such as feats, class features, or magic items.
+          return 0;
+        },
+
+        GetPassivePerception(character: CharacterRecord | null): number {
+          if (!character) {
+            return 10;
+          }
+
+          const wisdomModifier = this.GetAbilityModifier(this.GetEffectiveAbilityScore(character, 'wisdom'));
+          return 10 + wisdomModifier + this.GetPassivePerceptionOtherModifiers(character);
         },
           
         GetRacialTraits(character: CharacterRecord | null): Array<{ source: string; name: string; description: string }> {
