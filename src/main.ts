@@ -1791,6 +1791,7 @@ app.innerHTML = `
               <span x-text="GetDisplayedAncestryName(editingCharacter)"></span>
               <span> | Level </span><span x-text="GetTotalCharacterLevel(editingCharacter)"></span>
               <span> | </span><span x-text="editingCharacter?.alignment || 'Unaligned'"></span>
+              <span> | Size </span><span x-text="GetRacialSize(editingCharacter)"></span>
             </p>
             <p class="mt-1 text-sm text-ink-soft" x-show="(editingCharacter?.classLevels?.length ?? 0) > 0" x-cloak>
               <span class="font-semibold">Classes:</span>
@@ -2335,6 +2336,17 @@ const NpcEasyApp = (): any => {
             return this.GetCatalogName('races', character.raceId);
           },
 
+        GetRacialSize(character: CharacterRecord | null): string {
+            if (!character?.raceId) {
+                return 'Medium';
+            }
+            const selectedRace = this.GetSelectedRaceCatalogItem(character);
+            if (!selectedRace) {
+                return 'Medium';
+            }
+            return selectedRace.size ?? 'Medium';
+        },
+          
         GetRacialTraits(character: CharacterRecord | null): Array<{ source: string; name: string; description: string }> {
             if (!character?.raceId) {
                 return [];
