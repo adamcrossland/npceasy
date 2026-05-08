@@ -1828,6 +1828,7 @@ app.innerHTML = `
 
         <div class="sheet-card">
             <h4>Weapons</h4>
+            <p class="pl-4 text-sm font-bold text-red-700" x-show="(editingCharacter?.weaponIds?.length ?? 0) === 0" x-cloak>No weapons selected.</p>
             <ul class="list-base">
               <template x-for="id in editingCharacter?.weaponIds ?? []" :key="id">
                 <li>
