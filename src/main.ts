@@ -1206,7 +1206,7 @@ app.innerHTML = `
                   />
                 </label>
                 <label class="field-label">Shield
-                  <label class="mt-2 flex items-center gap-2 rounded-xl border border-amber-200 px-3 py-3 text-sm text-ink">
+                  <label class="flex items-center gap-2 rounded-xl border border-amber-200 px-3 py-3 text-sm text-ink">
                     <input x-model="editingCharacter.hasShield" type="checkbox" class="h-4 w-4" @change="NormalizeEquippedLoadout()" />
                     <span>Using a shield (+2 AC)</span>
                   </label>
