@@ -6,12 +6,19 @@ export interface Feat {
     abilityScoreBonuses?: Partial<Record<string, number>>;
     /** Player must choose one ability to increase */
     abilityScoreChoice?: { amount: number; options: string[] };
+    /** Derived stat modifiers granted by this feat */
+    derivedStatBonuses?: {
+        initiativeBonus?: number;
+        passivePerceptionBonus?: number;
+        speedBonus?: number;
+    };
 }
 
 export const Feats: Feat[] = [
     {
         name: 'Alert',
         description: '+5 to initiative, cannot be surprised while conscious; hidden creatures get no advantage on attack rolls.',
+        derivedStatBonuses: { initiativeBonus: 5 },
     },
     {
         name: 'Athlete',
@@ -119,6 +126,7 @@ export const Feats: Feat[] = [
     {
         name: 'Mobile',
         description: 'Speed increases by 10 ft; Dash ignores difficult terrain; avoid opportunity attacks from creatures you attack.',
+        derivedStatBonuses: { speedBonus: 10 },
     },
     {
         name: 'Moderately Armored',
@@ -134,6 +142,7 @@ export const Feats: Feat[] = [
         name: 'Observant',
         description: '+1 INT or WIS; read lips and gain +5 to passive Perception and Investigation scores.',
         abilityScoreChoice: { amount: 1, options: ['intelligence', 'wisdom'] },
+        derivedStatBonuses: { passivePerceptionBonus: 5 },
     },
     {
         name: 'Polearm Master',

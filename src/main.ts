@@ -1193,6 +1193,7 @@ app.innerHTML = `
               </label>
               <label class="field-label">Speed
                 <input x-model.number="editingCharacter.speed" type="number" min="0" class="input-base" />
+                <span class="text-xs text-ink-soft" x-text="GetSpeedWithBonusSummary(editingCharacter)"></span>
               </label>
             </div>
 
@@ -1828,7 +1829,7 @@ app.innerHTML = `
           <div class="sheet-badges">
             <span>Max HP <strong x-text="editingCharacter?.maxHitPoints ?? 0"></strong></span>
             <span :title="GetArmorClassNote(editingCharacter)">AC <strong x-text="GetDisplayedArmorClass(editingCharacter)"></strong></span>
-            <span>Speed <strong x-text="editingCharacter?.speed ?? 0"></strong> ft</span>
+            <span>Speed <strong x-text="GetDisplayedSpeed(editingCharacter)"></strong> ft</span>
             <span>Initiative <strong x-text="FormatSignedValue(GetInitiativeBonus(editingCharacter))"></strong></span>
             <span>Passive Perception <strong x-text="GetPassivePerception(editingCharacter)"></strong></span>
             <span>Prof Bonus <strong x-text="'+' + GetProficiencyBonus(GetTotalCharacterLevel(editingCharacter))"></strong></span>
@@ -2310,6 +2311,36 @@ const NpcEasyApp = (): any => {
             return bonuses;
           },
 
+          GetFeatDerivedStatBonuses(character: CharacterRecord | null): { initiativeBonus: number; passivePerceptionBonus: number; speedBonus: number } {
+            if (!character) {
+              return {
+                initiativeBonus: 0,
+                passivePerceptionBonus: 0,
+                speedBonus: 0
+              };
+            }
+
+            const totals = {
+              initiativeBonus: 0,
+              passivePerceptionBonus: 0,
+              speedBonus: 0
+            };
+
+            for (const id of character.featIds ?? []) {
+              const featName = this.GetCatalogName('feats', id);
+              const feat = GetFeatByName(featName);
+              if (!feat?.derivedStatBonuses) {
+                continue;
+              }
+
+              totals.initiativeBonus += feat.derivedStatBonuses.initiativeBonus ?? 0;
+              totals.passivePerceptionBonus += feat.derivedStatBonuses.passivePerceptionBonus ?? 0;
+              totals.speedBonus += feat.derivedStatBonuses.speedBonus ?? 0;
+            }
+
+            return totals;
+          },
+
           GetFeatsWithAbilityChoices(character: CharacterRecord | null): Array<{ id: string; name: string; amount: number; options: string[] }> {
             if (!character) {
               return [];
@@ -2403,17 +2434,44 @@ const NpcEasyApp = (): any => {
             return 5 + Math.floor(totalLevel / 2);
         },
 
+        GetDisplayedSpeed(character: CharacterRecord | null): number {
+          if (!character) {
+            return 0;
+          }
+
+          const speedBonus = this.GetFeatDerivedStatBonuses(character).speedBonus;
+          return Math.max(0, (character.speed ?? 0) + speedBonus);
+        },
+
+        GetSpeedWithBonusSummary(character: CharacterRecord | null): string {
+          if (!character) {
+            return '0';
+          }
+
+          const baseSpeed = character.speed ?? 0;
+          const speedBonus = this.GetFeatDerivedStatBonuses(character).speedBonus;
+          if (speedBonus === 0) {
+            return `${baseSpeed}`;
+          }
+
+          const bonusText = speedBonus > 0 ? `+${speedBonus}` : `${speedBonus}`;
+          return `${baseSpeed} ${bonusText} = ${Math.max(0, baseSpeed + speedBonus)}`;
+        },
+
         GetInitiativeBonus(character: CharacterRecord | null): number {
             if (!character) {
                 return 0;
             }
 
-            return this.GetAbilityModifier(this.GetEffectiveAbilityScore(character, 'dexterity'));
+          const dexterityModifier = this.GetAbilityModifier(this.GetEffectiveAbilityScore(character, 'dexterity'));
+          const featBonus = this.GetFeatDerivedStatBonuses(character).initiativeBonus;
+          return dexterityModifier + featBonus;
         },
 
-        GetPassivePerceptionOtherModifiers(_character: CharacterRecord | null): number {
-          // Placeholder for future sources such as feats, class features, or magic items.
-          return 0;
+        GetPassivePerceptionOtherModifiers(character: CharacterRecord | null): number {
+          const featBonus = this.GetFeatDerivedStatBonuses(character).passivePerceptionBonus;
+          // This method is a single hook for future sources such as class features or magic items.
+          return featBonus;
         },
 
         GetPassivePerception(character: CharacterRecord | null): number {
