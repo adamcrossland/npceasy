@@ -1203,27 +1203,27 @@ app.innerHTML = `
               </div>
               <div class="grid gap-3 sm:grid-cols-3 lg:grid-cols-6">
                 <label class="field-label">STR
-                  <input x-model.number="editingCharacter.abilityScores.strength" type="number" class="input-base" />
+                  <input x-model.number="editingCharacter.abilityScores.strength" type="number" max="20" class="input-base" />
                   <span class="text-xs text-ink-soft" x-text="GetAbilityScoreWithBonusSummary(editingCharacter, 'strength')"></span>
                 </label>
                 <label class="field-label">DEX
-                  <input x-model.number="editingCharacter.abilityScores.dexterity" type="number" class="input-base" />
+                  <input x-model.number="editingCharacter.abilityScores.dexterity" type="number" max="20" class="input-base" />
                   <span class="text-xs text-ink-soft" x-text="GetAbilityScoreWithBonusSummary(editingCharacter, 'dexterity')"></span>
                 </label>
                 <label class="field-label">CON
-                  <input x-model.number="editingCharacter.abilityScores.constitution" type="number" class="input-base" />
+                  <input x-model.number="editingCharacter.abilityScores.constitution" type="number" max="20" class="input-base" />
                   <span class="text-xs text-ink-soft" x-text="GetAbilityScoreWithBonusSummary(editingCharacter, 'constitution')"></span>
                 </label>
                 <label class="field-label">INT
-                  <input x-model.number="editingCharacter.abilityScores.intelligence" type="number" class="input-base" />
+                  <input x-model.number="editingCharacter.abilityScores.intelligence" type="number" max="20" class="input-base" />
                   <span class="text-xs text-ink-soft" x-text="GetAbilityScoreWithBonusSummary(editingCharacter, 'intelligence')"></span>
                 </label>
                 <label class="field-label">WIS
-                  <input x-model.number="editingCharacter.abilityScores.wisdom" type="number" class="input-base" />
+                  <input x-model.number="editingCharacter.abilityScores.wisdom" type="number" max="20" class="input-base" />
                   <span class="text-xs text-ink-soft" x-text="GetAbilityScoreWithBonusSummary(editingCharacter, 'wisdom')"></span>
                 </label>
                 <label class="field-label">CHA
-                  <input x-model.number="editingCharacter.abilityScores.charisma" type="number" class="input-base" />
+                  <input x-model.number="editingCharacter.abilityScores.charisma" type="number" max="20" class="input-base" />
                   <span class="text-xs text-ink-soft" x-text="GetAbilityScoreWithBonusSummary(editingCharacter, 'charisma')"></span>
                 </label>
               </div>
@@ -2102,7 +2102,15 @@ const NpcEasyApp = (): any => {
                 ...collection,
                 characters: collection.characters.map((character: CharacterRecord) => {
                     const { armorClass: _legacyArmorClass, ...characterWithoutLegacyArmorClass } = character;
-                    return characterWithoutLegacyArmorClass;
+              const cappedAbilityScores = { ...characterWithoutLegacyArmorClass.abilityScores };
+              for (const key of AbilityScoreKeys) {
+                const rawValue = Number(cappedAbilityScores[key] ?? 10);
+                cappedAbilityScores[key] = Number.isFinite(rawValue) ? Math.min(20, rawValue) : 10;
+              }
+                  return {
+                    ...characterWithoutLegacyArmorClass,
+                    abilityScores: cappedAbilityScores
+                  };
                 })
             }));
 
@@ -2338,9 +2346,10 @@ const NpcEasyApp = (): any => {
               return 10;
             }
 
-            return (character.abilityScores[key] ?? 10)
+            return Math.min(20,
+              (character.abilityScores[key] ?? 10)
               + (this.GetRaceAbilityScoreBonuses(character)[key] ?? 0)
-              + (this.GetFeatAbilityBonuses(character)[key] ?? 0);
+              + (this.GetFeatAbilityBonuses(character)[key] ?? 0));
           },
 
           GetAbilityScoreWithBonusSummary(character: CharacterRecord | null, key: keyof CharacterRecord['abilityScores']): string {
@@ -2348,7 +2357,7 @@ const NpcEasyApp = (): any => {
               return '10';
             }
 
-            const baseScore = character.abilityScores[key] ?? 10;
+            const baseScore = Math.min(20, character.abilityScores[key] ?? 10);
             const raceBonus = this.GetRaceAbilityScoreBonuses(character)[key] ?? 0;
             const featBonus = this.GetFeatAbilityBonuses(character)[key] ?? 0;
             const bonus = raceBonus + featBonus;
@@ -2356,7 +2365,7 @@ const NpcEasyApp = (): any => {
               return `${baseScore}`;
             }
 
-            const total = baseScore + bonus;
+            const total = Math.min(20, baseScore + bonus);
             const bonusText = bonus > 0 ? `+${bonus}` : `${bonus}`;
             return `${baseScore} ${bonusText} = ${total}`;
           },
