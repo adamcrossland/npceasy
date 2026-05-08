@@ -253,8 +253,8 @@ export const Races: Race[] = [
                 'Rock gnomes tend toward good.',
                 'Small', 25, ['Common', 'Gnomish'],
                 [
-                    { name: 'Artificer\'s Lore', description: 'INT (History) check related to magic items, alchemical objects, or technological devices, add twice your proficiency bonus' },
-                    { name: 'Tinker', description: 'Proficiency with artisan\'s tools (tinker\'s tools). Spend 1 hour and 10 gp worth of materials to construct a Tiny clockwork device.' },
+                    { name: 'Artificer\'s Lore', description: 'INT (History) check related to magic items, alchemical objects, or devices, add twice your proficiency bonus' },
+                    { name: 'Tinker', description: 'Proficiency with artisan or tinker\'s tools).' },
                 ]
             ),
         ]
@@ -272,10 +272,10 @@ export const Races: Race[] = [
         ['Common', 'Elvish'],
         [
             { name: 'Ability Score Increase (Two)', description: 'Two different ability scores of your choice increase by 1.' },
-            { name: 'Darkvision', description: 'Thanks to your elf blood, you have superior vision in dark and dim conditions. You can see in dim light within 60 feet as if it were bright light, and in darkness as if it were dim light.' },
-            { name: 'Fey Ancestry', description: 'You have advantage on saving throws against being charmed, and magic can\'t put you to sleep.' },
-            { name: 'Skill Versatility', description: 'You gain proficiency in two skills of your choice.' },
-            { name: 'Extra Language', description: 'You can speak, read, and write one extra language of your choice.' },
+            { name: 'Darkvision', description: 'See in dim light within 60 feet, and in darkness as if it were dim light.' },
+            { name: 'Fey Ancestry', description: 'Adv. on saves against being charmed; magic can\'t put you to sleep.' },
+            { name: 'Skill Versatility', description: 'Proficiency in two skills of your choice.' },
+            { name: 'Extra Language', description: 'Learn one extra language of your choice.' },
         ]
     ),
 
@@ -290,10 +290,10 @@ export const Races: Race[] = [
         30,
         ['Common', 'Orc'],
         [
-            { name: 'Darkvision', description: 'Thanks to your orc blood, you have superior vision in dark and dim conditions. You can see in dim light within 60 feet as if it were bright light, and in darkness as if it were dim light.' },
-            { name: 'Menacing', description: 'You gain proficiency in the Intimidation skill.' },
-            { name: 'Relentless Endurance', description: 'When you are reduced to 0 hit points but not killed outright, you can drop to 1 hit point instead. You can\'t use this feature again until you finish a long rest.' },
-            { name: 'Savage Attacks', description: 'When you score a critical hit with a melee weapon attack, you can roll one of the weapon\'s damage dice one additional time and add it to the extra damage of the critical hit.' },
+            { name: 'Darkvision', description: 'See in dim light within 60 feet, and in darkness as if it were dim light.' },
+            { name: 'Menacing', description: 'Proficiency in the Intimidation skill.' },
+            { name: 'Relentless Endurance', description: 'Drop to 1 hit point instead of 0.' },
+            { name: 'Savage Attacks', description: 'On critical hit with a melee weapon, roll one of damage dice one addtl time and add it to the extra damage.' },
         ]
     ),
 
@@ -308,9 +308,9 @@ export const Races: Race[] = [
         30,
         ['Common', 'Infernal'],
         [
-            { name: 'Darkvision', description: 'Thanks to your infernal heritage, you have superior vision in dark and dim conditions. You can see in dim light within 60 feet as if it were bright light, and in darkness as if it were dim light.' },
-            { name: 'Hellish Resistance', description: 'You have resistance to fire damage.' },
-            { name: 'Infernal Legacy', description: 'You know the thaumaturgy cantrip. When you reach 3rd level, you can cast the hellish rebuke spell as a 2nd-level spell once with this trait and regain the ability to do so when you finish a long rest. When you reach 5th level, you can also cast the darkness spell once with this trait and regain the ability to do so when you finish a long rest. Charisma is your spellcasting ability for these spells.' },
+            { name: 'Darkvision', description: 'See in dim light within 60 feet, and in darkness as if it were dim light.' },
+            { name: 'Hellish Resistance', description: 'Resistance to fire damage.' },
+            { name: 'Infernal Legacy', description: 'Know the thaumaturgy cantrip. At 3rd level, cast Hellish Rebuke at 2nd-level. At 5th level, cast the darkness spell. Charisma is spellcasting ability.' },
         ]
     ),
 ];

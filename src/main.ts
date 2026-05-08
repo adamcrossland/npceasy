@@ -703,6 +703,36 @@ function NormalizeRaceSubraces(subraces?: Array<RaceSubrace | string>): RaceSubr
   });
 }
 
+function MergeRaceTraitSets(defaultTraits?: Array<RaceTraits | string>, savedTraits?: Array<RaceTraits | string>): RaceTraits[] {
+  const normalizedDefaults = NormalizeRaceTraits(defaultTraits);
+  const normalizedSaved = NormalizeRaceTraits(savedTraits);
+
+  const defaultNames = new Set(normalizedDefaults.map((trait) => trait.name.toLowerCase()));
+  const savedCustomTraits = normalizedSaved.filter((trait) => !defaultNames.has(trait.name.toLowerCase()));
+
+  return [...normalizedDefaults, ...savedCustomTraits];
+}
+
+function MergeRaceSubraceSets(defaultSubraces?: Array<RaceSubrace | string>, savedSubraces?: Array<RaceSubrace | string>): RaceSubrace[] {
+  const normalizedDefaults = NormalizeRaceSubraces(defaultSubraces);
+  const normalizedSaved = NormalizeRaceSubraces(savedSubraces);
+
+  const merged = normalizedDefaults.map((defaultSubrace) => {
+    const savedMatch = normalizedSaved.find((subrace) => subrace.name.toLowerCase() === defaultSubrace.name.toLowerCase());
+
+    return {
+      ...defaultSubrace,
+      // Keep defaults authoritative for built-in subraces; preserve only custom additions from saved data.
+      traits: MergeRaceTraitSets(defaultSubrace.traits, savedMatch?.traits)
+    };
+  });
+
+  const defaultSubraceNames = new Set(normalizedDefaults.map((subrace) => subrace.name.toLowerCase()));
+  const customSubraces = normalizedSaved.filter((subrace) => !defaultSubraceNames.has(subrace.name.toLowerCase()));
+
+  return [...merged, ...customSubraces];
+}
+
 function NewId(prefix: string): string {
     return `${prefix}-${crypto.randomUUID()}`;
 }
@@ -741,11 +771,12 @@ function MergeRaceCatalog(savedRaces: CatalogItem[] | undefined, defaultRaces: C
     const savedMatch = saved.find((item) => item.name === defaultItem.name);
     return {
       ...defaultItem,
-      description: savedMatch?.description ?? defaultItem.description,
-      raceAbilityScoreBonuses: NormalizeRaceAbilityScoreBonuses(savedMatch?.raceAbilityScoreBonuses ?? defaultItem.raceAbilityScoreBonuses),
-      raceLanguages: NormalizeStringList(savedMatch?.raceLanguages ?? defaultItem.raceLanguages),
-      raceTraits: NormalizeRaceTraits(savedMatch?.raceTraits ?? defaultItem.raceTraits),
-      raceSubraces: NormalizeRaceSubraces(savedMatch?.raceSubraces ?? defaultItem.raceSubraces)
+      // Keep built-in race content synced with source data while preserving custom saved additions.
+      description: defaultItem.description,
+      raceAbilityScoreBonuses: NormalizeRaceAbilityScoreBonuses(defaultItem.raceAbilityScoreBonuses),
+      raceLanguages: NormalizeStringList(defaultItem.raceLanguages),
+      raceTraits: MergeRaceTraitSets(defaultItem.raceTraits, savedMatch?.raceTraits),
+      raceSubraces: MergeRaceSubraceSets(defaultItem.raceSubraces, savedMatch?.raceSubraces)
     };
   });
 
