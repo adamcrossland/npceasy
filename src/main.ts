@@ -1249,7 +1249,13 @@ app.innerHTML = `
               </div>
 
               <div>
-                <p class="field-label">Spells</p>
+                <div class="mb-2 flex items-center justify-between gap-3">
+                  <p class="field-label !mb-0">Spells</p>
+                  <label class="inline-flex items-center gap-2 text-sm text-ink">
+                    <input x-model="showAllBuilderSpells" type="checkbox" class="h-4 w-4" />
+                    <span>Show all spells</span>
+                  </label>
+                </div>
                 <div class="input-base min-h-[180px] max-h-[260px] space-y-2 overflow-y-auto">
                   <template x-for="entry in GetAvailableSpellsForCharacter(editingCharacter)" :key="entry.id">
                     <label class="flex items-center gap-2 text-sm text-ink">
@@ -1835,7 +1841,8 @@ const NpcEasyApp = (): any => {
     return {
         ...state,
         armors: Armors,
-      spellSchools: SpellSchools,
+        spellSchools: SpellSchools,
+        showAllBuilderSpells: false,
         newCollectionName: '',
         editingCharacter: null as CharacterRecord | null,
         compendiumSections: [
@@ -2196,6 +2203,19 @@ const NpcEasyApp = (): any => {
         },
 
         GetAvailableSpellsForCharacter(character: CharacterRecord | null): CatalogItem[] {
+          if (this.showAllBuilderSpells) {
+            return [...this.catalogs.spells].sort((left: CatalogItem, right: CatalogItem) => {
+              const leftLevel = Number.isFinite(left.level) ? (left.level as number) : Number.MAX_SAFE_INTEGER;
+              const rightLevel = Number.isFinite(right.level) ? (right.level as number) : Number.MAX_SAFE_INTEGER;
+
+              if (leftLevel !== rightLevel) {
+                return leftLevel - rightLevel;
+              }
+
+              return left.name.localeCompare(right.name);
+            });
+          }
+
             if (!character) {
                 return [];
             }
