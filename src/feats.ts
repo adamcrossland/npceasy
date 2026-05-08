@@ -2,6 +2,10 @@ export interface Feat {
     name: string;
     description: string;
     prerequisites?: string;
+    /** Fixed ability score increases granted by this feat */
+    abilityScoreBonuses?: Partial<Record<string, number>>;
+    /** Player must choose one ability to increase */
+    abilityScoreChoice?: { amount: number; options: string[] };
 }
 
 export const Feats: Feat[] = [
@@ -12,10 +16,12 @@ export const Feats: Feat[] = [
     {
         name: 'Athlete',
         description: '+1 STR or DEX; improved climbing and jumping.',
+        abilityScoreChoice: { amount: 1, options: ['strength', 'dexterity'] },
     },
     {
         name: 'Actor',
         description: '+1 CHA; mimic speech and sounds you have heard.',
+        abilityScoreBonuses: { charisma: 1 },
     },
     {
         name: 'Charger',
@@ -42,6 +48,7 @@ export const Feats: Feat[] = [
     {
         name: 'Durable',
         description: 'Increase CON by 1; when rolling hit dice to recover hit points, the minimum number is twice your CON modifier.',
+        abilityScoreBonuses: { constitution: 1 },
     },
     {
         name: 'Elemental Adept',
@@ -65,11 +72,13 @@ export const Feats: Feat[] = [
         name: 'Heavily Armored',
         description: 'Proficiency with heavy armor and increase STR by 1.',
         prerequisites: 'Proficiency with medium armor',
+        abilityScoreBonuses: { strength: 1 },
     },
     {
         name: 'Heavy Armor Master',
         description: 'Increase STR by 1. While wearing heavy armor, reduce bludgeoning, piercing, and slashing damage by 3.',
         prerequisites: 'Proficiency with heavy armor',
+        abilityScoreBonuses: { strength: 1 },
     },
     {
         name: 'Inspiring Leader',
@@ -79,10 +88,12 @@ export const Feats: Feat[] = [
     {
         name: 'Keen Mind',
         description: '+1 INT; track time, direction, and detail with uncanny precision.',
+        abilityScoreBonuses: { intelligence: 1 },
     },
     {
         name: 'Linguist',
         description: '+1 INT; learn 3 extra languages; can create ciphers.',
+        abilityScoreBonuses: { intelligence: 1 },
     },
     {
         name: 'Lucky',
@@ -113,6 +124,7 @@ export const Feats: Feat[] = [
         name: 'Moderately Armored',
         description: 'Gain proficiency with medium armor and shields. Increase STR or DEX by 1.',
         prerequisites: 'Proficiency with light armor',
+        abilityScoreChoice: { amount: 1, options: ['strength', 'dexterity'] },
     },
     {
         name: 'Mounted Combatant',
@@ -121,6 +133,7 @@ export const Feats: Feat[] = [
     {
         name: 'Observant',
         description: '+1 INT or WIS; read lips and gain +5 to passive Perception and Investigation scores.',
+        abilityScoreChoice: { amount: 1, options: ['intelligence', 'wisdom'] },
     },
     {
         name: 'Polearm Master',
@@ -129,6 +142,7 @@ export const Feats: Feat[] = [
     {
         name: 'Resilient',
         description: 'Choose one ability score. Increase it by 1 and gain proficiency in saving throws using that ability.',
+        abilityScoreChoice: { amount: 1, options: ['strength', 'dexterity', 'constitution', 'intelligence', 'wisdom', 'charisma'] },
     },
     {
         name: 'Ritual Caster',
@@ -168,6 +182,7 @@ export const Feats: Feat[] = [
     {
         name: 'Tavern Brawler',
         description: 'Gain +1 STR or CON, proficiency with improvised weapons; grapple as a bonus action.',
+        abilityScoreChoice: { amount: 1, options: ['strength', 'constitution'] },
     },
     {
         name: 'Tough',
@@ -181,6 +196,7 @@ export const Feats: Feat[] = [
     {
         name: 'Weapon Master',
         description: 'Gain +1 STR or DEX and proficiency with four weapons of your choice.',
+        abilityScoreChoice: { amount: 1, options: ['strength', 'dexterity'] },
     },
 ];
 

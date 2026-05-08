@@ -106,6 +106,7 @@ type CharacterRecord = {
     traits: string;
     equipment: string;
     featIds: string[];
+    featAbilityChoices?: Record<string, string>;
     weaponIds: string[];
     primaryWeaponId?: string;
     offhandWeaponId?: string;
@@ -910,6 +911,7 @@ function BuildNewCharacter(raceId: string): CharacterRecord {
         traits: '',
         equipment: '',
         featIds: [],
+        featAbilityChoices: {},
         weaponIds: [],
         primaryWeaponId: '',
         offhandWeaponId: '',
@@ -1291,6 +1293,22 @@ app.innerHTML = `
                         @change="ToggleCharacterListSelection('featIds', entry.id, $event.target.checked)"
                       />
                       <span x-text="entry.name"></span>
+                    </label>
+                  </template>
+                </div>
+                <div class="mt-3 space-y-2" x-show="GetFeatsWithAbilityChoices(editingCharacter).length > 0" x-cloak>
+                  <p class="text-xs font-semibold uppercase tracking-wide text-ink-soft">Feat Ability Choices</p>
+                  <template x-for="fc in GetFeatsWithAbilityChoices(editingCharacter)" :key="'feat-choice-' + fc.id">
+                    <label class="field-label text-xs">
+                      <span x-text="fc.name + ': +' + fc.amount"></span>
+                      <select class="input-base"
+                        :value="GetFeatAbilityChoice(editingCharacter, fc.id)"
+                        @change="SetFeatAbilityChoice(fc.id, $event.target.value)">
+                        <option value="">Choose ability score</option>
+                        <template x-for="opt in fc.options" :key="'fc-opt-' + fc.id + '-' + opt">
+                          <option :value="opt" :selected="GetFeatAbilityChoice(editingCharacter, fc.id) === opt" x-text="opt.charAt(0).toUpperCase() + opt.slice(1)"></option>
+                        </template>
+                      </select>
                     </label>
                   </template>
                 </div>
@@ -2215,12 +2233,72 @@ const NpcEasyApp = (): any => {
             return combined;
           },
 
+          GetFeatAbilityBonuses(character: CharacterRecord | null): Partial<Record<string, number>> {
+            if (!character) {
+              return {};
+            }
+
+            const bonuses: Record<string, number> = {};
+            for (const id of character.featIds ?? []) {
+              const featName = this.GetCatalogName('feats', id);
+              const feat = GetFeatByName(featName);
+              if (!feat) continue;
+
+              for (const [key, val] of Object.entries(feat.abilityScoreBonuses ?? {})) {
+                bonuses[key] = (bonuses[key] ?? 0) + (val as number);
+              }
+
+              if (feat.abilityScoreChoice) {
+                const chosen = (character.featAbilityChoices ?? {})[id];
+                if (chosen && feat.abilityScoreChoice.options.includes(chosen)) {
+                  bonuses[chosen] = (bonuses[chosen] ?? 0) + feat.abilityScoreChoice.amount;
+                }
+              }
+            }
+
+            return bonuses;
+          },
+
+          GetFeatsWithAbilityChoices(character: CharacterRecord | null): Array<{ id: string; name: string; amount: number; options: string[] }> {
+            if (!character) {
+              return [];
+            }
+
+            return (character.featIds ?? [])
+              .map((id) => {
+                const featName = this.GetCatalogName('feats', id);
+                const feat = GetFeatByName(featName);
+                if (!feat?.abilityScoreChoice) return null;
+                return { id, name: feat.name, amount: feat.abilityScoreChoice.amount, options: feat.abilityScoreChoice.options };
+              })
+              .filter((entry): entry is { id: string; name: string; amount: number; options: string[] } => entry !== null);
+          },
+
+          GetFeatAbilityChoice(character: CharacterRecord | null, featId: string): string {
+            return (character?.featAbilityChoices ?? {})[featId] ?? '';
+          },
+
+          SetFeatAbilityChoice(featId: string, abilityKey: string) {
+            if (!this.editingCharacter) return;
+            if (!this.editingCharacter.featAbilityChoices) {
+              this.editingCharacter.featAbilityChoices = {};
+            }
+            if (abilityKey) {
+              this.editingCharacter.featAbilityChoices[featId] = abilityKey;
+            } else {
+              delete this.editingCharacter.featAbilityChoices[featId];
+            }
+            this.SaveAll();
+          },
+
           GetEffectiveAbilityScore(character: CharacterRecord | null, key: keyof CharacterRecord['abilityScores']): number {
             if (!character) {
               return 10;
             }
 
-            return (character.abilityScores[key] ?? 10) + (this.GetRaceAbilityScoreBonuses(character)[key] ?? 0);
+            return (character.abilityScores[key] ?? 10)
+              + (this.GetRaceAbilityScoreBonuses(character)[key] ?? 0)
+              + (this.GetFeatAbilityBonuses(character)[key] ?? 0);
           },
 
           GetAbilityScoreWithBonusSummary(character: CharacterRecord | null, key: keyof CharacterRecord['abilityScores']): string {
@@ -2229,7 +2307,9 @@ const NpcEasyApp = (): any => {
             }
 
             const baseScore = character.abilityScores[key] ?? 10;
-            const bonus = this.GetRaceAbilityScoreBonuses(character)[key] ?? 0;
+            const raceBonus = this.GetRaceAbilityScoreBonuses(character)[key] ?? 0;
+            const featBonus = this.GetFeatAbilityBonuses(character)[key] ?? 0;
+            const bonus = raceBonus + featBonus;
             if (bonus === 0) {
               return `${baseScore}`;
             }
@@ -2907,6 +2987,9 @@ const NpcEasyApp = (): any => {
                 }
             } else {
                 this.editingCharacter[listKey] = existing.filter((value: string) => value !== id);
+                if (listKey === 'featIds' && this.editingCharacter.featAbilityChoices) {
+                    delete this.editingCharacter.featAbilityChoices[id];
+                }
             }
 
             this.SaveAll();
