@@ -1180,81 +1180,6 @@ app.innerHTML = `
               <p class="mt-2 text-sm text-ink-soft" x-show="editingCharacter?.fightingStyleId" x-text="GetCatalogDescription('fightingStyles', editingCharacter?.fightingStyleId || '')"></p>
             </div>
 
-            <div>
-              <div class="mb-2 flex items-center justify-between">
-                <p class="field-heading">Armor & Weapons</p>
-                <p class="text-xs text-ink-soft">Track worn armor, shield use, and wielded weapons for exact fighting-style math.</p>
-              </div>
-              <div class="grid gap-3 md:grid-cols-3">
-                <label class="field-label">Equipped Armor
-                  <select x-model="editingCharacter.equippedArmorId" x-effect="$el.value = editingCharacter?.equippedArmorId ?? ''" class="input-base" @change="NormalizeEquippedLoadout()">
-                    <option value="" :selected="!editingCharacter?.equippedArmorId">No armor</option>
-                    <template x-for="armor in armors" :key="armor.id">
-                      <option :value="armor.id" :selected="editingCharacter?.equippedArmorId === armor.id" x-text="armor.name"></option>
-                    </template>
-                  </select>
-                </label>
-                <label class="field-label">Armor Magic Bonus
-                  <input
-                    class="input-base"
-                    type="number"
-                    min="0"
-                    max="10"
-                    :value="GetArmorMagicBonus(editingCharacter)"
-                    @input="SetArmorMagicBonus(editingCharacter, $event.target.value)"
-                    :disabled="!editingCharacter?.equippedArmorId"
-                  />
-                </label>
-                <label class="field-label">Shield
-                  <label class="input-base flex items-center gap-2 rounded-xl border  px-3 py-3 text-sm text-ink">
-                    <input x-model="editingCharacter.hasShield" type="checkbox" class="h-4 w-4" @change="NormalizeEquippedLoadout()" />
-                    <span>Using a shield (+2 AC)</span>
-                  </label>
-                </label>
-                <label class="field-label">Shield Magic Bonus
-                  <input
-                    class="input-base"
-                    type="number"
-                    min="0"
-                    max="10"
-                    :value="GetShieldMagicBonus(editingCharacter)"
-                    @input="SetShieldMagicBonus(editingCharacter, $event.target.value)"
-                    :disabled="!editingCharacter?.hasShield"
-                  />
-                </label>
-                <label class="field-label">Primary Weapon
-                  <select x-model="editingCharacter.primaryWeaponId" x-effect="$el.value = editingCharacter?.primaryWeaponId ?? ''" class="input-base" @change="NormalizeEquippedLoadout()">
-                    <option value="" :selected="!editingCharacter?.primaryWeaponId">No primary weapon</option>
-                    <template x-for="weapon in GetLoadoutWeaponOptions(editingCharacter)" :key="weapon.id">
-                      <option :value="weapon.id" :selected="editingCharacter?.primaryWeaponId === weapon.id" x-text="weapon.name"></option>
-                    </template>
-                  </select>
-                </label>
-                <label class="field-label">Off-Hand Weapon
-                  <select x-model="editingCharacter.offhandWeaponId" x-effect="$el.value = editingCharacter?.offhandWeaponId ?? ''" class="input-base" @change="NormalizeEquippedLoadout()" :disabled="editingCharacter?.hasShield || IsPrimaryWeaponLockedToTwoHands(editingCharacter)">
-                    <option value="" :selected="!editingCharacter?.offhandWeaponId">No off-hand weapon</option>
-                    <template x-for="weapon in GetOffhandWeaponOptions(editingCharacter)" :key="weapon.id">
-                      <option :value="weapon.id" :selected="editingCharacter?.offhandWeaponId === weapon.id" x-text="weapon.name"></option>
-                    </template>
-                  </select>
-                </label>
-              </div>
-              <div class="mt-3 grid gap-3 md:grid-cols-2" x-show="ShouldShowPrimaryGrip(editingCharacter)" x-cloak>
-                <label class="field-label">Primary Weapon Grip
-                  <select x-model="editingCharacter.primaryWeaponGrip" x-effect="$el.value = editingCharacter?.primaryWeaponGrip ?? 'one-handed'" class="input-base" @change="NormalizeEquippedLoadout()">
-                    <option value="one-handed" :selected="editingCharacter?.primaryWeaponGrip !== 'two-handed'">One-Handed</option>
-                    <option value="two-handed" :selected="editingCharacter?.primaryWeaponGrip === 'two-handed'">Two-Handed</option>
-                  </select>
-                </label>
-              </div>
-              <p class="mt-2 text-sm text-ink-soft" x-text="GetArmorClassNote(editingCharacter)"></p>
-              <ul class="mt-2 list-base text-sm text-red-700" x-show="GetLoadoutWarnings(editingCharacter).length > 0" x-cloak>
-                <template x-for="warning in GetLoadoutWarnings(editingCharacter)" :key="warning">
-                  <li x-text="warning"></li>
-                </template>
-              </ul>
-            </div>
-
             <div class="grid gap-4 md:grid-cols-3">
               <div>
                 <p class="field-label">Feats</p>
@@ -1312,6 +1237,81 @@ app.innerHTML = `
                   </template>
                 </div>
               </div>
+            </div>
+
+            <div>
+              <div class="mb-2 flex items-center justify-between">
+                <p class="field-heading">Armor & Weapons</p>
+                <p class="text-xs text-ink-soft">Track worn armor, shield use, and wielded weapons for exact fighting-style math.</p>
+              </div>
+              <div class="grid gap-3 md:grid-cols-3">
+                <label class="field-label">Equipped Armor
+                  <select x-model="editingCharacter.equippedArmorId" x-effect="$el.value = editingCharacter?.equippedArmorId ?? ''" class="input-base" @change="NormalizeEquippedLoadout()">
+                    <option value="" :selected="!editingCharacter?.equippedArmorId">No armor</option>
+                    <template x-for="armor in armors" :key="armor.id">
+                      <option :value="armor.id" :selected="editingCharacter?.equippedArmorId === armor.id" x-text="armor.name"></option>
+                    </template>
+                  </select>
+                </label>
+                <label class="field-label">Armor Magic Bonus
+                  <input
+                    class="input-base"
+                    type="number"
+                    min="0"
+                    max="10"
+                    :value="GetArmorMagicBonus(editingCharacter)"
+                    @input="SetArmorMagicBonus(editingCharacter, $event.target.value)"
+                    :disabled="!editingCharacter?.equippedArmorId"
+                  />
+                </label>
+                <label class="field-label">Shield
+                  <label class="input-base flex items-center gap-2 rounded-xl border px-3 py-3 text-sm text-ink">
+                    <input x-model="editingCharacter.hasShield" type="checkbox" class="h-4 w-4" @change="NormalizeEquippedLoadout()" />
+                    <span>Using a shield (+2 AC)</span>
+                  </label>
+                </label>
+                <label class="field-label">Shield Magic Bonus
+                  <input
+                    class="input-base"
+                    type="number"
+                    min="0"
+                    max="10"
+                    :value="GetShieldMagicBonus(editingCharacter)"
+                    @input="SetShieldMagicBonus(editingCharacter, $event.target.value)"
+                    :disabled="!editingCharacter?.hasShield"
+                  />
+                </label>
+                <label class="field-label">Primary Weapon
+                  <select x-model="editingCharacter.primaryWeaponId" x-effect="$el.value = editingCharacter?.primaryWeaponId ?? ''" class="input-base" @change="NormalizeEquippedLoadout()">
+                    <option value="" :selected="!editingCharacter?.primaryWeaponId">No primary weapon</option>
+                    <template x-for="weapon in GetLoadoutWeaponOptions(editingCharacter)" :key="weapon.id">
+                      <option :value="weapon.id" :selected="editingCharacter?.primaryWeaponId === weapon.id" x-text="weapon.name"></option>
+                    </template>
+                  </select>
+                </label>
+                <label class="field-label">Off-Hand Weapon
+                  <select x-model="editingCharacter.offhandWeaponId" x-effect="$el.value = editingCharacter?.offhandWeaponId ?? ''" class="input-base" @change="NormalizeEquippedLoadout()" :disabled="editingCharacter?.hasShield || IsPrimaryWeaponLockedToTwoHands(editingCharacter)">
+                    <option value="" :selected="!editingCharacter?.offhandWeaponId">No off-hand weapon</option>
+                    <template x-for="weapon in GetOffhandWeaponOptions(editingCharacter)" :key="weapon.id">
+                      <option :value="weapon.id" :selected="editingCharacter?.offhandWeaponId === weapon.id" x-text="weapon.name"></option>
+                    </template>
+                  </select>
+                </label>
+              </div>
+              <div class="mt-3 grid gap-3 md:grid-cols-2" x-show="ShouldShowPrimaryGrip(editingCharacter)" x-cloak>
+                <label class="field-label">Primary Weapon Grip
+                  <select x-model="editingCharacter.primaryWeaponGrip" x-effect="$el.value = editingCharacter?.primaryWeaponGrip ?? 'one-handed'" class="input-base" @change="NormalizeEquippedLoadout()">
+                    <option value="one-handed" :selected="editingCharacter?.primaryWeaponGrip !== 'two-handed'">One-Handed</option>
+                    <option value="two-handed" :selected="editingCharacter?.primaryWeaponGrip === 'two-handed'">Two-Handed</option>
+                  </select>
+                </label>
+              </div>
+              <p class="mt-2 text-sm text-ink-soft" x-text="GetArmorClassNote(editingCharacter)"></p>
+              <ul class="mt-2 list-base text-sm text-red-700" x-show="GetLoadoutWarnings(editingCharacter).length > 0" x-cloak>
+                <template x-for="warning in GetLoadoutWarnings(editingCharacter)" :key="warning">
+                  <li x-text="warning"></li>
+                </template>
+              </ul>
             </div>
 
             <div>
