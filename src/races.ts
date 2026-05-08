@@ -61,11 +61,11 @@ export const Races: Race[] = [
         25,
         ['Common', 'Dwarvish'],
         [
-            { name: 'Darkvision', description: 'Accustomed to life underground, you can see in dim light within 60 feet as if it were bright light, and in darkness as if it were dim light.' },
-            { name: 'Dwarven Resilience', description: 'You have advantage on saving throws against poison, and you have resistance against poison damage.' },
-            { name: 'Dwarven Combat Training', description: 'You have proficiency with the battleaxe, handaxe, light hammer, and warhammer.' },
-            { name: 'Tool Proficiency', description: 'You gain proficiency with the artisan\'s tools of your choice: smith\'s tools, brewer\'s supplies, or mason\'s tools.' },
-            { name: 'Stonecunning', description: 'Whenever you make an Intelligence (History) check related to the origin of stonework, you are considered proficient in the History skill and add double your proficiency bonus to the check.' },
+            { name: 'Darkvision', description: 'See in dim light within 60 feet as if it were bright light, and in darkness as if it were dim light.' },
+            { name: 'Dwarven Resilience', description: 'Advantage on saving throws against poison; have resistance against poison damage.' },
+            { name: 'Dwarven Combat Training', description: 'Proficient with battleaxe, handaxe, light hammer, and warhammer.' },
+            { name: 'Tool Proficiency', description: 'Proficient with the artisan\'s tools of your choice: smith\'s tools, brewer\'s supplies, or mason\'s tools.' },
+            { name: 'Stonecunning', description: 'For INT (History) checks related to stonework, considered proficient in the History, and add double proficiency bonus to the check.' },
         ],
         [
             new Race(
@@ -75,7 +75,7 @@ export const Races: Race[] = [
                 'Hill dwarves have the same lifespan as other dwarves.',
                 'Most hill dwarves are lawful good.',
                 'Medium', 25, ['Common', 'Dwarvish'],
-                [{ name: 'Dwarven Toughness', description: 'Your hit point maximum increases by 1, and it increases by 1 every time you gain a level.' }]
+                [{ name: 'Dwarven Toughness', description: 'HP max increases by 1; increases by 1 every level gained.' }]
             ),
             new Race(
                 'Mountain Dwarf',
@@ -84,7 +84,7 @@ export const Races: Race[] = [
                 'Mountain dwarves have the same lifespan as other dwarves.',
                 'Most mountain dwarves are lawful good.',
                 'Medium', 25, ['Common', 'Dwarvish'],
-                [{ name: 'Dwarven Armor Training', description: 'You have proficiency with light and medium armor.' }]
+                [{ name: 'Dwarven Armor Training', description: 'Proficient with light and medium armor.' }]
             ),
         ]
     ),
@@ -100,10 +100,10 @@ export const Races: Race[] = [
         30,
         ['Common', 'Elvish'],
         [
-            { name: 'Darkvision', description: 'Accustomed to twilit forests and the night sky, you can see in dim light within 60 feet as if it were bright light, and in darkness as if it were dim light.' },
-            { name: 'Keen Senses', description: 'You have proficiency in the Perception skill.' },
-            { name: 'Fey Ancestry', description: 'You have advantage on saving throws against being charmed, and magic can\'t put you to sleep.' },
-            { name: 'Trance', description: 'Elves don\'t need to sleep. Instead, they meditate deeply, remaining semiconscious, for 4 hours a day. While meditating, you can dream after a fashion; such dreams are actually mental exercises that have become reflexive through years of practice. After resting in this way, you gain the same benefit that a human does from 8 hours of sleep.' },
+            { name: 'Darkvision', description: 'Can see in dim light within 60 feet as if it were bright light, and in darkness as if it were dim light.' },
+            { name: 'Keen Senses', description: 'Proficient in the Perception skill.' },
+            { name: 'Fey Ancestry', description: 'Advantage on saving throws against being charmed, and magic can\'t put you to sleep.' },
+            { name: 'Trance', description: 'Don\'t need sleep. After 4 hrs. meditation, gain same benefit that a human does from 8 hours of sleep.' },
         ],
         [
             new Race(
@@ -114,9 +114,9 @@ export const Races: Race[] = [
                 'High elves tend toward chaotic good.',
                 'Medium', 30, ['Common', 'Elvish'],
                 [
-                    { name: 'Elf Weapon Training', description: 'You have proficiency with the longsword, shortsword, shortbow, and longbow.' },
-                    { name: 'Cantrip', description: 'You know one cantrip of your choice from the wizard spell list. Intelligence is your spellcasting ability for it.' },
-                    { name: 'Extra Language', description: 'You can speak, read, and write one extra language of your choice.' },
+                    { name: 'Elf Weapon Training', description: 'Proficient with longsword, shortsword, shortbow, longbow.' },
+                    { name: 'Cantrip', description: 'Know one cantrip from Wizard spell list. INT is spellcasting ability for it.' },
+                    { name: 'Extra Language', description: 'Speak, read, and write one extra language of your choice.' },
                 ]
             ),
             new Race(
@@ -127,9 +127,9 @@ export const Races: Race[] = [
                 'Wood elves tend toward chaotic good.',
                 'Medium', 35, ['Common', 'Elvish'],
                 [
-                    { name: 'Elf Weapon Training', description: 'You have proficiency with the longsword, shortsword, shortbow, and longbow.' },
-                    { name: 'Fleet of Foot', description: 'Your base walking speed increases to 35 feet.' },
-                    { name: 'Mask of the Wild', description: 'You can attempt to hide even when you are only lightly obscured by foliage, heavy rain, falling snow, mist, and other natural phenomena.' },
+                    { name: 'Elf Weapon Training', description: 'Proficient with longsword, shortsword, shortbow, longbow.' },
+                    { name: 'Fleet of Foot', description: 'Base walking speed increases to 35 feet.' },
+                    { name: 'Mask of the Wild', description: 'Can attempt to hide even when only lightly obscured by natural phenomena.' },
                 ]
             ),
             new Race(
@@ -140,10 +140,10 @@ export const Races: Race[] = [
                 'Drow are usually chaotic evil.',
                 'Medium', 30, ['Common', 'Elvish', 'Undercommon'],
                 [
-                    { name: 'Superior Darkvision', description: 'Your darkvision has a radius of 120 feet.' },
-                    { name: 'Sunlight Sensitivity', description: 'You have disadvantage on attack rolls and on Wisdom (Perception) checks that rely on sight when you, the target of your attack, or whatever you are trying to perceive is in direct sunlight.' },
-                    { name: 'Drow Magic', description: 'You know the dancing lights cantrip. At 3rd level, you can cast faerie fire once per day. At 5th level, you can also cast darkness once per day. Charisma is your spellcasting ability for these spells.' },
-                    { name: 'Drow Weapon Training', description: 'You have proficiency with rapiers, shortswords, and hand crossbows.' },
+                    { name: 'Superior Darkvision', description: 'Darkvision has a radius of 120 feet.' },
+                    { name: 'Sunlight Sensitivity', description: 'Disadvantage on attack rolls and on WIS (Perception) checks that rely on sight when in direct sunlight.' },
+                    { name: 'Drow Magic', description: 'You know the dancing lights cantrip. At 3rd level, can cast faerie fire once per day. At 5th level, can cast darkness once per day. CHA is spellcasting ability for these spells.' },
+                    { name: 'Drow Weapon Training', description: 'Proficient with rapiers, shortswords, and hand crossbows.' },
                 ]
             ),
         ]
@@ -160,9 +160,9 @@ export const Races: Race[] = [
         25,
         ['Common', 'Halfling'],
         [
-            { name: 'Lucky', description: 'When you roll a 1 on the d20 for an attack roll, ability check, or saving throw, you can reroll the die and must use the new roll.' },
-            { name: 'Brave', description: 'You have advantage on saving throws against being frightened.' },
-            { name: 'Halfling Nimbleness', description: 'You can move through the space of any creature that is of a size larger than yours.' },
+            { name: 'Lucky', description: 'Can reroll a 1 for an attack roll, ability check, saving throw.' },
+            { name: 'Brave', description: 'Advantage on saving throws against being frightened.' },
+            { name: 'Halfling Nimbleness', description: 'Move through the space of any creature a size larger than yours.' },
         ],
         [
             new Race(
@@ -172,7 +172,7 @@ export const Races: Race[] = [
                 'Lightfoot halflings have the same lifespan as other halflings.',
                 'Lightfoot halflings tend toward lawful good.',
                 'Small', 25, ['Common', 'Halfling'],
-                [{ name: 'Naturally Stealthy', description: 'You can attempt to hide even when you are obscured only by a creature that is at least one size larger than you.' }]
+                [{ name: 'Naturally Stealthy', description: 'Can attempt to hide even when obscured only by a creature at least one size larger than you.' }]
             ),
             new Race(
                 'Stout Halfling',
@@ -181,7 +181,7 @@ export const Races: Race[] = [
                 'Stout halflings have the same lifespan as other halflings.',
                 'Stout halflings tend toward lawful good.',
                 'Small', 25, ['Common', 'Halfling'],
-                [{ name: 'Stout Resilience', description: 'You have advantage on saving throws against poison, and you have resistance against poison damage.' }]
+                [{ name: 'Stout Resilience', description: 'Advantage on saves against poison; resistance against poison damage.' }]
             ),
         ]
     ),
@@ -197,7 +197,7 @@ export const Races: Race[] = [
         30,
         ['Common'],
         [
-            { name: 'Extra Language', description: 'You can speak, read, and write one extra language of your choice.' },
+            { name: 'Extra Language', description: 'One extra language of your choice.' },
         ]
     ),
 
@@ -212,9 +212,9 @@ export const Races: Race[] = [
         30,
         ['Common', 'Draconic'],
         [
-            { name: 'Draconic Ancestry', description: 'You have draconic heritage. Choose one type of dragon from the Draconic Ancestry table. Your breath weapon and damage resistance are determined by the dragon type, as shown in the table (Black/Acid, Blue/Lightning, Brass/Fire, Bronze/Lightning, Copper/Acid, Gold/Fire, Green/Poison, Red/Fire, Silver/Cold, White/Cold).' },
-            { name: 'Breath Weapon', description: 'You can use your action to exhale destructive energy. Your draconic ancestry determines the size, shape, and damage type of the exhalation. When you use your breath weapon, each creature in the area of the exhalation must make a saving throw, the type of which is determined by your draconic ancestry. The DC for this saving throw equals 8 + your Constitution modifier + your proficiency bonus. A creature takes 2d6 damage on a failed save, and half as much damage on a successful one. The damage increases to 3d6 at 6th level, 4d6 at 11th level, and 5d6 at 16th level. After you use your breath weapon, you can\'t use it again until you complete a short or long rest.' },
-            { name: 'Damage Resistance', description: 'You have resistance to the damage type associated with your draconic ancestry.' },
+            { name: 'Draconic Ancestry', description: 'Choose one type of dragon. Breath weapon & damage resistance are determined by the dragon type.' },
+            { name: 'Breath Weapon', description: 'Can exhale destructive energy. Draconic ancestry determines size, shape, and damage type. Creatures in the area must make a saving throw, determined by your ancestry. DC equals 8 + CON modifier + your proficiency bonus. 2d6 damage on a fail, half as much on success. Damage increases to 3d6 at 6th, 4d6 at 11th, 5d6 at 16th. Once per rest.' },
+            { name: 'Damage Resistance', description: 'Have resistance to the damage type associated with your draconic ancestry.' },
         ]
     ),
 
@@ -229,8 +229,8 @@ export const Races: Race[] = [
         25,
         ['Common', 'Gnomish'],
         [
-            { name: 'Darkvision', description: 'Accustomed to life underground, you can see in dim light within 60 feet as if it were bright light, and in darkness as if it were dim light.' },
-            { name: 'Gnome Cunning', description: 'You have advantage on all Intelligence, Wisdom, and Charisma saving throws against magic.' },
+            { name: 'Darkvision', description: 'Can see in dim light within 60 feet as if it were bright light, and in darkness as if it were dim light.' },
+            { name: 'Gnome Cunning', description: 'Advantage on all INT, WIS, and CHA saving throws against magic.' },
         ],
         [
             new Race(
@@ -241,8 +241,8 @@ export const Races: Race[] = [
                 'Forest gnomes tend toward good.',
                 'Small', 25, ['Common', 'Gnomish'],
                 [
-                    { name: 'Natural Illusionist', description: 'You know the minor illusion cantrip. Intelligence is your spellcasting ability for it.' },
-                    { name: 'Speak with Small Beasts', description: 'Through sounds and gestures, you can communicate simple ideas with Small or smaller beasts. Forest gnomes love animals and often keep squirrels, badgers, rabbits, moles, woodpeckers, and other creatures as beloved pets.' },
+                    { name: 'Natural Illusionist', description: 'Know Minor Illusion cantrip. INT is spellcasting ability for it.' },
+                    { name: 'Speak with Small Beasts', description: 'Can communicate simple ideas with Small or smaller beasts.' },
                 ]
             ),
             new Race(
@@ -253,8 +253,8 @@ export const Races: Race[] = [
                 'Rock gnomes tend toward good.',
                 'Small', 25, ['Common', 'Gnomish'],
                 [
-                    { name: 'Artificer\'s Lore', description: 'Whenever you make an Intelligence (History) check related to magic items, alchemical objects, or technological devices, you can add twice your proficiency bonus, instead of any proficiency bonus you normally apply.' },
-                    { name: 'Tinker', description: 'You have proficiency with artisan\'s tools (tinker\'s tools). Using those tools, you can spend 1 hour and 10 gp worth of materials to construct a Tiny clockwork device (AC 5, 1 hp). The device ceases to function after 24 hours or when you dismantle it as an action.' },
+                    { name: 'Artificer\'s Lore', description: 'INT (History) check related to magic items, alchemical objects, or technological devices, add twice your proficiency bonus' },
+                    { name: 'Tinker', description: 'Proficiency with artisan\'s tools (tinker\'s tools). Spend 1 hour and 10 gp worth of materials to construct a Tiny clockwork device.' },
                 ]
             ),
         ]

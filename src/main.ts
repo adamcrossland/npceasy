@@ -91,6 +91,7 @@ type CharacterRecord = {
     hasShield?: boolean;
     armorMagicBonus?: number;
     shieldMagicBonus?: number;
+    skillProficiencies?: string[];
     speed: number;
     abilityScores: {
         strength: number;
@@ -242,6 +243,42 @@ const SpellSchools = [
     'Necromancy',
     'Transmutation'
 ];
+
+  const ClassSkillChoiceLimits: Record<string, number> = {
+    Barbarian: 2,
+    Bard: 3,
+    Cleric: 2,
+    Druid: 2,
+    Fighter: 2,
+    Monk: 2,
+    Paladin: 2,
+    Ranger: 3,
+    Rogue: 4,
+    Sorcerer: 2,
+    Warlock: 2,
+    Wizard: 2
+  };
+
+  const SkillDefinitions: Array<{ name: string; ability: keyof CharacterRecord['abilityScores']; abilityLabel: string }> = [
+    { name: 'Acrobatics', ability: 'dexterity', abilityLabel: 'DEX' },
+    { name: 'Animal Handling', ability: 'wisdom', abilityLabel: 'WIS' },
+    { name: 'Arcana', ability: 'intelligence', abilityLabel: 'INT' },
+    { name: 'Athletics', ability: 'strength', abilityLabel: 'STR' },
+    { name: 'Deception', ability: 'charisma', abilityLabel: 'CHA' },
+    { name: 'History', ability: 'intelligence', abilityLabel: 'INT' },
+    { name: 'Insight', ability: 'wisdom', abilityLabel: 'WIS' },
+    { name: 'Intimidation', ability: 'charisma', abilityLabel: 'CHA' },
+    { name: 'Investigation', ability: 'intelligence', abilityLabel: 'INT' },
+    { name: 'Medicine', ability: 'wisdom', abilityLabel: 'WIS' },
+    { name: 'Nature', ability: 'intelligence', abilityLabel: 'INT' },
+    { name: 'Perception', ability: 'wisdom', abilityLabel: 'WIS' },
+    { name: 'Performance', ability: 'charisma', abilityLabel: 'CHA' },
+    { name: 'Persuasion', ability: 'charisma', abilityLabel: 'CHA' },
+    { name: 'Religion', ability: 'intelligence', abilityLabel: 'INT' },
+    { name: 'Sleight of Hand', ability: 'dexterity', abilityLabel: 'DEX' },
+    { name: 'Stealth', ability: 'dexterity', abilityLabel: 'DEX' },
+    { name: 'Survival', ability: 'wisdom', abilityLabel: 'WIS' }
+  ];
 
 function SummarizeSpellEffect(description: string): string {
     const text = (description ?? '').replace(/\r/g, '').trim();
@@ -483,6 +520,9 @@ function NormalizeCharacterWeaponData(character: CharacterRecord): CharacterReco
     const shieldMagicBonus = Number.isFinite(Number(character.shieldMagicBonus))
       ? Math.max(0, Number(character.shieldMagicBonus))
       : 0;
+    const normalizedSkillProficiencies = [...new Set((character.skillProficiencies ?? [])
+      .map((skill) => (skill ?? '').trim())
+      .filter((skill) => SkillDefinitions.some((def) => def.name === skill)))];
 
     return {
         ...characterWithoutLegacyArmorClass,
@@ -494,6 +534,7 @@ function NormalizeCharacterWeaponData(character: CharacterRecord): CharacterReco
         hasShield: Boolean(character.hasShield),
         armorMagicBonus,
         shieldMagicBonus,
+        skillProficiencies: normalizedSkillProficiencies,
         weaponMagicBonuses: normalizedBonuses,
         characterWeapons: mergedWeaponIds.map((weaponId) => ({
             weaponId,
@@ -844,6 +885,7 @@ function BuildNewCharacter(raceId: string): CharacterRecord {
         primaryWeaponGrip: 'one-handed',
         characterWeapons: [],
         weaponMagicBonuses: {},
+        skillProficiencies: [],
         spellIds: [],
         alignment: '',
         background: '',
@@ -1145,7 +1187,7 @@ app.innerHTML = `
               <div class="space-y-2">
                 <template x-for="(row, index) in editingCharacter.classLevels" :key="index">
                   <div class="grid gap-2" :class="GetSubclassOptionsForClass(row.classId).length > 0 ? 'md:grid-cols-[1fr_160px_90px_auto]' : 'md:grid-cols-[1fr_90px_auto]'">
-                    <select x-model="row.classId" x-effect="$el.value = row.classId ?? ''" class="input-base" @change="NormalizeSubclassSelection(row); NormalizeFightingStyleSelection()">
+                    <select x-model="row.classId" x-effect="$el.value = row.classId ?? ''" class="input-base" @change="NormalizeSubclassSelection(row); NormalizeFightingStyleSelection(); NormalizeSkillProficiencies()">
                       <option value="" :selected="!row.classId">Choose class</option>
                       <template x-for="entry in catalogs.classes" :key="entry.name">
                         <option :value="entry.name" :selected="row.classId === entry.name" x-text="entry.name"></option>
@@ -1166,6 +1208,31 @@ app.innerHTML = `
                 <p class="text-sm text-ink-soft" x-show="(editingCharacter?.classLevels?.length ?? 0) === 0" x-cloak>No class levels set yet. Click Add Class to begin.</p>
                 <p class="text-sm font-semibold text-red-700" x-show="ShouldPromptWizardArcaneTradition(editingCharacter)" x-cloak>Wizard characters at level 2+ must choose an Arcane Tradition.</p>
               </div>
+            </div>
+
+            <div>
+              <div class="mb-2 flex items-center justify-between">
+                <p class="field-heading">Skills</p>
+                <p class="text-xs text-ink-soft" x-text="GetAvailableSkillOptions(editingCharacter).length > 0 ? ('Selected ' + GetSelectedSkillCount(editingCharacter) + ' of ' + GetSkillSelectionLimit(editingCharacter)) : 'Choose proficient skills from your class skill lists.'"></p>
+              </div>
+              <div class="input-base min-h-[140px] max-h-[260px] overflow-y-auto" x-show="GetAvailableSkillOptions(editingCharacter).length > 0" x-cloak>
+                <div class="grid gap-2 sm:grid-cols-2">
+                  <template x-for="skill in GetAvailableSkillOptions(editingCharacter)" :key="'skill-option-' + skill.name">
+                    <label class="flex items-center gap-2 text-sm text-ink">
+                      <input
+                        type="checkbox"
+                        class="h-4 w-4"
+                        :checked="IsSkillProficient(editingCharacter, skill.name)"
+                        :disabled="!CanSelectSkill(editingCharacter, skill.name)"
+                        @change="ToggleSkillProficiency(skill.name, $event.target.checked)"
+                      />
+                      <span x-text="skill.name + ' (' + skill.abilityLabel + ')'"></span>
+                    </label>
+                  </template>
+                </div>
+              </div>
+              <p class="text-sm text-ink-soft" x-show="GetAvailableSkillOptions(editingCharacter).length === 0" x-cloak>Add class levels to choose skill proficiencies.</p>
+              <p class="text-xs text-red-700" x-show="GetAvailableSkillOptions(editingCharacter).length > 0 && IsSkillSelectionAtLimit(editingCharacter)" x-cloak>You have reached your skill proficiency limit.</p>
             </div>
 
             <div x-show="CanSelectFightingStyle(editingCharacter)" x-cloak>
@@ -1692,7 +1759,7 @@ app.innerHTML = `
         <section class="sheet-grid">
           <div class="sheet-card">
             <h4>Ability Scores</h4>
-            <dl class="score-grid">
+            <dl class="score-grid score-grid-compact">
               <div><dt>STR</dt><dd x-text="FormatAbilityScore(GetEffectiveAbilityScore(editingCharacter, 'strength'))"></dd></div>
               <div><dt>DEX</dt><dd x-text="FormatAbilityScore(GetEffectiveAbilityScore(editingCharacter, 'dexterity'))"></dd></div>
               <div><dt>CON</dt><dd x-text="FormatAbilityScore(GetEffectiveAbilityScore(editingCharacter, 'constitution'))"></dd></div>
@@ -1701,7 +1768,7 @@ app.innerHTML = `
               <div><dt>CHA</dt><dd x-text="FormatAbilityScore(GetEffectiveAbilityScore(editingCharacter, 'charisma'))"></dd></div>
             </dl>
             <h4>Saving Throws</h4>
-            <dl class="score-grid">
+            <dl class="score-grid score-grid-compact">
               <template x-for="save in GetSavingThrows(editingCharacter)" :key="save.label">
                 <div>
                   <dt x-text="save.label" :class="save.proficient ? 'font-bold' : ''"></dt>
@@ -1709,6 +1776,23 @@ app.innerHTML = `
                 </div>
               </template>
             </dl>
+            <h4>Skills</h4>
+            <ul class="list-base space-y-0.5 text-[11px] leading-tight">
+              <template x-for="skill in GetSkillBonuses(editingCharacter)" :key="'sheet-skill-' + skill.name">
+                <li class="flex items-center justify-between gap-1">
+                  <span class="flex min-w-0 items-center gap-1">
+                    <span
+                      class="inline-flex h-4 w-4 items-center justify-center rounded-full border text-[9px] font-bold"
+                      :class="skill.proficient ? 'border-emerald-600 bg-emerald-50 text-emerald-700' : 'border-slate-300 text-slate-500'"
+                      :title="skill.proficient ? 'Proficient' : 'Not proficient'"
+                      x-text="skill.proficient ? 'P' : '-'"
+                    ></span>
+                    <span class="truncate" x-text="skill.name"></span>
+                  </span>
+                  <span class="font-semibold tabular-nums text-[11px]" x-text="skill.value"></span>
+                </li>
+              </template>
+            </ul>
           </div>
 
         <div class="sheet-card">
@@ -2730,6 +2814,7 @@ const NpcEasyApp = (): any => {
             });
             this.NormalizeEquippedLoadout();
             this.NormalizeFightingStyleSelection();
+            this.NormalizeSkillProficiencies();
             this.SaveAll();
         },
 
@@ -2741,6 +2826,7 @@ const NpcEasyApp = (): any => {
             this.editingCharacter.classLevels.splice(index, 1);
             this.NormalizeEquippedLoadout();
             this.NormalizeFightingStyleSelection();
+            this.NormalizeSkillProficiencies();
             this.SaveAll();
         },
 
@@ -2917,6 +3003,7 @@ const NpcEasyApp = (): any => {
                 if (key === 'classes') {
                     const removedClassName = removedItem?.name;
                     this.editingCharacter.classLevels = this.editingCharacter.classLevels.filter((entry: ClassLevel) => entry.classId !== removedClassName);
+                  this.NormalizeSkillProficiencies();
                 }
             }
 
@@ -2975,6 +3062,144 @@ const NpcEasyApp = (): any => {
 
         GetProficiencyBonus(level: number): number {
             return Math.ceil(level / 4) + 1;
+        },
+
+        GetAvailableSkillOptions(character: CharacterRecord | null): Array<{ name: string; ability: keyof CharacterRecord['abilityScores']; abilityLabel: string }> {
+          if (!character) {
+            return [];
+          }
+
+          const availableSkills = new Set<string>();
+          for (const entry of character.classLevels ?? []) {
+            if (!entry.classId || (entry.level ?? 0) <= 0) {
+              continue;
+            }
+
+            const charClass = AllClasses.find((cls) => cls.classType === entry.classId);
+            for (const skill of charClass?.proficiencies.skills ?? []) {
+              availableSkills.add(skill);
+            }
+          }
+
+          return SkillDefinitions.filter((skill) => availableSkills.has(skill.name));
+        },
+
+        GetCharacterSkillProficiencies(character: CharacterRecord | null): string[] {
+          if (!character) {
+            return [];
+          }
+
+          const normalized = [...new Set((character.skillProficiencies ?? [])
+            .map((skill) => (skill ?? '').trim())
+            .filter((skill) => skill.length > 0 && SkillDefinitions.some((def) => def.name === skill)))];
+          character.skillProficiencies = normalized;
+          return normalized;
+        },
+
+        GetSkillSelectionLimit(character: CharacterRecord | null): number {
+          if (!character) {
+            return 0;
+          }
+
+          const classIds = [...new Set((character.classLevels ?? [])
+            .filter((entry) => !!entry.classId && (entry.level ?? 0) > 0)
+            .map((entry) => entry.classId))];
+
+          return classIds.reduce((total, classId) => total + (ClassSkillChoiceLimits[classId] ?? 0), 0);
+        },
+
+        GetSelectedSkillCount(character: CharacterRecord | null): number {
+          return this.GetCharacterSkillProficiencies(character).length;
+        },
+
+        IsSkillSelectionAtLimit(character: CharacterRecord | null): boolean {
+          const limit = this.GetSkillSelectionLimit(character);
+          if (limit <= 0) {
+            return true;
+          }
+
+          return this.GetSelectedSkillCount(character) >= limit;
+        },
+
+        CanSelectSkill(character: CharacterRecord | null, skillName: string): boolean {
+          if (!character) {
+            return false;
+          }
+
+          if (this.IsSkillProficient(character, skillName)) {
+            return true;
+          }
+
+          return !this.IsSkillSelectionAtLimit(character);
+        },
+
+        NormalizeSkillProficiencies() {
+          if (!this.editingCharacter) {
+            return;
+          }
+
+          const available = new Set(this.GetAvailableSkillOptions(this.editingCharacter).map((skill: { name: string }) => skill.name));
+          const limit = this.GetSkillSelectionLimit(this.editingCharacter);
+          this.editingCharacter.skillProficiencies = this.GetCharacterSkillProficiencies(this.editingCharacter)
+            .filter((skill: string) => available.has(skill));
+
+          if (limit > 0 && this.editingCharacter.skillProficiencies.length > limit) {
+            this.editingCharacter.skillProficiencies = this.editingCharacter.skillProficiencies.slice(0, limit);
+          }
+        },
+
+        IsSkillProficient(character: CharacterRecord | null, skillName: string): boolean {
+          return this.GetCharacterSkillProficiencies(character).includes(skillName);
+        },
+
+        ToggleSkillProficiency(skillName: string, isChecked: boolean) {
+          if (!this.editingCharacter) {
+            return;
+          }
+
+            const available = new Set(this.GetAvailableSkillOptions(this.editingCharacter).map((skill: { name: string }) => skill.name));
+          if (!available.has(skillName)) {
+            return;
+          }
+
+          const current = this.GetCharacterSkillProficiencies(this.editingCharacter);
+          if (isChecked) {
+            const limit = this.GetSkillSelectionLimit(this.editingCharacter);
+            if (limit > 0 && current.length >= limit) {
+              return;
+            }
+
+            if (!current.includes(skillName)) {
+              current.push(skillName);
+            }
+            this.editingCharacter.skillProficiencies = [...new Set(current)];
+          } else {
+                this.editingCharacter.skillProficiencies = current.filter((skill: string) => skill !== skillName);
+          }
+
+          this.SaveAll();
+        },
+
+        GetSkillBonuses(character: CharacterRecord | null): Array<{ name: string; value: string; proficient: boolean }> {
+          if (!character) {
+            return [];
+          }
+
+          const profBonus = this.GetProficiencyBonus(this.GetTotalCharacterLevel(character));
+          const proficiencies = new Set(this.GetCharacterSkillProficiencies(character));
+            const available = new Set(this.GetAvailableSkillOptions(character).map((skill: { name: string }) => skill.name));
+
+          return SkillDefinitions.map((skill) => {
+            const abilityMod = this.GetAbilityModifier(this.GetEffectiveAbilityScore(character, skill.ability));
+            const proficient = available.has(skill.name) && proficiencies.has(skill.name);
+            const total = abilityMod + (proficient ? profBonus : 0);
+            const value = total >= 0 ? `+${total}` : `${total}`;
+            return {
+              name: skill.name,
+              value,
+              proficient
+            };
+          });
         },
 
         GetSavingThrows(character: CharacterRecord): { label: string; value: string; proficient: boolean }[] {
