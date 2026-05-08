@@ -45,6 +45,7 @@ type CatalogItem = {
     description: string;
     classFeatures?: ClassFeatureRecord[];
     classSubclasses?: ClassSubclass[];
+    raceSize?: string;
   raceSubraces?: RaceSubrace[];
     raceAbilityScoreBonuses?: RaceAbilityScores;
     raceLanguages?: string[];
@@ -774,6 +775,7 @@ function MergeRaceCatalog(savedRaces: CatalogItem[] | undefined, defaultRaces: C
       ...defaultItem,
       // Keep built-in race content synced with source data while preserving custom saved additions.
       description: defaultItem.description,
+      raceSize: defaultItem.raceSize,
       raceAbilityScoreBonuses: NormalizeRaceAbilityScoreBonuses(defaultItem.raceAbilityScoreBonuses),
       raceLanguages: NormalizeStringList(defaultItem.raceLanguages),
       raceTraits: MergeRaceTraitSets(defaultItem.raceTraits, savedMatch?.raceTraits),
@@ -1803,6 +1805,7 @@ app.innerHTML = `
             <span :title="GetArmorClassNote(editingCharacter)">AC <strong x-text="GetDisplayedArmorClass(editingCharacter)"></strong></span>
             <span>Speed <strong x-text="editingCharacter?.speed ?? 0"></strong> ft</span>
             <span>Prof Bonus <strong x-text="'+' + GetProficiencyBonus(GetTotalCharacterLevel(editingCharacter))"></strong></span>
+            <span>Hero Points <strong x-text="GetHeroPoints(editingCharacter)"></strong></span>
           </div>
         </header>
 
@@ -2344,7 +2347,12 @@ const NpcEasyApp = (): any => {
             if (!selectedRace) {
                 return 'Medium';
             }
-            return selectedRace.size ?? 'Medium';
+            return selectedRace.raceSize ?? 'Medium';
+        },
+
+        GetHeroPoints(character?: CharacterRecord | null): number {
+            const totalLevel = this.GetTotalCharacterLevel(character);
+            return 5 + Math.floor(totalLevel / 2);
         },
           
         GetRacialTraits(character: CharacterRecord | null): Array<{ source: string; name: string; description: string }> {
