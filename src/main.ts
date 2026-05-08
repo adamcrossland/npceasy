@@ -1946,31 +1946,36 @@ app.innerHTML = `
             </div>
           </div>
 
-          <div class="sheet-card" x-show="editingCharacter?.backgroundId" x-cloak>
-            <h4>Background</h4>
-            <div class="rounded-lg border border-amber-100 p-2">
-              <p class="font-semibold text-ink" x-text="GetCatalogName('backgrounds', editingCharacter?.backgroundId || '')"></p>
-              <p class="mt-1 text-xs text-ink-soft" x-text="GetCatalogDescription('backgrounds', editingCharacter?.backgroundId || '')"></p>
-            </div>
-          </div>
-
-          <div class="sheet-card" x-show="GetClassFeatureSummary(editingCharacter).length > 0" x-cloak>
-            <h4>Class Features</h4>
-            <div class="space-y-2">
-              <template x-for="entry in GetClassFeatureSummary(editingCharacter)" :key="entry.className + '-' + entry.classLevel + '-' + entry.subclassName">
-                <div class="rounded-lg border border-amber-100 p-2">
-                  <p class="font-semibold text-ink" x-text="entry.subclassName ? (entry.className + ' (' + entry.subclassName + ') Lv ' + entry.classLevel) : (entry.className + ' Lv ' + entry.classLevel)"></p>
-                  <ul class="mt-1 list-base text-sm">
-                    <template x-for="feature in entry.classFeatures" :key="entry.className + '-base-' + feature">
-                      <li x-text="feature"></li>
-                    </template>
-                    <template x-for="feature in entry.subclassFeatures" :key="entry.className + '-subclass-' + feature">
-                      <li class="text-ink-soft" x-text="feature"></li>
-                    </template>
-                  </ul>
+          <div class="sheet-card" x-show="editingCharacter?.backgroundId || GetClassFeatureSummary(editingCharacter).length > 0" x-cloak>
+            <template x-if="editingCharacter?.backgroundId">
+              <div>
+                <h4>Background</h4>
+                <div class="rounded-lg border border-amber-100 p-2 mb-4">
+                  <p class="font-semibold text-ink" x-text="GetCatalogName('backgrounds', editingCharacter?.backgroundId || '')"></p>
+                  <p class="mt-1 text-xs text-ink-soft" x-text="GetCatalogDescription('backgrounds', editingCharacter?.backgroundId || '')"></p>
                 </div>
-              </template>
-            </div>
+              </div>
+            </template>
+            <template x-if="GetClassFeatureSummary(editingCharacter).length > 0">
+              <div>
+                <h4>Class Features</h4>
+                <div class="space-y-2">
+                  <template x-for="entry in GetClassFeatureSummary(editingCharacter)" :key="entry.className + '-' + entry.classLevel + '-' + entry.subclassName">
+                    <div class="rounded-lg border border-amber-100 p-2">
+                      <p class="font-semibold text-ink" x-text="entry.subclassName ? (entry.className + ' (' + entry.subclassName + ') Lv ' + entry.classLevel) : (entry.className + ' Lv ' + entry.classLevel)"></p>
+                      <ul class="mt-1 list-base text-sm">
+                        <template x-for="feature in entry.classFeatures" :key="entry.className + '-base-' + feature">
+                          <li x-text="feature"></li>
+                        </template>
+                        <template x-for="feature in entry.subclassFeatures" :key="entry.className + '-subclass-' + feature">
+                          <li class="text-ink-soft" x-text="feature"></li>
+                        </template>
+                      </ul>
+                    </div>
+                  </template>
+                </div>
+              </div>
+            </template>
           </div>
 
           <div class="sheet-card">
