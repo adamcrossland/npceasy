@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "deploy": "npm run build && swa deploy --config-name npceasy --env production",
+    "deploy:swa": "swa deploy --config-name npceasy --env production"
   },
   "devDependencies": {
     "typescript": "~6.0.2",
