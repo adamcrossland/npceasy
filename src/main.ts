@@ -54,6 +54,13 @@ type CatalogItem = {
     scaling?: string;
     level?: number;
     classes?: string[];
+    castingTime?: string;
+    range?: string;
+    duration?: string;
+    components?: string;
+    school?: string;
+    ritual?: boolean;
+    concentration?: boolean;
     weaponDamage?: string;
     weaponDamageType?: string;
     weaponProperties?: string[];
@@ -199,7 +206,14 @@ const DEFAULT_SPELLS: CatalogItem[] = Spells.map((item) => ({
     damage: item.damage,
     scaling: item.scaling,
     level: item.level,
-    classes: item.classes
+  classes: item.classes,
+  castingTime: item.castingTime,
+  range: item.range,
+  duration: item.duration,
+  components: item.components,
+  school: item.school,
+  ritual: item.ritual,
+  concentration: item.concentration
 }));
 
 const DEFAULT_FIGHTING_STYLES: CatalogItem[] = FightingStyles.map((item) => ({
@@ -215,6 +229,16 @@ const AbilityScoreKeys: Array<keyof CharacterRecord['abilityScores']> = [
   'intelligence',
   'wisdom',
   'charisma'
+];
+const SpellSchools = [
+    'Abjuration',
+    'Conjuration',
+    'Divination',
+    'Enchantment',
+    'Evocation',
+    'Illusion',
+    'Necromancy',
+    'Transmutation'
 ];
 
 function SummarizeSpellEffect(description: string): string {
@@ -301,6 +325,25 @@ function SummarizeSpellDamage(description: string): string | undefined {
     return 'See description';
 }
 
+function NormalizeSpellBoolean(value: unknown, fallback: boolean): boolean {
+  if (typeof value === 'boolean') {
+    return value;
+  }
+
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase();
+    if (normalized === 'true') {
+      return true;
+    }
+
+    if (normalized === 'false') {
+      return false;
+    }
+  }
+
+  return fallback;
+}
+
 function NormalizeSpellCatalog(items: CatalogItem[]): CatalogItem[] {
     return items.map((item) => {
         const canonical = Spells.find((spell) => spell.name.toLowerCase() === item.name.toLowerCase());
@@ -337,10 +380,48 @@ function NormalizeSpellCatalog(items: CatalogItem[]): CatalogItem[] {
             damage: item.damage ?? canonical?.damage,
             scaling: item.scaling ?? canonical?.scaling,
             level: item.level ?? canonical?.level ?? inferredLevelFromDescription ?? 0,
-            classes: item.classes ?? canonical?.classes ?? inferredClassesFromDescription ?? []
+          classes: item.classes ?? canonical?.classes ?? inferredClassesFromDescription ?? [],
+          castingTime: item.castingTime ?? canonical?.castingTime,
+          range: item.range ?? canonical?.range,
+          duration: item.duration ?? canonical?.duration,
+          components: item.components ?? canonical?.components,
+          school: item.school ?? canonical?.school,
+          ritual: NormalizeSpellBoolean(item.ritual, canonical?.ritual ?? false),
+          concentration: NormalizeSpellBoolean(item.concentration, canonical?.concentration ?? false)
         };
     });
 }
+
+  function GetMergedSpellDetails(spell: CatalogItem): Required<Pick<CatalogItem, 'description' | 'effect' | 'level' | 'classes'>> & {
+    damage?: string;
+    scaling?: string;
+    castingTime?: string;
+    range?: string;
+    duration?: string;
+    components?: string;
+    school?: string;
+    ritual: boolean;
+    concentration: boolean;
+  } {
+    const sourceSpell = GetSpellByName(spell.name);
+    const description = (spell.description?.trim() || sourceSpell?.description || '').trim();
+
+    return {
+      description,
+      effect: spell.effect ?? sourceSpell?.effect ?? SummarizeSpellEffect(description),
+      damage: spell.damage ?? sourceSpell?.damage ?? SummarizeSpellDamage(description),
+      scaling: spell.scaling ?? sourceSpell?.scaling,
+      level: Number.isFinite(spell.level) ? (spell.level as number) : (sourceSpell?.level ?? 0),
+      classes: spell.classes ?? sourceSpell?.classes ?? [],
+      castingTime: spell.castingTime ?? sourceSpell?.castingTime,
+      range: spell.range ?? sourceSpell?.range,
+      duration: spell.duration ?? sourceSpell?.duration,
+      components: spell.components ?? sourceSpell?.components,
+      school: spell.school ?? sourceSpell?.school,
+      ritual: spell.ritual ?? sourceSpell?.ritual ?? false,
+      concentration: spell.concentration ?? sourceSpell?.concentration ?? false
+    };
+  }
 
 function NormalizeWeaponCatalog(items: CatalogItem[]): CatalogItem[] {
     return items.map((item) => {
@@ -653,7 +734,14 @@ function MergeSpellCatalog(savedSpells: CatalogItem[] | undefined, defaultSpells
             damage: savedMatch?.damage ?? defaultItem.damage,
             scaling: savedMatch?.scaling ?? defaultItem.scaling,
             level: savedMatch?.level ?? defaultItem.level,
-            classes: savedMatch?.classes ?? defaultItem.classes
+          classes: savedMatch?.classes ?? defaultItem.classes,
+          castingTime: savedMatch?.castingTime ?? defaultItem.castingTime,
+          range: savedMatch?.range ?? defaultItem.range,
+          duration: savedMatch?.duration ?? defaultItem.duration,
+          components: savedMatch?.components ?? defaultItem.components,
+          school: savedMatch?.school ?? defaultItem.school,
+          ritual: savedMatch?.ritual ?? defaultItem.ritual,
+          concentration: savedMatch?.concentration ?? defaultItem.concentration
         };
     });
 
@@ -1278,14 +1366,14 @@ app.innerHTML = `
 
           <div class="space-y-2" @input.debounce.300ms="SaveAll()">
             <template x-for="item in catalogs[group.key]" :key="item.id">
-              <div class="space-y-2">
+              <div class="space-y-2" :class="group.key === 'spells' ? 'rounded-xl border border-amber-200 p-3' : ''">
                 <div x-show="group.key === 'races'" class="rounded-xl border border-amber-300/80 bg-amber-50/80 px-4 py-3" x-cloak>
                   <h4 class="font-display text-xl text-ink" x-text="item.name || 'New Race'"></h4>
                 </div>
 
                 <div
-                  class="grid gap-2 rounded-xl border border-amber-200 p-3"
-                  :class="group.key === 'spells' ? 'md:grid-cols-[180px_1fr_90px_260px_auto]' : 'md:grid-cols-[220px_1fr_auto]'"
+                  class="grid gap-2"
+                  :class="group.key === 'spells' ? 'md:grid-cols-[180px_1fr_90px_260px_auto]' : 'rounded-xl border border-amber-200 p-3 md:grid-cols-[220px_1fr_auto]'"
                 >
                   <input x-model="item.name" type="text" class="input-base" placeholder="Name" />
                   <input x-model="item.description" type="text" class="input-base" placeholder="Description" />
@@ -1306,6 +1394,50 @@ app.innerHTML = `
                     placeholder="Classes (comma-separated)"
                   />
                   <button class="btn-danger" @click="RemoveCompendiumItem(group.key, item.id)">Remove</button>
+                </div>
+
+                <div x-show="group.key === 'spells'" class="space-y-3" x-cloak>
+                  <div class="grid gap-2 md:grid-cols-2 xl:grid-cols-4">
+                    <label class="field-label !mb-0">Damage
+                      <input x-model="item.damage" type="text" class="input-base" placeholder="e.g. 1d8 fire" />
+                    </label>
+                    <label class="field-label !mb-0">Scaling
+                      <input x-model="item.scaling" type="text" class="input-base" placeholder="Scaling text" />
+                    </label>
+                    <label class="field-label !mb-0">Casting Time
+                      <input x-model="item.castingTime" type="text" class="input-base" placeholder="1 action" />
+                    </label>
+                    <label class="field-label !mb-0">Range
+                      <input x-model="item.range" type="text" class="input-base" placeholder="60 feet" />
+                    </label>
+                    <label class="field-label !mb-0">Duration
+                      <input x-model="item.duration" type="text" class="input-base" placeholder="Instantaneous" />
+                    </label>
+                    <label class="field-label !mb-0">Components
+                      <input x-model="item.components" type="text" class="input-base" placeholder="V, S" />
+                    </label>
+                    <label class="field-label !mb-0">School
+                      <select x-model="item.school" class="input-base">
+                        <option value="">Select school</option>
+                        <template x-for="schoolName in spellSchools" :key="'spell-school-' + schoolName">
+                          <option :value="schoolName.toLowerCase()" x-text="schoolName"></option>
+                        </template>
+                      </select>
+                    </label>
+                    <label class="field-label !mb-0">Effect
+                      <input x-model="item.effect" type="text" class="input-base" placeholder="Short effect summary" />
+                    </label>
+                  </div>
+                  <div class="flex flex-wrap gap-4">
+                    <label class="inline-flex items-center gap-2 text-sm font-medium text-ink">
+                      <input x-model="item.ritual" type="checkbox" class="h-4 w-4 rounded border-amber-300 text-amber-700 focus:ring-amber-500" />
+                      Ritual
+                    </label>
+                    <label class="inline-flex items-center gap-2 text-sm font-medium text-ink">
+                      <input x-model="item.concentration" type="checkbox" class="h-4 w-4 rounded border-amber-300 text-amber-700 focus:ring-amber-500" />
+                      Concentration
+                    </label>
+                  </div>
                 </div>
 
                 <div x-show="group.key === 'classes'" class="space-y-3">
@@ -1703,6 +1835,7 @@ const NpcEasyApp = (): any => {
     return {
         ...state,
         armors: Armors,
+      spellSchools: SpellSchools,
         newCollectionName: '',
         editingCharacter: null as CharacterRecord | null,
         compendiumSections: [
@@ -1776,7 +1909,7 @@ const NpcEasyApp = (): any => {
                 return;
             }
 
-            const collection: Collection = {
+          const collection: Collection = {
                 id: NewId('collection'),
                 name: safeName,
                 characters: []
@@ -2574,6 +2707,16 @@ const NpcEasyApp = (): any => {
             if (key === 'spells') {
                 item.level = 0;
                 item.classes = [];
+              item.effect = '';
+              item.damage = '';
+              item.scaling = '';
+              item.castingTime = '';
+              item.range = '';
+              item.duration = '';
+              item.components = '';
+              item.school = '';
+              item.ritual = false;
+              item.concentration = false;
             }
 
             this.catalogs[key].unshift(item);
@@ -3100,8 +3243,7 @@ const NpcEasyApp = (): any => {
                     continue;
                 }
 
-                const sourceSpell = GetSpellByName(catalogSpell.name);
-                const damage = catalogSpell.damage ?? sourceSpell?.damage ?? SummarizeSpellDamage(catalogSpell.description ?? sourceSpell?.description ?? '');
+            const damage = GetMergedSpellDetails(catalogSpell).damage;
                 if (damage && damage !== 'See description') {
                     return true;
                 }
@@ -3210,10 +3352,8 @@ const NpcEasyApp = (): any => {
             return [...(character.spellIds ?? [])].sort((leftId: string, rightId: string) => {
                 const leftSpell = this.catalogs.spells.find((item: CatalogItem) => item.id === leftId);
                 const rightSpell = this.catalogs.spells.find((item: CatalogItem) => item.id === rightId);
-                const leftSource = leftSpell ? GetSpellByName(leftSpell.name) : undefined;
-                const rightSource = rightSpell ? GetSpellByName(rightSpell.name) : undefined;
-                const leftLevel = leftSource?.level ?? Number.MAX_SAFE_INTEGER;
-                const rightLevel = rightSource?.level ?? Number.MAX_SAFE_INTEGER;
+              const leftLevel = leftSpell ? GetMergedSpellDetails(leftSpell).level : Number.MAX_SAFE_INTEGER;
+              const rightLevel = rightSpell ? GetMergedSpellDetails(rightSpell).level : Number.MAX_SAFE_INTEGER;
 
                 if (leftLevel !== rightLevel) {
                     return leftLevel - rightLevel;
@@ -3231,19 +3371,17 @@ const NpcEasyApp = (): any => {
                 return [];
             }
 
-            // Use structured fields from the enriched spell catalog
-            const srcSpell = GetSpellByName(spell.name);
-            const descriptionText = (spell.description?.trim() || srcSpell?.description || '');
-            const castingTime = srcSpell?.castingTime ?? 'Action';
-            const range = srcSpell?.range ?? 'See description';
-            const duration = srcSpell?.duration ?? 'See description';
-            const components = srcSpell?.components ?? '';
-            const school = srcSpell?.school ?? '';
-            const ritual = srcSpell?.ritual ? ' (ritual)' : '';
-            const concentration = srcSpell?.concentration ? ' ★ Concentration' : '';
-            const effect = spell.effect ?? srcSpell?.effect ?? SummarizeSpellEffect(descriptionText);
-            const damage = spell.damage ?? srcSpell?.damage ?? SummarizeSpellDamage(descriptionText);
-            const scaling = spell.scaling ?? srcSpell?.scaling;
+          const details = GetMergedSpellDetails(spell);
+          const castingTime = details.castingTime ?? 'Action';
+          const range = details.range ?? 'See description';
+          const duration = details.duration ?? 'See description';
+          const components = details.components ?? '';
+          const school = details.school ?? '';
+          const ritual = details.ritual ? ' (ritual)' : '';
+          const concentration = details.concentration ? ' ★ Concentration' : '';
+          const effect = details.effect;
+          const damage = details.damage;
+          const scaling = details.scaling;
 
             const meta: string[] = [];
             if (school) meta.push(school.charAt(0).toUpperCase() + school.slice(1));
@@ -3275,29 +3413,28 @@ const NpcEasyApp = (): any => {
                 };
             }
 
-            const srcSpell = GetSpellByName(spell.name);
-            const descriptionText = (spell.description?.trim() || srcSpell?.description || '');
-            const school = srcSpell?.school
-                ? srcSpell.school.charAt(0).toUpperCase() + srcSpell.school.slice(1)
+                const details = GetMergedSpellDetails(spell);
+                const school = details.school
+                  ? details.school.charAt(0).toUpperCase() + details.school.slice(1)
                 : 'Spell';
-            const levelPrefix = srcSpell ? (srcSpell.level === 0 ? 'C' : `${srcSpell.level}`) : '?';
+                const levelPrefix = details.level === 0 ? 'C' : `${details.level}`;
             const tags: string[] = [];
-            if (srcSpell?.ritual) {
+                if (details.ritual) {
                 tags.push('Ritual');
             }
-            if (srcSpell?.concentration) {
+                if (details.concentration) {
                 tags.push('Concentration');
             }
 
-            const effect = spell.effect ?? srcSpell?.effect ?? SummarizeSpellEffect(descriptionText);
-            const damage = spell.damage ?? srcSpell?.damage ?? SummarizeSpellDamage(descriptionText) ?? 'None';
+                const effect = details.effect;
+                const damage = details.damage ?? 'None';
 
             return {
                 name: `${levelPrefix}: ${spell.name}`,
-                castingTime: srcSpell?.castingTime ?? 'Action',
-                range: srcSpell?.range ?? 'See description',
-                duration: srcSpell?.duration ?? 'See description',
-                components: srcSpell?.components ?? 'None',
+                  castingTime: details.castingTime ?? 'Action',
+                  range: details.range ?? 'See description',
+                  duration: details.duration ?? 'See description',
+                  components: details.components ?? 'None',
                 type: tags.length > 0 ? `${school} (${tags.join(', ')})` : school,
                 damage,
                 effects: effect || 'See full text.'
