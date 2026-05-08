@@ -89,6 +89,8 @@ type CharacterRecord = {
     armorClass?: number;
     equippedArmorId?: string;
     hasShield?: boolean;
+    armorMagicBonus?: number;
+    shieldMagicBonus?: number;
     speed: number;
     abilityScores: {
         strength: number;
@@ -475,6 +477,12 @@ function NormalizeCharacterWeaponData(character: CharacterRecord): CharacterReco
     const equippedArmorId = Armors.some((armor) => armor.id === character.equippedArmorId)
         ? character.equippedArmorId ?? ''
         : '';
+    const armorMagicBonus = Number.isFinite(Number(character.armorMagicBonus))
+      ? Math.max(0, Number(character.armorMagicBonus))
+      : 0;
+    const shieldMagicBonus = Number.isFinite(Number(character.shieldMagicBonus))
+      ? Math.max(0, Number(character.shieldMagicBonus))
+      : 0;
 
     return {
         ...characterWithoutLegacyArmorClass,
@@ -484,6 +492,8 @@ function NormalizeCharacterWeaponData(character: CharacterRecord): CharacterReco
         primaryWeaponGrip,
         equippedArmorId,
         hasShield: Boolean(character.hasShield),
+        armorMagicBonus,
+        shieldMagicBonus,
         weaponMagicBonuses: normalizedBonuses,
         characterWeapons: mergedWeaponIds.map((weaponId) => ({
             weaponId,
@@ -812,6 +822,8 @@ function BuildNewCharacter(raceId: string): CharacterRecord {
         maxHitPoints: 8,
         equippedArmorId: '',
         hasShield: false,
+        armorMagicBonus: 0,
+        shieldMagicBonus: 0,
         speed: 30,
         abilityScores: {
             strength: 10,
@@ -1173,7 +1185,7 @@ app.innerHTML = `
                 <p class="field-heading">Armor & Weapons</p>
                 <p class="text-xs text-ink-soft">Track worn armor, shield use, and wielded weapons for exact fighting-style math.</p>
               </div>
-              <div class="grid gap-3 md:grid-cols-2">
+              <div class="grid gap-3 md:grid-cols-3">
                 <label class="field-label">Equipped Armor
                   <select x-model="editingCharacter.equippedArmorId" x-effect="$el.value = editingCharacter?.equippedArmorId ?? ''" class="input-base" @change="NormalizeEquippedLoadout()">
                     <option value="" :selected="!editingCharacter?.equippedArmorId">No armor</option>
@@ -1182,11 +1194,33 @@ app.innerHTML = `
                     </template>
                   </select>
                 </label>
+                <label class="field-label">Armor Magic Bonus
+                  <input
+                    class="input-base"
+                    type="number"
+                    min="0"
+                    max="10"
+                    :value="GetArmorMagicBonus(editingCharacter)"
+                    @input="SetArmorMagicBonus(editingCharacter, $event.target.value)"
+                    :disabled="!editingCharacter?.equippedArmorId"
+                  />
+                </label>
                 <label class="field-label">Shield
                   <label class="mt-2 flex items-center gap-2 rounded-xl border border-amber-200 px-3 py-3 text-sm text-ink">
                     <input x-model="editingCharacter.hasShield" type="checkbox" class="h-4 w-4" @change="NormalizeEquippedLoadout()" />
                     <span>Using a shield (+2 AC)</span>
                   </label>
+                </label>
+                <label class="field-label">Shield Magic Bonus
+                  <input
+                    class="input-base"
+                    type="number"
+                    min="0"
+                    max="10"
+                    :value="GetShieldMagicBonus(editingCharacter)"
+                    @input="SetShieldMagicBonus(editingCharacter, $event.target.value)"
+                    :disabled="!editingCharacter?.hasShield"
+                  />
                 </label>
                 <label class="field-label">Primary Weapon
                   <select x-model="editingCharacter.primaryWeaponId" x-effect="$el.value = editingCharacter?.primaryWeaponId ?? ''" class="input-base" @change="NormalizeEquippedLoadout()">
@@ -1710,7 +1744,7 @@ app.innerHTML = `
             <h4 class="mt-3">Armor</h4>
             <ul class="list-base text-sm">
               <li><span class="font-semibold">Armor:</span> <span x-text="GetEquippedArmorName(editingCharacter)"></span></li>
-              <li><span class="font-semibold">Shield:</span> <span x-text="editingCharacter?.hasShield ? 'Equipped' : 'Not equipped'"></span></li>
+              <li><span class="font-semibold">Shield:</span> <span x-text="GetShieldLabel(editingCharacter)"></span></li>
               <li><span class="font-semibold">Primary:</span> <span x-text="GetEquippedWeaponLabel(editingCharacter, editingCharacter?.primaryWeaponId || '', 'None')"></span></li>
               <li><span class="font-semibold">Off-Hand:</span> <span x-text="GetEquippedWeaponLabel(editingCharacter, editingCharacter?.offhandWeaponId || '', 'None')"></span></li>
             </ul>
@@ -3068,6 +3102,50 @@ const NpcEasyApp = (): any => {
             return this.GetCatalogName('fightingStyles', character.fightingStyleId);
         },
 
+          GetArmorMagicBonus(character: CharacterRecord | null): number {
+            if (!character) {
+              return 0;
+            }
+
+            const current = Number(character.armorMagicBonus ?? 0);
+            const bonus = Number.isFinite(current) ? Math.max(0, current) : 0;
+            character.armorMagicBonus = bonus;
+            return bonus;
+          },
+
+          SetArmorMagicBonus(character: CharacterRecord | null, value: string) {
+            if (!character) {
+              return;
+            }
+
+            const parsed = Number.parseInt(value, 10);
+            const safeBonus = Number.isFinite(parsed) ? Math.max(0, parsed) : 0;
+            character.armorMagicBonus = safeBonus;
+            this.SaveAll();
+          },
+
+          GetShieldMagicBonus(character: CharacterRecord | null): number {
+            if (!character) {
+              return 0;
+            }
+
+            const current = Number(character.shieldMagicBonus ?? 0);
+            const bonus = Number.isFinite(current) ? Math.max(0, current) : 0;
+            character.shieldMagicBonus = bonus;
+            return bonus;
+          },
+
+          SetShieldMagicBonus(character: CharacterRecord | null, value: string) {
+            if (!character) {
+              return;
+            }
+
+            const parsed = Number.parseInt(value, 10);
+            const safeBonus = Number.isFinite(parsed) ? Math.max(0, parsed) : 0;
+            character.shieldMagicBonus = safeBonus;
+            this.SaveAll();
+          },
+
         GetEquippedArmor(character: CharacterRecord | null) {
             if (!character?.equippedArmorId) {
                 return undefined;
@@ -3077,7 +3155,22 @@ const NpcEasyApp = (): any => {
         },
 
         GetEquippedArmorName(character: CharacterRecord | null): string {
-            return this.GetEquippedArmor(character)?.name ?? 'No armor';
+            const armor = this.GetEquippedArmor(character);
+            if (!armor) {
+              return 'No armor';
+            }
+
+            const bonus = this.GetArmorMagicBonus(character);
+            return bonus > 0 ? `${armor.name} +${bonus}` : armor.name;
+          },
+
+          GetShieldLabel(character: CharacterRecord | null): string {
+            if (!character?.hasShield) {
+              return 'Not equipped';
+            }
+
+            const bonus = this.GetShieldMagicBonus(character);
+            return bonus > 0 ? `Equipped +${bonus}` : 'Equipped';
         },
 
         GetArcaneWardValue(character: CharacterRecord | null): number | null {
@@ -3150,7 +3243,7 @@ const NpcEasyApp = (): any => {
       }
 
       lines.push(`Armor: ${this.GetEquippedArmorName(character)}`);
-      lines.push(`Shield: ${character.hasShield ? 'Equipped' : 'Not equipped'}`);
+      lines.push(`Shield: ${this.GetShieldLabel(character)}`);
 
       const weaponLabels = (character.weaponIds ?? [])
         .map((weaponId) => this.GetEquippedWeaponLabel(character, weaponId, ''))
@@ -3176,10 +3269,11 @@ const NpcEasyApp = (): any => {
             const armorBase = armor
                 ? armor.baseArmorClass + Math.min(dexterityModifier, armor.maxDexBonus ?? dexterityModifier)
                 : 10 + dexterityModifier;
-            const shieldBonus = character.hasShield ? 2 : 0;
+            const armorMagicBonus = armor ? this.GetArmorMagicBonus(character) : 0;
+            const shieldBonus = character.hasShield ? 2 + this.GetShieldMagicBonus(character) : 0;
             const defenseBonus = styleName === 'Defense' && armor ? 1 : 0;
 
-            return armorBase + shieldBonus + defenseBonus;
+            return armorBase + armorMagicBonus + shieldBonus + defenseBonus;
         },
 
         GetArmorClassNote(character: CharacterRecord | null): string {
@@ -3196,8 +3290,16 @@ const NpcEasyApp = (): any => {
             } else {
               notes.push(`No armor equipped. Using unarmored AC 10 + Dex modifier (${10 + this.GetAbilityModifier(this.GetEffectiveAbilityScore(character, 'dexterity'))}).`);
             }
+            const armorMagicBonus = armor ? this.GetArmorMagicBonus(character) : 0;
+            if (armorMagicBonus > 0) {
+              notes.push(`Armor magic bonus: +${armorMagicBonus} AC.`);
+            }
             if (character.hasShield) {
                 notes.push('Shield equipped: +2 AC.');
+              const shieldMagicBonus = this.GetShieldMagicBonus(character);
+              if (shieldMagicBonus > 0) {
+                notes.push(`Shield magic bonus: +${shieldMagicBonus} AC.`);
+              }
             }
             if (styleName === 'Defense' && armor) {
                 notes.push('Defense fighting style: +1 AC while armored.');
