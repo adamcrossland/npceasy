@@ -1852,8 +1852,8 @@ app.innerHTML = `
             <div class="">
               <template x-for="id in editingCharacter?.featIds ?? []" :key="id">
                 <div class="rounded-lg border border-amber-100">
-                  <p class="font-semibold text-ink" x-text="GetCatalogName('feats', id)"></p>
-                  <p class="mt-1 text-sm text-ink-soft" x-text="GetFullFeatDescription(id)"></p>
+                  <p class="text-sm font-semibold text-ink" x-text="GetCatalogName('feats', id)"></p>
+                  <p class="mt-1 text-xs text-ink-soft" x-text="GetFullFeatDescription(id)"></p>
                 </div>
               </template>
             </div>
@@ -1861,8 +1861,8 @@ app.innerHTML = `
             <div class="">
               <template x-for="trait in GetRacialTraits(editingCharacter)" :key="trait.source + '-' + trait.name">
                 <div class="rounded-lg border border-amber-100">
-                  <p class="font-semibold text-ink" x-text="trait.name"></p>
-                  <p class="mt-1 text-sm text-ink-soft" x-text="trait.description"></p>
+                  <p class="text-sm font-semibold text-ink" x-text="trait.name"></p>
+                  <p class="mt-1 text-xs text-ink-soft" x-text="trait.description"></p>
                 </div>
               </template>
             </div>
