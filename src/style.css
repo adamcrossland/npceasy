@@ -284,6 +284,24 @@ body {
   color: #223127;
 }
 
+.score-grid-compact {
+  gap: 0.35rem;
+  padding-bottom: 0.7rem;
+}
+
+.score-grid-compact div {
+  padding: 0.32rem;
+}
+
+.score-grid-compact dt {
+  font-size: 0.67rem;
+}
+
+.score-grid-compact dd {
+  margin-top: 0.05rem;
+  font-size: 0.84rem;
+}
+
 .list-base {
   margin: 0;
   padding-left: 1rem;
