@@ -1777,19 +1777,19 @@ app.innerHTML = `
               </template>
             </dl>
             <h4>Skills</h4>
-            <ul class="list-base space-y-1 text-xs">
+            <ul class="list-base space-y-0.5 text-[11px] leading-tight">
               <template x-for="skill in GetSkillBonuses(editingCharacter)" :key="'sheet-skill-' + skill.name">
-                <li class="flex items-center justify-between gap-2">
-                  <span class="flex min-w-0 items-center gap-2">
+                <li class="flex items-center justify-between gap-1">
+                  <span class="flex min-w-0 items-center gap-1">
                     <span
-                      class="inline-flex h-5 w-5 items-center justify-center rounded-full border text-[10px] font-bold"
+                      class="inline-flex h-4 w-4 items-center justify-center rounded-full border text-[9px] font-bold"
                       :class="skill.proficient ? 'border-emerald-600 bg-emerald-50 text-emerald-700' : 'border-slate-300 text-slate-500'"
                       :title="skill.proficient ? 'Proficient' : 'Not proficient'"
                       x-text="skill.proficient ? 'P' : '-'"
                     ></span>
                     <span class="truncate" x-text="skill.name"></span>
                   </span>
-                  <span class="font-semibold tabular-nums" x-text="skill.value"></span>
+                  <span class="font-semibold tabular-nums text-[11px]" x-text="skill.value"></span>
                 </li>
               </template>
             </ul>
