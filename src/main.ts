@@ -1851,9 +1851,9 @@ app.innerHTML = `
             </ul>
           </div>
 
-          <div class="sheet-card" x-show="(editingCharacter?.featIds?.length ?? 0) > 0" x-cloak>
-            <h4>Feats</h4>
-            <div class="">
+          <div class="sheet-card" x-show="(editingCharacter?.featIds?.length ?? 0) > 0 || GetRacialTraits(editingCharacter).length > 0" x-cloak>
+            <h4 x-show="(editingCharacter?.featIds?.length ?? 0) > 0" x-cloak>Feats</h4>
+            <div class="" x-show="(editingCharacter?.featIds?.length ?? 0) > 0" x-cloak>
               <template x-for="id in editingCharacter?.featIds ?? []" :key="id">
                 <div class="rounded-lg border border-amber-100">
                   <p class="text-sm font-semibold text-ink" x-text="GetCatalogName('feats', id)"></p>
@@ -1861,8 +1861,8 @@ app.innerHTML = `
                 </div>
               </template>
             </div>
-            <h4>Racial Traits</h4>
-            <div class="">
+            <h4 x-show="GetRacialTraits(editingCharacter).length > 0" x-cloak>Racial Traits</h4>
+            <div class="" x-show="GetRacialTraits(editingCharacter).length > 0" x-cloak>
               <template x-for="trait in GetRacialTraits(editingCharacter)" :key="trait.source + '-' + trait.name">
                 <div class="rounded-lg border border-amber-100">
                   <p class="text-sm font-semibold text-ink" x-text="trait.name"></p>
@@ -1872,7 +1872,7 @@ app.innerHTML = `
             </div>
           </div>
 
-          <div class="sheet-card" x-show="GetRacialTraits(editingCharacter).length > 0" x-cloak>
+          <div class="sheet-card" x-show="GetClassFeatureSummary(editingCharacter).length > 0" x-cloak>
             <h4>Class Features</h4>
             <div class="space-y-2">
               <template x-for="entry in GetClassFeatureSummary(editingCharacter)" :key="entry.className + '-' + entry.classLevel + '-' + entry.subclassName">
