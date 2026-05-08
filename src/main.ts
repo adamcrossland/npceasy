@@ -1811,7 +1811,11 @@ app.innerHTML = `
                 </li>
               </template>
             </ul>
-            <div x-show="editingCharacter?.fightingStyleId || CanSelectFightingStyle(editingCharacter)" x-cloak>
+            <p class="mt-1 text-sm text-ink-soft" x-show="editingCharacter" x-cloak>
+              <span class="font-semibold text-ink">Attacks per Round:</span>
+              <span x-text="GetAttacksPerRound(editingCharacter)"></span>
+            </p>
+            <div class="mt-2" x-show="editingCharacter?.fightingStyleId || CanSelectFightingStyle(editingCharacter)" x-cloak>
               <h4>Fighting Style</h4>
               <template x-if="editingCharacter?.fightingStyleId">
                 <ul class="list-base text-sm">
@@ -3307,6 +3311,19 @@ const NpcEasyApp = (): any => {
                 })
                 .filter((entry) => entry.classFeatures.length > 0 || entry.subclassFeatures.length > 0);
         },
+
+            GetAttacksPerRound(character: CharacterRecord | null): number {
+              if (!character) {
+                return 1;
+              }
+
+              const extraAttackCount = this.GetClassFeatureSummary(character)
+                .flatMap((entry: ClassFeatureSummary) => [...entry.classFeatures, ...entry.subclassFeatures])
+                .filter((feature: string) => /\bextra attack\b/i.test(feature))
+                .length;
+
+              return 1 + extraAttackCount;
+            },
 
         FormatWeaponName(character: CharacterRecord, weaponId: string): string {
             const weaponName = this.GetCatalogName('weapons', weaponId);
