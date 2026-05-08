@@ -3243,7 +3243,9 @@ const NpcEasyApp = (): any => {
       }
 
       lines.push(`Armor: ${this.GetEquippedArmorName(character)}`);
-      lines.push(`Shield: ${this.GetShieldLabel(character)}`);
+      if (character.hasShield) {
+        lines.push(`Shield: ${this.GetShieldLabel(character)}`);
+      }
 
       const weaponLabels = (character.weaponIds ?? [])
         .map((weaponId) => this.GetEquippedWeaponLabel(character, weaponId, ''))
