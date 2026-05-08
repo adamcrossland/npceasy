@@ -1162,7 +1162,7 @@ app.innerHTML = `
 
             <div>
               <div class="mb-2 flex items-center justify-between">
-                <p class="field-heading">Armor & Loadout</p>
+                <p class="field-heading">Armor & Weapons</p>
                 <p class="text-xs text-ink-soft">Track worn armor, shield use, and wielded weapons for exact fighting-style math.</p>
               </div>
               <div class="grid gap-3 md:grid-cols-2">
