@@ -1193,6 +1193,7 @@ app.innerHTML = `
               </label>
               <label class="field-label">Speed
                 <input x-model.number="editingCharacter.speed" type="number" min="0" class="input-base" />
+                <span class="text-xs text-ink-soft" x-text="GetSpeedWithBonusSummary(editingCharacter)"></span>
               </label>
             </div>
 
@@ -1203,27 +1204,27 @@ app.innerHTML = `
               </div>
               <div class="grid gap-3 sm:grid-cols-3 lg:grid-cols-6">
                 <label class="field-label">STR
-                  <input x-model.number="editingCharacter.abilityScores.strength" type="number" class="input-base" />
+                  <input x-model.number="editingCharacter.abilityScores.strength" type="number" max="20" class="input-base" />
                   <span class="text-xs text-ink-soft" x-text="GetAbilityScoreWithBonusSummary(editingCharacter, 'strength')"></span>
                 </label>
                 <label class="field-label">DEX
-                  <input x-model.number="editingCharacter.abilityScores.dexterity" type="number" class="input-base" />
+                  <input x-model.number="editingCharacter.abilityScores.dexterity" type="number" max="20" class="input-base" />
                   <span class="text-xs text-ink-soft" x-text="GetAbilityScoreWithBonusSummary(editingCharacter, 'dexterity')"></span>
                 </label>
                 <label class="field-label">CON
-                  <input x-model.number="editingCharacter.abilityScores.constitution" type="number" class="input-base" />
+                  <input x-model.number="editingCharacter.abilityScores.constitution" type="number" max="20" class="input-base" />
                   <span class="text-xs text-ink-soft" x-text="GetAbilityScoreWithBonusSummary(editingCharacter, 'constitution')"></span>
                 </label>
                 <label class="field-label">INT
-                  <input x-model.number="editingCharacter.abilityScores.intelligence" type="number" class="input-base" />
+                  <input x-model.number="editingCharacter.abilityScores.intelligence" type="number" max="20" class="input-base" />
                   <span class="text-xs text-ink-soft" x-text="GetAbilityScoreWithBonusSummary(editingCharacter, 'intelligence')"></span>
                 </label>
                 <label class="field-label">WIS
-                  <input x-model.number="editingCharacter.abilityScores.wisdom" type="number" class="input-base" />
+                  <input x-model.number="editingCharacter.abilityScores.wisdom" type="number" max="20" class="input-base" />
                   <span class="text-xs text-ink-soft" x-text="GetAbilityScoreWithBonusSummary(editingCharacter, 'wisdom')"></span>
                 </label>
                 <label class="field-label">CHA
-                  <input x-model.number="editingCharacter.abilityScores.charisma" type="number" class="input-base" />
+                  <input x-model.number="editingCharacter.abilityScores.charisma" type="number" max="20" class="input-base" />
                   <span class="text-xs text-ink-soft" x-text="GetAbilityScoreWithBonusSummary(editingCharacter, 'charisma')"></span>
                 </label>
               </div>
@@ -1828,8 +1829,9 @@ app.innerHTML = `
           <div class="sheet-badges">
             <span>Max HP <strong x-text="editingCharacter?.maxHitPoints ?? 0"></strong></span>
             <span :title="GetArmorClassNote(editingCharacter)">AC <strong x-text="GetDisplayedArmorClass(editingCharacter)"></strong></span>
-            <span>Speed <strong x-text="editingCharacter?.speed ?? 0"></strong> ft</span>
+            <span>Speed <strong x-text="GetDisplayedSpeed(editingCharacter)"></strong> ft</span>
             <span>Initiative <strong x-text="FormatSignedValue(GetInitiativeBonus(editingCharacter))"></strong></span>
+            <span>Passive Perception <strong x-text="GetPassivePerception(editingCharacter)"></strong></span>
             <span>Prof Bonus <strong x-text="'+' + GetProficiencyBonus(GetTotalCharacterLevel(editingCharacter))"></strong></span>
             <span>Hero Points <strong x-text="GetHeroPoints(editingCharacter)"></strong></span>
           </div>
@@ -2102,7 +2104,15 @@ const NpcEasyApp = (): any => {
                 ...collection,
                 characters: collection.characters.map((character: CharacterRecord) => {
                     const { armorClass: _legacyArmorClass, ...characterWithoutLegacyArmorClass } = character;
-                    return characterWithoutLegacyArmorClass;
+              const cappedAbilityScores = { ...characterWithoutLegacyArmorClass.abilityScores };
+              for (const key of AbilityScoreKeys) {
+                const rawValue = Number(cappedAbilityScores[key] ?? 10);
+                cappedAbilityScores[key] = Number.isFinite(rawValue) ? Math.min(20, rawValue) : 10;
+              }
+                  return {
+                    ...characterWithoutLegacyArmorClass,
+                    abilityScores: cappedAbilityScores
+                  };
                 })
             }));
 
@@ -2301,6 +2311,36 @@ const NpcEasyApp = (): any => {
             return bonuses;
           },
 
+          GetFeatDerivedStatBonuses(character: CharacterRecord | null): { initiativeBonus: number; passivePerceptionBonus: number; speedBonus: number } {
+            if (!character) {
+              return {
+                initiativeBonus: 0,
+                passivePerceptionBonus: 0,
+                speedBonus: 0
+              };
+            }
+
+            const totals = {
+              initiativeBonus: 0,
+              passivePerceptionBonus: 0,
+              speedBonus: 0
+            };
+
+            for (const id of character.featIds ?? []) {
+              const featName = this.GetCatalogName('feats', id);
+              const feat = GetFeatByName(featName);
+              if (!feat?.derivedStatBonuses) {
+                continue;
+              }
+
+              totals.initiativeBonus += feat.derivedStatBonuses.initiativeBonus ?? 0;
+              totals.passivePerceptionBonus += feat.derivedStatBonuses.passivePerceptionBonus ?? 0;
+              totals.speedBonus += feat.derivedStatBonuses.speedBonus ?? 0;
+            }
+
+            return totals;
+          },
+
           GetFeatsWithAbilityChoices(character: CharacterRecord | null): Array<{ id: string; name: string; amount: number; options: string[] }> {
             if (!character) {
               return [];
@@ -2338,9 +2378,10 @@ const NpcEasyApp = (): any => {
               return 10;
             }
 
-            return (character.abilityScores[key] ?? 10)
+            return Math.min(20,
+              (character.abilityScores[key] ?? 10)
               + (this.GetRaceAbilityScoreBonuses(character)[key] ?? 0)
-              + (this.GetFeatAbilityBonuses(character)[key] ?? 0);
+              + (this.GetFeatAbilityBonuses(character)[key] ?? 0));
           },
 
           GetAbilityScoreWithBonusSummary(character: CharacterRecord | null, key: keyof CharacterRecord['abilityScores']): string {
@@ -2348,7 +2389,7 @@ const NpcEasyApp = (): any => {
               return '10';
             }
 
-            const baseScore = character.abilityScores[key] ?? 10;
+            const baseScore = Math.min(20, character.abilityScores[key] ?? 10);
             const raceBonus = this.GetRaceAbilityScoreBonuses(character)[key] ?? 0;
             const featBonus = this.GetFeatAbilityBonuses(character)[key] ?? 0;
             const bonus = raceBonus + featBonus;
@@ -2356,7 +2397,7 @@ const NpcEasyApp = (): any => {
               return `${baseScore}`;
             }
 
-            const total = baseScore + bonus;
+            const total = Math.min(20, baseScore + bonus);
             const bonusText = bonus > 0 ? `+${bonus}` : `${bonus}`;
             return `${baseScore} ${bonusText} = ${total}`;
           },
@@ -2393,12 +2434,53 @@ const NpcEasyApp = (): any => {
             return 5 + Math.floor(totalLevel / 2);
         },
 
+        GetDisplayedSpeed(character: CharacterRecord | null): number {
+          if (!character) {
+            return 0;
+          }
+
+          const speedBonus = this.GetFeatDerivedStatBonuses(character).speedBonus;
+          return Math.max(0, (character.speed ?? 0) + speedBonus);
+        },
+
+        GetSpeedWithBonusSummary(character: CharacterRecord | null): string {
+          if (!character) {
+            return '0';
+          }
+
+          const baseSpeed = character.speed ?? 0;
+          const speedBonus = this.GetFeatDerivedStatBonuses(character).speedBonus;
+          if (speedBonus === 0) {
+            return `${baseSpeed}`;
+          }
+
+          const bonusText = speedBonus > 0 ? `+${speedBonus}` : `${speedBonus}`;
+          return `${baseSpeed} ${bonusText} = ${Math.max(0, baseSpeed + speedBonus)}`;
+        },
+
         GetInitiativeBonus(character: CharacterRecord | null): number {
             if (!character) {
                 return 0;
             }
 
-            return this.GetAbilityModifier(this.GetEffectiveAbilityScore(character, 'dexterity'));
+          const dexterityModifier = this.GetAbilityModifier(this.GetEffectiveAbilityScore(character, 'dexterity'));
+          const featBonus = this.GetFeatDerivedStatBonuses(character).initiativeBonus;
+          return dexterityModifier + featBonus;
+        },
+
+        GetPassivePerceptionOtherModifiers(character: CharacterRecord | null): number {
+          const featBonus = this.GetFeatDerivedStatBonuses(character).passivePerceptionBonus;
+          // This method is a single hook for future sources such as class features or magic items.
+          return featBonus;
+        },
+
+        GetPassivePerception(character: CharacterRecord | null): number {
+          if (!character) {
+            return 10;
+          }
+
+          const wisdomModifier = this.GetAbilityModifier(this.GetEffectiveAbilityScore(character, 'wisdom'));
+          return 10 + wisdomModifier + this.GetPassivePerceptionOtherModifiers(character);
         },
           
         GetRacialTraits(character: CharacterRecord | null): Array<{ source: string; name: string; description: string }> {
