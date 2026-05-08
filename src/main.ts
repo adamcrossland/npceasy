@@ -1,5 +1,6 @@
 import './style.css';
 import { Armors } from './armors';
+import { Backgrounds } from './backgrounds';
 import { AllClasses } from './classes';
 import { Feats, GetFeatByName } from './feats';
 import { FightingStyles } from './fightingStyles';
@@ -8,7 +9,7 @@ import { Spells, GetSpellByName } from './spells';
 import { SrdWeapons } from './weapons';
 
 type Screen = 'Collections' | 'CharacterBuilder' | 'Compendium' | 'CharacterSheet';
-type CatalogKey = 'classes' | 'feats' | 'weapons' | 'spells' | 'races' | 'fightingStyles';
+type CatalogKey = 'classes' | 'feats' | 'weapons' | 'spells' | 'races' | 'fightingStyles' | 'backgrounds';
 type WeaponGrip = 'one-handed' | 'two-handed';
 
 type ClassFeatureRecord = {
@@ -116,7 +117,7 @@ type CharacterRecord = {
     weaponMagicBonuses?: Record<string, number>;
     spellIds: string[];
     alignment: string;
-    background: string;
+    backgroundId: string;
     personality: string;
     ideals: string;
     bonds: string;
@@ -141,6 +142,7 @@ type AppState = {
         spells: CatalogItem[];
         races: CatalogItem[];
         fightingStyles: CatalogItem[];
+        backgrounds: CatalogItem[];
     };
 };
 
@@ -223,6 +225,12 @@ const DEFAULT_SPELLS: CatalogItem[] = Spells.map((item) => ({
 
 const DEFAULT_FIGHTING_STYLES: CatalogItem[] = FightingStyles.map((item) => ({
     id: `fighting-style-${item.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
+    name: item.name,
+    description: item.description
+}));
+
+const DEFAULT_BACKGROUNDS: CatalogItem[] = Backgrounds.map((item) => ({
+    id: `background-${item.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
     name: item.name,
     description: item.description
 }));
@@ -865,6 +873,7 @@ function BuildDefaultState(): AppState {
             })),
             weapons: DEFAULT_WEAPONS,
             spells: DEFAULT_SPELLS,
+            backgrounds: DEFAULT_BACKGROUNDS,
             races: Races.map(item => ({
                 id: `race-${item.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
                 name: item.name,
@@ -923,7 +932,7 @@ function BuildNewCharacter(raceId: string): CharacterRecord {
         skillProficiencies: [],
         spellIds: [],
         alignment: '',
-        background: '',
+        backgroundId: '',
         personality: '',
         ideals: '',
         bonds: '',
@@ -995,6 +1004,7 @@ function LoadState(): AppState {
         const savedClassCatalog = parsed.catalogs?.classes ?? freshCatalogs.classes;
         const savedRaceCatalog = parsed.catalogs?.races ?? freshCatalogs.races;
         const savedFightingStyleCatalog = parsed.catalogs?.fightingStyles ?? freshCatalogs.fightingStyles;
+        const savedBackgroundCatalog = parsed.catalogs?.backgrounds ?? freshCatalogs.backgrounds;
         const mergedState = {
             ...BuildDefaultState(),
             ...parsed,
@@ -1004,7 +1014,8 @@ function LoadState(): AppState {
               races: MergeRaceCatalog(parsed.catalogs?.races, freshCatalogs.races),
                 weapons: NormalizeWeaponCatalog(isLegacyWeaponCatalog ? DEFAULT_WEAPONS : (parsed.catalogs?.weapons ?? freshCatalogs.weapons)),
                 spells: MergeSpellCatalog(isLegacySpellCatalog ? DEFAULT_SPELLS : parsed.catalogs?.spells, freshCatalogs.spells),
-                fightingStyles: parsed.catalogs?.fightingStyles ?? freshCatalogs.fightingStyles
+                fightingStyles: parsed.catalogs?.fightingStyles ?? freshCatalogs.fightingStyles,
+                backgrounds: parsed.catalogs?.backgrounds ?? freshCatalogs.backgrounds
             }
         };
 
@@ -1016,6 +1027,10 @@ function LoadState(): AppState {
                     ...char,
                     raceId: MigrateCatalogItemId(char.raceId, savedRaceCatalog, freshCatalogs.races),
                     subraceName: char.subraceName ?? '',
+                    backgroundId: (() => {
+                        const migratedId = MigrateCatalogItemId(char.backgroundId ?? '', savedBackgroundCatalog, freshCatalogs.backgrounds);
+                        return freshCatalogs.backgrounds.some((item) => item.id === migratedId) ? migratedId : '';
+                    })(),
                     fightingStyleId: (() => {
                         const migratedId = MigrateCatalogItemId(char.fightingStyleId ?? '', savedFightingStyleCatalog, freshCatalogs.fightingStyles);
                         return freshCatalogs.fightingStyles.some((item) => item.id === migratedId) ? migratedId : '';
@@ -1470,7 +1485,12 @@ app.innerHTML = `
                 </select>
               </label>
               <label class="field-label">Background
-                <input x-model="editingCharacter.background" type="text" class="input-base" />
+                <select x-model="editingCharacter.backgroundId" class="input-base">
+                  <option value="" :selected="!editingCharacter?.backgroundId">Choose a background</option>
+                  <template x-for="bg in catalogs.backgrounds" :key="bg.id">
+                    <option :value="bg.id" :selected="editingCharacter?.backgroundId === bg.id" x-text="bg.name"></option>
+                  </template>
+                </select>
               </label>
               <label class="field-label">Proficiencies (comma-separated)
                 <textarea x-model="editingCharacter.proficiencies" class="input-base min-h-[90px]"></textarea>
@@ -1926,27 +1946,39 @@ app.innerHTML = `
             </div>
           </div>
 
-          <div class="sheet-card" x-show="GetClassFeatureSummary(editingCharacter).length > 0" x-cloak>
-            <h4>Class Features</h4>
-            <div class="space-y-2">
-              <template x-for="entry in GetClassFeatureSummary(editingCharacter)" :key="entry.className + '-' + entry.classLevel + '-' + entry.subclassName">
-                <div class="rounded-lg border border-amber-100 p-2">
-                  <p class="font-semibold text-ink" x-text="entry.subclassName ? (entry.className + ' (' + entry.subclassName + ') Lv ' + entry.classLevel) : (entry.className + ' Lv ' + entry.classLevel)"></p>
-                  <ul class="mt-1 list-base text-sm">
-                    <template x-for="feature in entry.classFeatures" :key="entry.className + '-base-' + feature">
-                      <li x-text="feature"></li>
-                    </template>
-                    <template x-for="feature in entry.subclassFeatures" :key="entry.className + '-subclass-' + feature">
-                      <li class="text-ink-soft" x-text="feature"></li>
-                    </template>
-                  </ul>
+          <div class="sheet-card" x-show="editingCharacter?.backgroundId || GetClassFeatureSummary(editingCharacter).length > 0" x-cloak>
+            <template x-if="editingCharacter?.backgroundId">
+              <div>
+                <h4>Background</h4>
+                <div class="rounded-lg border border-amber-100 p-2 mb-4">
+                  <p class="font-semibold text-ink" x-text="GetCatalogName('backgrounds', editingCharacter?.backgroundId || '')"></p>
+                  <p class="mt-1 text-xs text-ink-soft" x-text="GetCatalogDescription('backgrounds', editingCharacter?.backgroundId || '')"></p>
                 </div>
-              </template>
-            </div>
+              </div>
+            </template>
+            <template x-if="GetClassFeatureSummary(editingCharacter).length > 0">
+              <div>
+                <h4>Class Features</h4>
+                <div class="space-y-2">
+                  <template x-for="entry in GetClassFeatureSummary(editingCharacter)" :key="entry.className + '-' + entry.classLevel + '-' + entry.subclassName">
+                    <div class="rounded-lg border border-amber-100 p-2">
+                      <p class="font-semibold text-ink" x-text="entry.subclassName ? (entry.className + ' (' + entry.subclassName + ') Lv ' + entry.classLevel) : (entry.className + ' Lv ' + entry.classLevel)"></p>
+                      <ul class="mt-1 list-base text-sm">
+                        <template x-for="feature in entry.classFeatures" :key="entry.className + '-base-' + feature">
+                          <li x-text="feature"></li>
+                        </template>
+                        <template x-for="feature in entry.subclassFeatures" :key="entry.className + '-subclass-' + feature">
+                          <li class="text-ink-soft" x-text="feature"></li>
+                        </template>
+                      </ul>
+                    </div>
+                  </template>
+                </div>
+              </div>
+            </template>
           </div>
 
           <div class="sheet-card">
-            <p><strong>Background:</strong> <span x-text="editingCharacter?.background"></span></p>
             <p><strong>Languages:</strong> <span x-text="editingCharacter?.languages || 'None listed'"></span></p>
             <p><strong>Personality:</strong> <span x-text="editingCharacter?.personality"></span></p>
             <p><strong>Ideals:</strong> <span x-text="editingCharacter?.ideals"></span></p>
