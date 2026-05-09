@@ -1117,9 +1117,46 @@ app.innerHTML = `
         </ol>
       </div>
 
+      <div class="panel space-y-4">
+        <h3 class="font-display text-2xl text-ink">Frequently Asked Questions</h3>
+        <div class="space-y-4">
+          <div>
+            <p class="text-sm font-semibold text-ink">Where is my data stored?</p>
+            <p class="text-sm text-ink-soft">All data is stored locally in your browser's localStorage. Nothing is sent to a server, so your characters are private and available offline.</p>
+          </div>
+          <div>
+            <p class="text-sm font-semibold text-ink">Will my data be lost if I clear my browser?</p>
+            <p class="text-sm text-ink-soft">Yes — clearing site data or browser storage will erase your characters. Use Export Data on the Compendium page to keep a backup file before clearing.</p>
+          </div>
+          <div>
+            <p class="text-sm font-semibold text-ink">How do I move my data to another device or browser?</p>
+            <p class="text-sm text-ink-soft">Go to Compendium, click <span class="font-semibold">Export Data</span> to download a JSON backup, then open NPC Easy on the target browser, go to Compendium, and click <span class="font-semibold">Import Data</span> to restore it.</p>
+          </div>
+          <div>
+            <p class="text-sm font-semibold text-ink">How are ability scores calculated?</p>
+            <p class="text-sm text-ink-soft">Base scores are set in the Character Builder. Racial bonuses from the selected race are added automatically. Scores are capped at 20. Feat bonuses may also apply depending on the feats selected.</p>
+          </div>
+          <div>
+            <p class="text-sm font-semibold text-ink">How is proficiency bonus determined?</p>
+            <p class="text-sm text-ink-soft">Proficiency bonus is based on total character level: +2 at levels 1–4, +3 at levels 5–8, +4 at levels 9–12, +5 at levels 13–16, and +6 at levels 17–20.</p>
+          </div>
+          <div>
+            <p class="text-sm font-semibold text-ink">Can I reset a character to defaults?</p>
+            <p class="text-sm text-ink-soft">Open the Character Builder, select the character, and manually clear or adjust any fields. To remove a character entirely, use the delete option in Collections.</p>
+          </div>
+        </div>
+      </div>
+
       <div class="panel space-y-3">
         <h3 class="font-display text-2xl text-ink">Data Transfer</h3>
         <p class="text-sm text-ink">To move your data to another browser or device, go to Compendium and use <span class="font-semibold">Export Data</span> to download a backup file, then use <span class="font-semibold">Import Data</span> in the target browser.</p>
+      </div>
+
+      <div class="panel space-y-3">
+        <h3 class="font-display text-2xl text-ink">Who is NPC Easy?</h3>
+        <p class="text-sm text-ink">NPC Easy is the creation of <a class="font-semibold text-amber-800 underline" href="https://crossland.dev" target="_blank" rel="noopener noreferrer">Adam Crossland</a>, a software engineer and TTRPG enthusiast.</p>
+        <p class="text-sm text-ink">The source code is available on <a class="font-semibold text-amber-800 underline" href="https://github.com/adamcrossland/npceasy" target="_blank" rel="noopener noreferrer">GitHub</a>.</p>
+        <p class="text-sm text-ink">If you have a feature request, bug report or even just a random gripe, feel free to reach out via <a class="font-semibold text-amber-800 underline" href="mailto:adam.crossland@gmail.com">email</a>. Alternatively, you can open an Issue on the GitHub repo.</p>
       </div>
 
       <div class="panel space-y-3">
