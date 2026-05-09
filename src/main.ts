@@ -1144,6 +1144,10 @@ app.innerHTML = `
             <p class="text-sm font-semibold text-ink">Can I reset a character to defaults?</p>
             <p class="text-sm text-ink-soft">Open the Character Builder, select the character, and manually clear or adjust any fields. To remove a character entirely, use the delete option in Collections.</p>
           </div>
+          <div>
+            <p class="text-sm font-semibold text-ink">How is this paid for?</p>
+            <p class="text-sm text-ink-soft">NPC Easy is completely free to use. There are no ads, no accounts, no data mining, nothing.
+            This is a passion project and a tool that the creator uses every day.</p>
         </div>
       </div>
 
