@@ -1534,8 +1534,21 @@ app.innerHTML = `
     <section x-show="screen === 'Compendium'" class="space-y-5" x-cloak>
       <div class="panel" id="compendium-top">
         <h2 class="panel-title">Editable Compendium</h2>
-        <p class="panel-subtitle">Add, remove, or update classes, feats, weapons, spells, and races. Changes are used everywhere in the app.</p>
+        <p class="panel-subtitle">Add, remove, or update classes, feats, weapons, spells, and races. Changes are used everywhere in the app. You can also export or import all app data here.</p>
+        <div class="mt-3 flex flex-wrap items-center gap-2">
+          <button class="btn-secondary px-3 py-2 text-xs" @click="ExportData()">Export Data</button>
+          <button class="btn-secondary px-3 py-2 text-xs" @click="$refs.importDataInput.click()">Import Data</button>
+          <input
+            x-ref="importDataInput"
+            type="file"
+            accept=".json,application/json"
+            class="hidden"
+            @change="ImportData($event)"
+          />
+        </div>
+        <p class="mt-2 text-xs text-ink-soft" x-show="dataTransferStatus" x-text="dataTransferStatus" x-cloak></p>
         <div class="mt-4 flex flex-wrap gap-2">
+        <span class="text-sm font-medium py-2">Jump to: </span>
           <template x-for="entry in compendiumSections" :key="'jump-' + entry.key">
             <a
               class="btn-secondary px-3 py-2 text-xs"
@@ -2068,6 +2081,7 @@ const NpcEasyApp = (): any => {
         spellSchools: SpellSchools,
         showAllBuilderSpells: false,
         newCollectionName: '',
+        dataTransferStatus: '',
         editingCharacter: null as CharacterRecord | null,
         compendiumSections: [
             { key: 'classes', label: 'Classes' },
@@ -2126,6 +2140,77 @@ const NpcEasyApp = (): any => {
 
             localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot));
         },
+
+    ExportData() {
+      this.SaveAll();
+
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) {
+        alert('No data found to export.');
+        return;
+      }
+
+      const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const fileName = `npceasy-backup-${stamp}.json`;
+      const blob = new Blob([raw], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = fileName;
+      document.body.appendChild(anchor);
+      anchor.click();
+      document.body.removeChild(anchor);
+      URL.revokeObjectURL(url);
+      this.dataTransferStatus = `Last export: ${new Date().toLocaleString()}`;
+    },
+
+    async ImportData(event: Event) {
+      const input = event.target as HTMLInputElement | null;
+      const file = input?.files?.[0];
+      if (!file) {
+        return;
+      }
+
+      const previousRaw = localStorage.getItem(STORAGE_KEY);
+
+      try {
+        const importedText = await file.text();
+        JSON.parse(importedText);
+
+        localStorage.setItem(STORAGE_KEY, importedText);
+        const importedState = LoadState();
+
+        this.screen = importedState.screen;
+        this.collections = importedState.collections;
+        this.selectedCollectionId = importedState.selectedCollectionId;
+        this.selectedCharacterId = importedState.selectedCharacterId;
+        this.catalogs = importedState.catalogs;
+
+        this.showAllBuilderSpells = false;
+        const selected = this.GetSelectedCharacter();
+        this.editingCharacter = selected ?? null;
+        this.NormalizeSelectedSubrace();
+        this.NormalizeEquippedLoadout();
+        this.NormalizeFightingStyleSelection();
+        this.NormalizeSkillProficiencies();
+
+        this.SaveAll();
+        this.dataTransferStatus = `Last import: ${new Date().toLocaleString()}`;
+        alert('Data imported successfully.');
+      } catch {
+        if (previousRaw === null) {
+          localStorage.removeItem(STORAGE_KEY);
+        } else {
+          localStorage.setItem(STORAGE_KEY, previousRaw);
+        }
+        this.dataTransferStatus = `Import failed: ${new Date().toLocaleString()}`;
+        alert('Import failed. Please select a valid NPC Easy backup JSON file.');
+      } finally {
+        if (input) {
+          input.value = '';
+        }
+      }
+    },
 
         SelectCollection(collectionId: string) {
             this.selectedCollectionId = collectionId;
