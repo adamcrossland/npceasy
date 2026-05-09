@@ -8,7 +8,7 @@ import { Races, type RaceAbilityScores, type RaceTraits } from './races';
 import { Spells, GetSpellByName } from './spells';
 import { SrdWeapons } from './weapons';
 
-type Screen = 'Collections' | 'CharacterBuilder' | 'Compendium' | 'CharacterSheet';
+type Screen = 'Help' | 'Collections' | 'CharacterBuilder' | 'Compendium' | 'CharacterSheet';
 type CatalogKey = 'classes' | 'feats' | 'weapons' | 'spells' | 'races' | 'fightingStyles' | 'backgrounds';
 type WeaponGrip = 'one-handed' | 'two-handed';
 
@@ -147,6 +147,7 @@ type AppState = {
 };
 
 const STORAGE_KEY = 'NpcEasy.AppState.v1';
+const HELP_SEEN_KEY = 'NpcEasy.HelpSeen.v1';
 
 const SpellSlotsByCasterLevel: number[][] = [
     [],
@@ -1070,11 +1071,76 @@ app.innerHTML = `
         <button class="tab-btn" :class="{ 'tab-btn-active': screen === 'CharacterBuilder' }" @click="screen = 'CharacterBuilder'">Character Builder</button>
         <button class="tab-btn" :class="{ 'tab-btn-active': screen === 'CharacterSheet' }" @click="screen = 'CharacterSheet'">Character Sheet</button>
         <button class="tab-btn" :class="{ 'tab-btn-active': screen === 'Compendium' }" @click="screen = 'Compendium'">Compendium</button>
+        <button class="tab-btn" :class="{ 'tab-btn-active': screen === 'Help' }" @click="screen = 'Help'">Help</button>
       </nav>
     </div>
   </header>
 
   <main class="mx-auto w-full max-w-7xl px-4 py-6 md:px-8 md:py-10">
+    <section x-show="screen === 'Help'" class="space-y-6" x-cloak>
+      <div class="panel">
+        <h2 class="panel-title">Welcome to NPC Easy</h2>
+        <p class="panel-subtitle">Quick start and tips for creating, organizing, and sharing your NPC data.</p>
+      </div>
+
+      <div class="panel space-y-4">
+        <h3 class="font-display text-2xl text-ink">What is NPC Easy? Why is NPC Easy?</h3>
+        <p class="text-sm text-ink">NPC Easy is a free, open-source tool for building and organizing NPC stat
+        blocks and player character sheets for Dungeons & Dragons 5th Edition. It runs entirely in your web browser
+        with no account or internet connection required, so you can keep your campaign data private and
+        accessible wherever you go.</p>
+        <p class="text-sm text-ink">NPC Easy is designed to be a simple, flexible, and extensible tool for
+        GMs who want to create and manage their NPCs and player characters without relying on proprietary
+        software or complex character management apps. Whether you're running a homebrew campaign, using
+        published adventures, or just want a digital way to keep track of your characters, NPC Easy is here
+        to help.</p>
+      </div>
+
+      <div class="panel space-y-4">
+        <h3 class="font-display text-2xl text-ink">Is this legal?</h3>
+        <p class="text-sm text-ink">Yes! NPC Easy uses content from the System Reference Document 5.2.1,
+        which is licensed under the Creative Commons Attribution 4.0 International License. This means
+        you are free to use, share, and modify the content as long as you provide proper attribution.
+        For more details, see the Legal section below.</p>
+        <p class="text-sm text-ink">Although NPC Easy comes only with SRD content, you are free to use it in your own Dungeons & Dragons games and campaigns.
+        You can add any Races, Classes, Spells, Feats, Weapons, Armor, and other content that you need
+        for your own campaign.</p>
+      </div>
+
+      <div class="panel space-y-4">
+        <h3 class="font-display text-2xl text-ink">Getting Started</h3>
+        <ol class="list-base list-decimal space-y-2 pl-5 text-sm text-ink">
+          <li>Open Collections and create a new collection.</li>
+          <li>Go to Character Builder to add characters and edit details.</li>
+          <li>Use Character Sheet for a compact, print-friendly summary.</li>
+          <li>Use Compendium to edit shared classes, feats, races, spells, and equipment data.</li>
+        </ol>
+      </div>
+
+      <div class="panel space-y-3">
+        <h3 class="font-display text-2xl text-ink">Data Transfer</h3>
+        <p class="text-sm text-ink">To move your data to another browser or device, go to Compendium and use <span class="font-semibold">Export Data</span> to download a backup file, then use <span class="font-semibold">Import Data</span> in the target browser.</p>
+      </div>
+
+      <div class="panel space-y-3">
+        <h3 class="font-display text-2xl text-ink">Legal</h3>
+        <p class="text-sm text-ink">
+          This work includes material from the System Reference Document 5.2.1 ("SRD 5.2.1") by Wizards of the Coast LLC,
+          available at
+          <a class="font-semibold text-amber-800 underline" href="https://www.dndbeyond.com/srd" target="_blank" rel="noopener noreferrer">https://www.dndbeyond.com/srd</a>.
+          The SRD 5.2.1 is licensed under the Creative Commons Attribution 4.0 International License, available at
+          <a class="font-semibold text-amber-800 underline" href="https://creativecommons.org/licenses/by/4.0/legalcode" target="_blank" rel="noopener noreferrer">https://creativecommons.org/licenses/by/4.0/legalcode</a>.
+        </p>
+        <p class="text-sm text-ink">NPC Easy is not affiliated with, endorsed by, or sponsored by Wizards of
+        the Coast LLC.</p>
+      </div>
+
+      <div class="panel flex flex-wrap gap-2">
+        <button class="btn-primary" @click="screen = 'Collections'">Go to Collections</button>
+        <button class="btn-secondary" @click="screen = 'CharacterBuilder'">Go to Builder</button>
+      </div>
+    </section>
+
     <section x-show="screen === 'Collections'" class="space-y-6" x-cloak>
       <div class="panel">
         <h2 class="panel-title">Character Collections</h2>
@@ -2100,6 +2166,12 @@ const NpcEasyApp = (): any => {
             if (!this.catalogs?.classes?.length) {
                 this.catalogs = defaultCatalogs;
             }
+
+          const hasSeenHelp = localStorage.getItem(HELP_SEEN_KEY) === '1';
+          if (!hasSeenHelp) {
+            this.screen = 'Help';
+            localStorage.setItem(HELP_SEEN_KEY, '1');
+          }
 
             if (this.collections.length && !this.selectedCollectionId) {
                 this.selectedCollectionId = this.collections[0].id;
