@@ -473,26 +473,6 @@ function NormalizeSpellCatalog(items: CatalogItem[]): CatalogItem[] {
     };
   }
 
-function NormalizeWeaponCatalog(items: CatalogItem[]): CatalogItem[] {
-    return items.map((item) => {
-        if (item.weaponDamage) {
-            return item;
-        }
-
-        const canonical = SrdWeapons.find((weapon) => weapon.name.toLowerCase() === item.name.toLowerCase());
-        if (canonical) {
-            return {
-                ...item,
-                weaponDamage: canonical.damage,
-                weaponDamageType: canonical.damageType,
-                weaponProperties: canonical.properties
-            };
-        }
-
-        return item;
-    });
-}
-
 function NormalizeCharacterWeaponData(character: CharacterRecord): CharacterRecord {
     const { armorClass: _legacyArmorClass, ...characterWithoutLegacyArmorClass } = character;
     const existingBonuses = character.weaponMagicBonuses ?? {};
@@ -1013,7 +993,7 @@ function LoadState(): AppState {
                 classes: MergeClassCatalog(parsed.catalogs?.classes, freshCatalogs.classes),
                 feats: freshCatalogs.feats,
               races: MergeRaceCatalog(parsed.catalogs?.races, freshCatalogs.races),
-                weapons: NormalizeWeaponCatalog(isLegacyWeaponCatalog ? DEFAULT_WEAPONS : (parsed.catalogs?.weapons ?? freshCatalogs.weapons)),
+                weapons: isLegacyWeaponCatalog ? DEFAULT_WEAPONS : (parsed.catalogs?.weapons ?? freshCatalogs.weapons),
                 spells: MergeSpellCatalog(isLegacySpellCatalog ? DEFAULT_SPELLS : parsed.catalogs?.spells, freshCatalogs.spells),
                 fightingStyles: parsed.catalogs?.fightingStyles ?? freshCatalogs.fightingStyles,
                 backgrounds: parsed.catalogs?.backgrounds ?? freshCatalogs.backgrounds
