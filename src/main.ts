@@ -789,7 +789,8 @@ function MergeSpellCatalog(savedSpells: CatalogItem[] | undefined, defaultSpells
             castingTime: savedMatch?.castingTime ?? defaultItem.castingTime,
             range: savedMatch?.range ?? defaultItem.range,
             duration: savedMatch?.duration ?? defaultItem.duration,
-            components: savedMatch?.components ?? defaultItem.components,
+          // Keep built-in spell component notation synced with source data.
+          components: defaultItem.components,
             school: savedMatch?.school ?? defaultItem.school,
             ritual: savedMatch?.ritual ?? defaultItem.ritual,
             concentration: savedMatch?.concentration ?? defaultItem.concentration
@@ -2112,9 +2113,9 @@ app.innerHTML = `
                           </tr>
                           <tr class="spell-table-detail-row">
                             <td colspan="6">
-                              <p>
-                                <span class="mr-6"><span class="font-semibold">Damage:</span> <span x-text="GetSpellSheetRow(id).damage"></span></span>
-                                <span><span class="font-semibold">Effects:</span> <span x-text="GetSpellSheetRow(id).effects"></span></span>
+                              <p class="spell-table-detail-grid">
+                                <span class="spell-damage-block"><span class="font-semibold">Damage:</span> <span x-text="GetSpellSheetRow(id).damage"></span></span>
+                                <span class="spell-effects-block"><span class="font-semibold">Effects:</span> <span x-text="GetSpellSheetRow(id).effects"></span></span>
                               </p>
                             </td>
                           </tr>

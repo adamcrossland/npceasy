@@ -360,6 +360,32 @@ body {
   border-bottom: 1px solid #dccba8;
 }
 
+.spell-table-detail-grid {
+  display: grid;
+  grid-template-columns: minmax(220px, 1.2fr) minmax(0, 2fr);
+  gap: 0.65rem;
+  margin: 0;
+}
+
+.spell-damage-block,
+.spell-effects-block {
+  display: block;
+}
+
+.spell-damage-block {
+  min-width: 220px;
+}
+
+@media (max-width: 900px) {
+  .spell-table-detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .spell-damage-block {
+    min-width: 0;
+  }
+}
+
 @media (min-width: 1200px) {
   .spell-table-columns {
     grid-template-columns: repeat(2, minmax(0, 1fr));
