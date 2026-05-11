@@ -979,13 +979,14 @@ function LoadState(): AppState {
             && parsed.catalogs.spells.length === 5
             && parsed.catalogs.spells.some((item) => item.id === 'spell-fireball');
 
-        const freshCatalogs = BuildDefaultState().catalogs;
+        const defaultState = BuildDefaultState();
+        const freshCatalogs = defaultState.catalogs;
         const savedClassCatalog = parsed.catalogs?.classes ?? freshCatalogs.classes;
         const savedRaceCatalog = parsed.catalogs?.races ?? freshCatalogs.races;
         const savedFightingStyleCatalog = parsed.catalogs?.fightingStyles ?? freshCatalogs.fightingStyles;
         const savedBackgroundCatalog = parsed.catalogs?.backgrounds ?? freshCatalogs.backgrounds;
         const mergedState = {
-            ...BuildDefaultState(),
+            ...defaultState,
             ...parsed,
             catalogs: {
                 classes: MergeClassCatalog(parsed.catalogs?.classes, freshCatalogs.classes),
@@ -2149,8 +2150,6 @@ app.innerHTML = `
 </div>
 `;
 
-const defaultCatalogs = BuildDefaultState().catalogs;
-
 declare global {
     interface Window {
         NpcEasyApp: () => any;
@@ -2182,10 +2181,6 @@ const NpcEasyApp = (): any => {
         },
 
         Init() {
-            if (!this.catalogs?.classes?.length) {
-                this.catalogs = defaultCatalogs;
-            }
-
           const hasSeenHelp = localStorage.getItem(HELP_SEEN_KEY) === '1';
           if (!hasSeenHelp) {
             this.screen = 'Help';
