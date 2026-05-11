@@ -88,7 +88,6 @@ type CharacterRecord = {
     fightingStyleId?: string;
     experience: number;
     maxHitPoints: number;
-    armorClass?: number;
     equippedArmorId?: string;
     hasShield?: boolean;
     armorMagicBonus?: number;
@@ -474,7 +473,6 @@ function NormalizeSpellCatalog(items: CatalogItem[]): CatalogItem[] {
   }
 
 function NormalizeCharacterWeaponData(character: CharacterRecord): CharacterRecord {
-    const { armorClass: _legacyArmorClass, ...characterWithoutLegacyArmorClass } = character;
     const existingBonuses = character.weaponMagicBonuses ?? {};
     const normalizedCharacterWeapons = (character.characterWeapons ?? []).map((entry) => ({
         weaponId: entry.weaponId,
@@ -516,7 +514,7 @@ function NormalizeCharacterWeaponData(character: CharacterRecord): CharacterReco
       .filter((skill) => SkillDefinitions.some((def) => def.name === skill)))];
 
     return {
-        ...characterWithoutLegacyArmorClass,
+        ...character,
         weaponIds: mergedWeaponIds,
         primaryWeaponId,
         offhandWeaponId,
@@ -2207,17 +2205,16 @@ const NpcEasyApp = (): any => {
         },
 
         SaveAll() {
-            const collectionsWithoutLegacyArmorClass = this.collections.map((collection: Collection) => ({
+            const normalizedCollections = this.collections.map((collection: Collection) => ({
                 ...collection,
                 characters: collection.characters.map((character: CharacterRecord) => {
-                    const { armorClass: _legacyArmorClass, ...characterWithoutLegacyArmorClass } = character;
-              const cappedAbilityScores = { ...characterWithoutLegacyArmorClass.abilityScores };
+              const cappedAbilityScores = { ...character.abilityScores };
               for (const key of AbilityScoreKeys) {
                 const rawValue = Number(cappedAbilityScores[key] ?? 10);
                 cappedAbilityScores[key] = Number.isFinite(rawValue) ? Math.min(20, rawValue) : 10;
               }
                   return {
-                    ...characterWithoutLegacyArmorClass,
+                    ...character,
                     abilityScores: cappedAbilityScores
                   };
                 })
@@ -2225,7 +2222,7 @@ const NpcEasyApp = (): any => {
 
             const snapshot: AppState = {
                 screen: this.screen,
-                collections: collectionsWithoutLegacyArmorClass,
+                collections: normalizedCollections,
                 selectedCollectionId: this.selectedCollectionId,
                 selectedCharacterId: this.selectedCharacterId,
                 catalogs: this.catalogs
