@@ -25,11 +25,11 @@ type ClassSubclass = {
 };
 
 type RaceSubrace = {
-  name: string;
-  description: string;
-  abilityScoreBonuses?: RaceAbilityScores;
-  languages?: string[];
-  traits?: RaceTraits[];
+    name: string;
+    description: string;
+    abilityScoreBonuses?: RaceAbilityScores;
+    languages?: string[];
+    traits?: RaceTraits[];
 };
 
 type ClassFeatureSummary = {
@@ -47,7 +47,7 @@ type CatalogItem = {
     classFeatures?: ClassFeatureRecord[];
     classSubclasses?: ClassSubclass[];
     raceSize?: string;
-  raceSubraces?: RaceSubrace[];
+    raceSubraces?: RaceSubrace[];
     raceAbilityScoreBonuses?: RaceAbilityScores;
     raceLanguages?: string[];
     raceTraits?: RaceTraits[];
@@ -74,11 +74,6 @@ type ClassLevel = {
     subclassName?: string;
 };
 
-type CharacterWeapon = {
-    weaponId: string;
-    magicalBonus: number;
-};
-
 type CharacterRecord = {
     id: string;
     name: string;
@@ -88,7 +83,6 @@ type CharacterRecord = {
     fightingStyleId?: string;
     experience: number;
     maxHitPoints: number;
-    armorClass?: number;
     equippedArmorId?: string;
     hasShield?: boolean;
     armorMagicBonus?: number;
@@ -113,7 +107,6 @@ type CharacterRecord = {
     primaryWeaponId?: string;
     offhandWeaponId?: string;
     primaryWeaponGrip?: WeaponGrip;
-    characterWeapons?: CharacterWeapon[];
     weaponMagicBonuses?: Record<string, number>;
     spellIds: string[];
     alignment: string;
@@ -214,14 +207,14 @@ const DEFAULT_SPELLS: CatalogItem[] = Spells.map((item) => ({
     damage: item.damage,
     scaling: item.scaling,
     level: item.level,
-  classes: item.classes,
-  castingTime: item.castingTime,
-  range: item.range,
-  duration: item.duration,
-  components: item.components,
-  school: item.school,
-  ritual: item.ritual,
-  concentration: item.concentration
+    classes: item.classes,
+    castingTime: item.castingTime,
+    range: item.range,
+    duration: item.duration,
+    components: item.components,
+    school: item.school,
+    ritual: item.ritual,
+    concentration: item.concentration
 }));
 
 const DEFAULT_FIGHTING_STYLES: CatalogItem[] = FightingStyles.map((item) => ({
@@ -237,12 +230,12 @@ const DEFAULT_BACKGROUNDS: CatalogItem[] = Backgrounds.map((item) => ({
 }));
 
 const AbilityScoreKeys: Array<keyof CharacterRecord['abilityScores']> = [
-  'strength',
-  'dexterity',
-  'constitution',
-  'intelligence',
-  'wisdom',
-  'charisma'
+    'strength',
+    'dexterity',
+    'constitution',
+    'intelligence',
+    'wisdom',
+    'charisma'
 ];
 const SpellSchools = [
     'Abjuration',
@@ -255,7 +248,7 @@ const SpellSchools = [
     'Transmutation'
 ];
 
-  const ClassSkillChoiceLimits: Record<string, number> = {
+const ClassSkillChoiceLimits: Record<string, number> = {
     Barbarian: 2,
     Bard: 3,
     Cleric: 2,
@@ -268,9 +261,9 @@ const SpellSchools = [
     Sorcerer: 2,
     Warlock: 2,
     Wizard: 2
-  };
+};
 
-  const SkillDefinitions: Array<{ name: string; ability: keyof CharacterRecord['abilityScores']; abilityLabel: string }> = [
+const SkillDefinitions: Array<{ name: string; ability: keyof CharacterRecord['abilityScores']; abilityLabel: string }> = [
     { name: 'Acrobatics', ability: 'dexterity', abilityLabel: 'DEX' },
     { name: 'Animal Handling', ability: 'wisdom', abilityLabel: 'WIS' },
     { name: 'Arcana', ability: 'intelligence', abilityLabel: 'INT' },
@@ -289,7 +282,7 @@ const SpellSchools = [
     { name: 'Sleight of Hand', ability: 'dexterity', abilityLabel: 'DEX' },
     { name: 'Stealth', ability: 'dexterity', abilityLabel: 'DEX' },
     { name: 'Survival', ability: 'wisdom', abilityLabel: 'WIS' }
-  ];
+];
 
 function SummarizeSpellEffect(description: string): string {
     const text = (description ?? '').replace(/\r/g, '').trim();
@@ -376,22 +369,22 @@ function SummarizeSpellDamage(description: string): string | undefined {
 }
 
 function NormalizeSpellBoolean(value: unknown, fallback: boolean): boolean {
-  if (typeof value === 'boolean') {
-    return value;
-  }
-
-  if (typeof value === 'string') {
-    const normalized = value.trim().toLowerCase();
-    if (normalized === 'true') {
-      return true;
+    if (typeof value === 'boolean') {
+        return value;
     }
 
-    if (normalized === 'false') {
-      return false;
-    }
-  }
+    if (typeof value === 'string') {
+        const normalized = value.trim().toLowerCase();
+        if (normalized === 'true') {
+            return true;
+        }
 
-  return fallback;
+        if (normalized === 'false') {
+            return false;
+        }
+    }
+
+    return fallback;
 }
 
 function NormalizeSpellCatalog(items: CatalogItem[]): CatalogItem[] {
@@ -430,19 +423,19 @@ function NormalizeSpellCatalog(items: CatalogItem[]): CatalogItem[] {
             damage: item.damage ?? canonical?.damage,
             scaling: item.scaling ?? canonical?.scaling,
             level: item.level ?? canonical?.level ?? inferredLevelFromDescription ?? 0,
-          classes: item.classes ?? canonical?.classes ?? inferredClassesFromDescription ?? [],
-          castingTime: item.castingTime ?? canonical?.castingTime,
-          range: item.range ?? canonical?.range,
-          duration: item.duration ?? canonical?.duration,
-          components: item.components ?? canonical?.components,
-          school: item.school ?? canonical?.school,
-          ritual: NormalizeSpellBoolean(item.ritual, canonical?.ritual ?? false),
-          concentration: NormalizeSpellBoolean(item.concentration, canonical?.concentration ?? false)
+            classes: item.classes ?? canonical?.classes ?? inferredClassesFromDescription ?? [],
+            castingTime: item.castingTime ?? canonical?.castingTime,
+            range: item.range ?? canonical?.range,
+            duration: item.duration ?? canonical?.duration,
+            components: item.components ?? canonical?.components,
+            school: item.school ?? canonical?.school,
+            ritual: NormalizeSpellBoolean(item.ritual, canonical?.ritual ?? false),
+            concentration: NormalizeSpellBoolean(item.concentration, canonical?.concentration ?? false)
         };
     });
 }
 
-  function GetMergedSpellDetails(spell: CatalogItem): Required<Pick<CatalogItem, 'description' | 'effect' | 'level' | 'classes'>> & {
+function GetMergedSpellDetails(spell: CatalogItem): Required<Pick<CatalogItem, 'description' | 'effect' | 'level' | 'classes'>> & {
     damage?: string;
     scaling?: string;
     castingTime?: string;
@@ -452,66 +445,34 @@ function NormalizeSpellCatalog(items: CatalogItem[]): CatalogItem[] {
     school?: string;
     ritual: boolean;
     concentration: boolean;
-  } {
+} {
     const sourceSpell = GetSpellByName(spell.name);
     const description = (spell.description?.trim() || sourceSpell?.description || '').trim();
 
     return {
-      description,
-      effect: spell.effect ?? sourceSpell?.effect ?? SummarizeSpellEffect(description),
-      damage: spell.damage ?? sourceSpell?.damage ?? SummarizeSpellDamage(description),
-      scaling: spell.scaling ?? sourceSpell?.scaling,
-      level: Number.isFinite(spell.level) ? (spell.level as number) : (sourceSpell?.level ?? 0),
-      classes: spell.classes ?? sourceSpell?.classes ?? [],
-      castingTime: spell.castingTime ?? sourceSpell?.castingTime,
-      range: spell.range ?? sourceSpell?.range,
-      duration: spell.duration ?? sourceSpell?.duration,
-      components: spell.components ?? sourceSpell?.components,
-      school: spell.school ?? sourceSpell?.school,
-      ritual: spell.ritual ?? sourceSpell?.ritual ?? false,
-      concentration: spell.concentration ?? sourceSpell?.concentration ?? false
+        description,
+        effect: spell.effect ?? sourceSpell?.effect ?? SummarizeSpellEffect(description),
+        damage: spell.damage ?? sourceSpell?.damage ?? SummarizeSpellDamage(description),
+        scaling: spell.scaling ?? sourceSpell?.scaling,
+        level: Number.isFinite(spell.level) ? (spell.level as number) : (sourceSpell?.level ?? 0),
+        classes: spell.classes ?? sourceSpell?.classes ?? [],
+        castingTime: spell.castingTime ?? sourceSpell?.castingTime,
+        range: spell.range ?? sourceSpell?.range,
+        duration: spell.duration ?? sourceSpell?.duration,
+        components: spell.components ?? sourceSpell?.components,
+        school: spell.school ?? sourceSpell?.school,
+        ritual: spell.ritual ?? sourceSpell?.ritual ?? false,
+        concentration: spell.concentration ?? sourceSpell?.concentration ?? false
     };
-  }
-
-function NormalizeWeaponCatalog(items: CatalogItem[]): CatalogItem[] {
-    return items.map((item) => {
-        if (item.weaponDamage) {
-            return item;
-        }
-
-        const canonical = SrdWeapons.find((weapon) => weapon.name.toLowerCase() === item.name.toLowerCase());
-        if (canonical) {
-            return {
-                ...item,
-                weaponDamage: canonical.damage,
-                weaponDamageType: canonical.damageType,
-                weaponProperties: canonical.properties
-            };
-        }
-
-        return item;
-    });
 }
 
 function NormalizeCharacterWeaponData(character: CharacterRecord): CharacterRecord {
-    const { armorClass: _legacyArmorClass, ...characterWithoutLegacyArmorClass } = character;
-    const existingBonuses = character.weaponMagicBonuses ?? {};
-    const normalizedCharacterWeapons = (character.characterWeapons ?? []).map((entry) => ({
-        weaponId: entry.weaponId,
-        magicalBonus: Number.isFinite(entry.magicalBonus) ? entry.magicalBonus : 0
-    }));
+    const mergedWeaponIds = [...new Set(character.weaponIds)];
 
-    const weaponIdsFromCharacterWeapons = normalizedCharacterWeapons.map((entry) => entry.weaponId);
-    const mergedWeaponIds = [...new Set([...character.weaponIds, ...weaponIdsFromCharacterWeapons])];
-
-    const normalizedBonuses: Record<string, number> = { ...existingBonuses };
-    for (const entry of normalizedCharacterWeapons) {
-        normalizedBonuses[entry.weaponId] = entry.magicalBonus;
-    }
+    const normalizedBonuses: Record<string, number> = {};
     for (const weaponId of mergedWeaponIds) {
-        if (!Number.isFinite(normalizedBonuses[weaponId])) {
-            normalizedBonuses[weaponId] = 0;
-        }
+        const existing = Number(character.weaponMagicBonuses?.[weaponId] ?? 0);
+        normalizedBonuses[weaponId] = Number.isFinite(existing) ? Math.max(0, existing) : 0;
     }
 
     const primaryWeaponId = mergedWeaponIds.includes(character.primaryWeaponId ?? '')
@@ -526,17 +487,17 @@ function NormalizeCharacterWeaponData(character: CharacterRecord): CharacterReco
         ? character.equippedArmorId ?? ''
         : '';
     const armorMagicBonus = Number.isFinite(Number(character.armorMagicBonus))
-      ? Math.max(0, Number(character.armorMagicBonus))
-      : 0;
+        ? Math.max(0, Number(character.armorMagicBonus))
+        : 0;
     const shieldMagicBonus = Number.isFinite(Number(character.shieldMagicBonus))
-      ? Math.max(0, Number(character.shieldMagicBonus))
-      : 0;
+        ? Math.max(0, Number(character.shieldMagicBonus))
+        : 0;
     const normalizedSkillProficiencies = [...new Set((character.skillProficiencies ?? [])
-      .map((skill) => (skill ?? '').trim())
-      .filter((skill) => SkillDefinitions.some((def) => def.name === skill)))];
+        .map((skill) => (skill ?? '').trim())
+        .filter((skill) => SkillDefinitions.some((def) => def.name === skill)))];
 
     return {
-        ...characterWithoutLegacyArmorClass,
+        ...character,
         weaponIds: mergedWeaponIds,
         primaryWeaponId,
         offhandWeaponId,
@@ -546,11 +507,7 @@ function NormalizeCharacterWeaponData(character: CharacterRecord): CharacterReco
         armorMagicBonus,
         shieldMagicBonus,
         skillProficiencies: normalizedSkillProficiencies,
-        weaponMagicBonuses: normalizedBonuses,
-        characterWeapons: mergedWeaponIds.map((weaponId) => ({
-            weaponId,
-            magicalBonus: normalizedBonuses[weaponId] ?? 0
-        }))
+        weaponMagicBonuses: normalizedBonuses
     };
 }
 
@@ -626,22 +583,22 @@ function NormalizeClassSubclasses(subclasses?: Array<ClassSubclass | string>): C
     });
 }
 
-  function NormalizeStringList(values?: Array<string | null | undefined>): string[] {
+function NormalizeStringList(values?: Array<string | null | undefined>): string[] {
     const normalized = (values ?? [])
-      .map((value) => (value ?? '').trim())
-      .filter((value) => value.length > 0);
+        .map((value) => (value ?? '').trim())
+        .filter((value) => value.length > 0);
 
     const seen = new Set<string>();
     return normalized.filter((value) => {
-      const key = value.toLowerCase();
-      if (seen.has(key)) {
-        return false;
-      }
+        const key = value.toLowerCase();
+        if (seen.has(key)) {
+            return false;
+        }
 
-      seen.add(key);
-      return true;
+        seen.add(key);
+        return true;
     });
-  }
+}
 
 function NormalizeRaceAbilityScoreBonuses(bonuses?: RaceAbilityScores): RaceAbilityScores {
     const normalized: RaceAbilityScores = {};
@@ -656,92 +613,92 @@ function NormalizeRaceAbilityScoreBonuses(bonuses?: RaceAbilityScores): RaceAbil
     return normalized;
 }
 
-  function NormalizeRaceTraits(traits?: Array<RaceTraits | string>): RaceTraits[] {
+function NormalizeRaceTraits(traits?: Array<RaceTraits | string>): RaceTraits[] {
     const normalized = (traits ?? []).map((trait): RaceTraits | null => {
-      if (typeof trait === 'string') {
-        const name = trait.trim();
-        return name ? { name, description: '' } : null;
-      }
+        if (typeof trait === 'string') {
+            const name = trait.trim();
+            return name ? { name, description: '' } : null;
+        }
 
-      const name = (trait.name ?? '').trim();
-      if (!name) {
-        return null;
-      }
+        const name = (trait.name ?? '').trim();
+        if (!name) {
+            return null;
+        }
 
-      return {
-        name,
-        description: (trait.description ?? '').trim()
-      };
+        return {
+            name,
+            description: (trait.description ?? '').trim()
+        };
     }).filter((trait): trait is RaceTraits => trait !== null);
 
     const seen = new Set<string>();
     return normalized.filter((trait) => {
-      const key = trait.name.toLowerCase();
-      if (seen.has(key)) {
-        return false;
-      }
+        const key = trait.name.toLowerCase();
+        if (seen.has(key)) {
+            return false;
+        }
 
-      seen.add(key);
-      return true;
+        seen.add(key);
+        return true;
     });
-  }
+}
 
 function NormalizeRaceSubraces(subraces?: Array<RaceSubrace | string>): RaceSubrace[] {
-  const normalized = (subraces ?? []).map((subrace): RaceSubrace | null => {
-    if (typeof subrace === 'string') {
-      const name = subrace.trim();
-      return name ? { name, description: '', abilityScoreBonuses: {}, languages: [], traits: [] } : null;
-    }
+    const normalized = (subraces ?? []).map((subrace): RaceSubrace | null => {
+        if (typeof subrace === 'string') {
+            const name = subrace.trim();
+            return name ? { name, description: '', abilityScoreBonuses: {}, languages: [], traits: [] } : null;
+        }
 
-    const name = (subrace.name ?? '').trim();
-    if (!name) return null;
+        const name = (subrace.name ?? '').trim();
+        if (!name) return null;
 
-    return {
-      name,
-      description: (subrace.description ?? '').trim(),
-      abilityScoreBonuses: NormalizeRaceAbilityScoreBonuses((subrace as RaceSubrace).abilityScoreBonuses),
-      languages: NormalizeStringList((subrace as RaceSubrace).languages),
-      traits: NormalizeRaceTraits((subrace as RaceSubrace).traits)
-    };
-  }).filter((subrace): subrace is RaceSubrace => subrace !== null);
+        return {
+            name,
+            description: (subrace.description ?? '').trim(),
+            abilityScoreBonuses: NormalizeRaceAbilityScoreBonuses((subrace as RaceSubrace).abilityScoreBonuses),
+            languages: NormalizeStringList((subrace as RaceSubrace).languages),
+            traits: NormalizeRaceTraits((subrace as RaceSubrace).traits)
+        };
+    }).filter((subrace): subrace is RaceSubrace => subrace !== null);
 
-  const seen = new Set<string>();
-  return normalized.filter((subrace) => {
-    const key = subrace.name.toLowerCase();
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
+    const seen = new Set<string>();
+    return normalized.filter((subrace) => {
+        const key = subrace.name.toLowerCase();
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+    });
 }
 
 function MergeRaceTraitSets(defaultTraits?: Array<RaceTraits | string>, savedTraits?: Array<RaceTraits | string>): RaceTraits[] {
-  const normalizedDefaults = NormalizeRaceTraits(defaultTraits);
-  const normalizedSaved = NormalizeRaceTraits(savedTraits);
+    const normalizedDefaults = NormalizeRaceTraits(defaultTraits);
+    const normalizedSaved = NormalizeRaceTraits(savedTraits);
 
-  const defaultNames = new Set(normalizedDefaults.map((trait) => trait.name.toLowerCase()));
-  const savedCustomTraits = normalizedSaved.filter((trait) => !defaultNames.has(trait.name.toLowerCase()));
+    const defaultNames = new Set(normalizedDefaults.map((trait) => trait.name.toLowerCase()));
+    const savedCustomTraits = normalizedSaved.filter((trait) => !defaultNames.has(trait.name.toLowerCase()));
 
-  return [...normalizedDefaults, ...savedCustomTraits];
+    return [...normalizedDefaults, ...savedCustomTraits];
 }
 
 function MergeRaceSubraceSets(defaultSubraces?: Array<RaceSubrace | string>, savedSubraces?: Array<RaceSubrace | string>): RaceSubrace[] {
-  const normalizedDefaults = NormalizeRaceSubraces(defaultSubraces);
-  const normalizedSaved = NormalizeRaceSubraces(savedSubraces);
+    const normalizedDefaults = NormalizeRaceSubraces(defaultSubraces);
+    const normalizedSaved = NormalizeRaceSubraces(savedSubraces);
 
-  const merged = normalizedDefaults.map((defaultSubrace) => {
-    const savedMatch = normalizedSaved.find((subrace) => subrace.name.toLowerCase() === defaultSubrace.name.toLowerCase());
+    const merged = normalizedDefaults.map((defaultSubrace) => {
+        const savedMatch = normalizedSaved.find((subrace) => subrace.name.toLowerCase() === defaultSubrace.name.toLowerCase());
 
-    return {
-      ...defaultSubrace,
-      // Keep defaults authoritative for built-in subraces; preserve only custom additions from saved data.
-      traits: MergeRaceTraitSets(defaultSubrace.traits, savedMatch?.traits)
-    };
-  });
+        return {
+            ...defaultSubrace,
+            // Keep defaults authoritative for built-in subraces; preserve only custom additions from saved data.
+            traits: MergeRaceTraitSets(defaultSubrace.traits, savedMatch?.traits)
+        };
+    });
 
-  const defaultSubraceNames = new Set(normalizedDefaults.map((subrace) => subrace.name.toLowerCase()));
-  const customSubraces = normalizedSaved.filter((subrace) => !defaultSubraceNames.has(subrace.name.toLowerCase()));
+    const defaultSubraceNames = new Set(normalizedDefaults.map((subrace) => subrace.name.toLowerCase()));
+    const customSubraces = normalizedSaved.filter((subrace) => !defaultSubraceNames.has(subrace.name.toLowerCase()));
 
-  return [...merged, ...customSubraces];
+    return [...merged, ...customSubraces];
 }
 
 function NewId(prefix: string): string {
@@ -776,34 +733,34 @@ function MergeClassCatalog(savedClasses: CatalogItem[] | undefined, defaultClass
 }
 
 function MergeRaceCatalog(savedRaces: CatalogItem[] | undefined, defaultRaces: CatalogItem[]): CatalogItem[] {
-  const saved = savedRaces ?? [];
+    const saved = savedRaces ?? [];
 
-  const mergedDefaults = defaultRaces.map((defaultItem) => {
-    const savedMatch = saved.find((item) => item.name === defaultItem.name);
-    return {
-      ...defaultItem,
-      // Keep built-in race content synced with source data while preserving custom saved additions.
-      description: defaultItem.description,
-      raceSize: defaultItem.raceSize,
-      raceAbilityScoreBonuses: NormalizeRaceAbilityScoreBonuses(defaultItem.raceAbilityScoreBonuses),
-      raceLanguages: NormalizeStringList(defaultItem.raceLanguages),
-      raceTraits: MergeRaceTraitSets(defaultItem.raceTraits, savedMatch?.raceTraits),
-      raceSubraces: MergeRaceSubraceSets(defaultItem.raceSubraces, savedMatch?.raceSubraces)
-    };
-  });
+    const mergedDefaults = defaultRaces.map((defaultItem) => {
+        const savedMatch = saved.find((item) => item.name === defaultItem.name);
+        return {
+            ...defaultItem,
+            // Keep built-in race content synced with source data while preserving custom saved additions.
+            description: defaultItem.description,
+            raceSize: defaultItem.raceSize,
+            raceAbilityScoreBonuses: NormalizeRaceAbilityScoreBonuses(defaultItem.raceAbilityScoreBonuses),
+            raceLanguages: NormalizeStringList(defaultItem.raceLanguages),
+            raceTraits: MergeRaceTraitSets(defaultItem.raceTraits, savedMatch?.raceTraits),
+            raceSubraces: MergeRaceSubraceSets(defaultItem.raceSubraces, savedMatch?.raceSubraces)
+        };
+    });
 
-  const customRaces = saved
-    .filter((item) => !defaultRaces.some((defaultItem) => defaultItem.name === item.name))
-    .map((item) => ({
-      ...item,
-      id: item.id || NewId('race'),
-      raceAbilityScoreBonuses: NormalizeRaceAbilityScoreBonuses(item.raceAbilityScoreBonuses),
-      raceLanguages: NormalizeStringList(item.raceLanguages),
-      raceTraits: NormalizeRaceTraits(item.raceTraits),
-      raceSubraces: NormalizeRaceSubraces(item.raceSubraces)
-    }));
+    const customRaces = saved
+        .filter((item) => !defaultRaces.some((defaultItem) => defaultItem.name === item.name))
+        .map((item) => ({
+            ...item,
+            id: item.id || NewId('race'),
+            raceAbilityScoreBonuses: NormalizeRaceAbilityScoreBonuses(item.raceAbilityScoreBonuses),
+            raceLanguages: NormalizeStringList(item.raceLanguages),
+            raceTraits: NormalizeRaceTraits(item.raceTraits),
+            raceSubraces: NormalizeRaceSubraces(item.raceSubraces)
+        }));
 
-  return [...mergedDefaults, ...customRaces];
+    return [...mergedDefaults, ...customRaces];
 }
 
 function IsLegacySpellDescription(description: string): boolean {
@@ -828,14 +785,14 @@ function MergeSpellCatalog(savedSpells: CatalogItem[] | undefined, defaultSpells
             damage: savedMatch?.damage ?? defaultItem.damage,
             scaling: savedMatch?.scaling ?? defaultItem.scaling,
             level: savedMatch?.level ?? defaultItem.level,
-          classes: savedMatch?.classes ?? defaultItem.classes,
-          castingTime: savedMatch?.castingTime ?? defaultItem.castingTime,
-          range: savedMatch?.range ?? defaultItem.range,
-          duration: savedMatch?.duration ?? defaultItem.duration,
-          components: savedMatch?.components ?? defaultItem.components,
-          school: savedMatch?.school ?? defaultItem.school,
-          ritual: savedMatch?.ritual ?? defaultItem.ritual,
-          concentration: savedMatch?.concentration ?? defaultItem.concentration
+            classes: savedMatch?.classes ?? defaultItem.classes,
+            castingTime: savedMatch?.castingTime ?? defaultItem.castingTime,
+            range: savedMatch?.range ?? defaultItem.range,
+            duration: savedMatch?.duration ?? defaultItem.duration,
+            components: savedMatch?.components ?? defaultItem.components,
+            school: savedMatch?.school ?? defaultItem.school,
+            ritual: savedMatch?.ritual ?? defaultItem.ritual,
+            concentration: savedMatch?.concentration ?? defaultItem.concentration
         };
     });
 
@@ -878,17 +835,17 @@ function BuildDefaultState(): AppState {
             races: Races.map(item => ({
                 id: `race-${item.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
                 name: item.name,
-              description: item.description,
-              raceAbilityScoreBonuses: NormalizeRaceAbilityScoreBonuses(item.abilityScoreIncreases),
-              raceLanguages: NormalizeStringList(item.languages),
-              raceTraits: NormalizeRaceTraits(item.traits),
-              raceSubraces: (item.subraces ?? []).map((subrace) => ({
-                name: subrace.name,
-                description: subrace.description,
-                abilityScoreBonuses: NormalizeRaceAbilityScoreBonuses(subrace.abilityScoreIncreases),
-                languages: NormalizeStringList(subrace.languages),
-                traits: NormalizeRaceTraits(subrace.traits)
-              }))
+                description: item.description,
+                raceAbilityScoreBonuses: NormalizeRaceAbilityScoreBonuses(item.abilityScoreIncreases),
+                raceLanguages: NormalizeStringList(item.languages),
+                raceTraits: NormalizeRaceTraits(item.traits),
+                raceSubraces: (item.subraces ?? []).map((subrace) => ({
+                    name: subrace.name,
+                    description: subrace.description,
+                    abilityScoreBonuses: NormalizeRaceAbilityScoreBonuses(subrace.abilityScoreIncreases),
+                    languages: NormalizeStringList(subrace.languages),
+                    traits: NormalizeRaceTraits(subrace.traits)
+                }))
             })),
             fightingStyles: DEFAULT_FIGHTING_STYLES
         }
@@ -928,7 +885,6 @@ function BuildNewCharacter(raceId: string): CharacterRecord {
         primaryWeaponId: '',
         offhandWeaponId: '',
         primaryWeaponGrip: 'one-handed',
-        characterWeapons: [],
         weaponMagicBonuses: {},
         skillProficiencies: [],
         spellIds: [],
@@ -1001,19 +957,20 @@ function LoadState(): AppState {
             && parsed.catalogs.spells.length === 5
             && parsed.catalogs.spells.some((item) => item.id === 'spell-fireball');
 
-        const freshCatalogs = BuildDefaultState().catalogs;
+        const defaultState = BuildDefaultState();
+        const freshCatalogs = defaultState.catalogs;
         const savedClassCatalog = parsed.catalogs?.classes ?? freshCatalogs.classes;
         const savedRaceCatalog = parsed.catalogs?.races ?? freshCatalogs.races;
         const savedFightingStyleCatalog = parsed.catalogs?.fightingStyles ?? freshCatalogs.fightingStyles;
         const savedBackgroundCatalog = parsed.catalogs?.backgrounds ?? freshCatalogs.backgrounds;
         const mergedState = {
-            ...BuildDefaultState(),
+            ...defaultState,
             ...parsed,
             catalogs: {
                 classes: MergeClassCatalog(parsed.catalogs?.classes, freshCatalogs.classes),
                 feats: freshCatalogs.feats,
-              races: MergeRaceCatalog(parsed.catalogs?.races, freshCatalogs.races),
-                weapons: NormalizeWeaponCatalog(isLegacyWeaponCatalog ? DEFAULT_WEAPONS : (parsed.catalogs?.weapons ?? freshCatalogs.weapons)),
+                races: MergeRaceCatalog(parsed.catalogs?.races, freshCatalogs.races),
+                weapons: isLegacyWeaponCatalog ? DEFAULT_WEAPONS : (parsed.catalogs?.weapons ?? freshCatalogs.weapons),
                 spells: MergeSpellCatalog(isLegacySpellCatalog ? DEFAULT_SPELLS : parsed.catalogs?.spells, freshCatalogs.spells),
                 fightingStyles: parsed.catalogs?.fightingStyles ?? freshCatalogs.fightingStyles,
                 backgrounds: parsed.catalogs?.backgrounds ?? freshCatalogs.backgrounds
@@ -2171,8 +2128,6 @@ app.innerHTML = `
 </div>
 `;
 
-const defaultCatalogs = BuildDefaultState().catalogs;
-
 declare global {
     interface Window {
         NpcEasyApp: () => any;
@@ -2204,15 +2159,11 @@ const NpcEasyApp = (): any => {
         },
 
         Init() {
-            if (!this.catalogs?.classes?.length) {
-                this.catalogs = defaultCatalogs;
+            const hasSeenHelp = localStorage.getItem(HELP_SEEN_KEY) === '1';
+            if (!hasSeenHelp) {
+                this.screen = 'Help';
+                localStorage.setItem(HELP_SEEN_KEY, '1');
             }
-
-          const hasSeenHelp = localStorage.getItem(HELP_SEEN_KEY) === '1';
-          if (!hasSeenHelp) {
-            this.screen = 'Help';
-            localStorage.setItem(HELP_SEEN_KEY, '1');
-          }
 
             if (this.collections.length && !this.selectedCollectionId) {
                 this.selectedCollectionId = this.collections[0].id;
@@ -2227,25 +2178,24 @@ const NpcEasyApp = (): any => {
         },
 
         SaveAll() {
-            const collectionsWithoutLegacyArmorClass = this.collections.map((collection: Collection) => ({
+            const normalizedCollections = this.collections.map((collection: Collection) => ({
                 ...collection,
                 characters: collection.characters.map((character: CharacterRecord) => {
-                    const { armorClass: _legacyArmorClass, ...characterWithoutLegacyArmorClass } = character;
-              const cappedAbilityScores = { ...characterWithoutLegacyArmorClass.abilityScores };
-              for (const key of AbilityScoreKeys) {
-                const rawValue = Number(cappedAbilityScores[key] ?? 10);
-                cappedAbilityScores[key] = Number.isFinite(rawValue) ? Math.min(20, rawValue) : 10;
-              }
-                  return {
-                    ...characterWithoutLegacyArmorClass,
-                    abilityScores: cappedAbilityScores
-                  };
+                    const cappedAbilityScores = { ...character.abilityScores };
+                    for (const key of AbilityScoreKeys) {
+                        const rawValue = Number(cappedAbilityScores[key] ?? 10);
+                        cappedAbilityScores[key] = Number.isFinite(rawValue) ? Math.min(20, rawValue) : 10;
+                    }
+                    return {
+                        ...character,
+                        abilityScores: cappedAbilityScores
+                    };
                 })
             }));
 
             const snapshot: AppState = {
                 screen: this.screen,
-                collections: collectionsWithoutLegacyArmorClass,
+                collections: normalizedCollections,
                 selectedCollectionId: this.selectedCollectionId,
                 selectedCharacterId: this.selectedCharacterId,
                 catalogs: this.catalogs
@@ -2254,76 +2204,76 @@ const NpcEasyApp = (): any => {
             localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot));
         },
 
-    ExportData() {
-      this.SaveAll();
+        ExportData() {
+            this.SaveAll();
 
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) {
-        alert('No data found to export.');
-        return;
-      }
+            const raw = localStorage.getItem(STORAGE_KEY);
+            if (!raw) {
+                alert('No data found to export.');
+                return;
+            }
 
-      const stamp = new Date().toISOString().replace(/[:.]/g, '-');
-      const fileName = `npceasy-backup-${stamp}.json`;
-      const blob = new Blob([raw], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const anchor = document.createElement('a');
-      anchor.href = url;
-      anchor.download = fileName;
-      document.body.appendChild(anchor);
-      anchor.click();
-      document.body.removeChild(anchor);
-      URL.revokeObjectURL(url);
-      this.dataTransferStatus = `Last export: ${new Date().toLocaleString()}`;
-    },
+            const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+            const fileName = `npceasy-backup-${stamp}.json`;
+            const blob = new Blob([raw], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const anchor = document.createElement('a');
+            anchor.href = url;
+            anchor.download = fileName;
+            document.body.appendChild(anchor);
+            anchor.click();
+            document.body.removeChild(anchor);
+            URL.revokeObjectURL(url);
+            this.dataTransferStatus = `Last export: ${new Date().toLocaleString()}`;
+        },
 
-    async ImportData(event: Event) {
-      const input = event.target as HTMLInputElement | null;
-      const file = input?.files?.[0];
-      if (!file) {
-        return;
-      }
+        async ImportData(event: Event) {
+            const input = event.target as HTMLInputElement | null;
+            const file = input?.files?.[0];
+            if (!file) {
+                return;
+            }
 
-      const previousRaw = localStorage.getItem(STORAGE_KEY);
+            const previousRaw = localStorage.getItem(STORAGE_KEY);
 
-      try {
-        const importedText = await file.text();
-        JSON.parse(importedText);
+            try {
+                const importedText = await file.text();
+                JSON.parse(importedText);
 
-        localStorage.setItem(STORAGE_KEY, importedText);
-        const importedState = LoadState();
+                localStorage.setItem(STORAGE_KEY, importedText);
+                const importedState = LoadState();
 
-        this.screen = importedState.screen;
-        this.collections = importedState.collections;
-        this.selectedCollectionId = importedState.selectedCollectionId;
-        this.selectedCharacterId = importedState.selectedCharacterId;
-        this.catalogs = importedState.catalogs;
+                this.screen = importedState.screen;
+                this.collections = importedState.collections;
+                this.selectedCollectionId = importedState.selectedCollectionId;
+                this.selectedCharacterId = importedState.selectedCharacterId;
+                this.catalogs = importedState.catalogs;
 
-        this.showAllBuilderSpells = false;
-        const selected = this.GetSelectedCharacter();
-        this.editingCharacter = selected ?? null;
-        this.NormalizeSelectedSubrace();
-        this.NormalizeEquippedLoadout();
-        this.NormalizeFightingStyleSelection();
-        this.NormalizeSkillProficiencies();
+                this.showAllBuilderSpells = false;
+                const selected = this.GetSelectedCharacter();
+                this.editingCharacter = selected ?? null;
+                this.NormalizeSelectedSubrace();
+                this.NormalizeEquippedLoadout();
+                this.NormalizeFightingStyleSelection();
+                this.NormalizeSkillProficiencies();
 
-        this.SaveAll();
-        this.dataTransferStatus = `Last import: ${new Date().toLocaleString()}`;
-        alert('Data imported successfully.');
-      } catch {
-        if (previousRaw === null) {
-          localStorage.removeItem(STORAGE_KEY);
-        } else {
-          localStorage.setItem(STORAGE_KEY, previousRaw);
-        }
-        this.dataTransferStatus = `Import failed: ${new Date().toLocaleString()}`;
-        alert('Import failed. Please select a valid NPC Easy backup JSON file.');
-      } finally {
-        if (input) {
-          input.value = '';
-        }
-      }
-    },
+                this.SaveAll();
+                this.dataTransferStatus = `Last import: ${new Date().toLocaleString()}`;
+                alert('Data imported successfully.');
+            } catch {
+                if (previousRaw === null) {
+                    localStorage.removeItem(STORAGE_KEY);
+                } else {
+                    localStorage.setItem(STORAGE_KEY, previousRaw);
+                }
+                this.dataTransferStatus = `Import failed: ${new Date().toLocaleString()}`;
+                alert('Import failed. Please select a valid NPC Easy backup JSON file.');
+            } finally {
+                if (input) {
+                    input.value = '';
+                }
+            }
+        },
 
         SelectCollection(collectionId: string) {
             this.selectedCollectionId = collectionId;
@@ -2346,7 +2296,7 @@ const NpcEasyApp = (): any => {
                 return;
             }
 
-          const collection: Collection = {
+            const collection: Collection = {
                 id: NewId('collection'),
                 name: safeName,
                 characters: []
@@ -2432,159 +2382,159 @@ const NpcEasyApp = (): any => {
 
             const catalogSubraces = NormalizeRaceSubraces(selectedRace.raceSubraces);
             if (catalogSubraces.length > 0) {
-              return catalogSubraces.map((subrace) => ({ name: subrace.name }));
+                return catalogSubraces.map((subrace) => ({ name: subrace.name }));
             }
 
             const raceDefinition = Races.find((race) => race.name.toLowerCase() === selectedRace.name.toLowerCase());
             return (raceDefinition?.subraces ?? []).map((subrace) => ({ name: subrace.name }));
         },
 
-          GetSelectedRaceCatalogItem(character: CharacterRecord | null): CatalogItem | undefined {
+        GetSelectedRaceCatalogItem(character: CharacterRecord | null): CatalogItem | undefined {
             if (!character?.raceId) {
-              return undefined;
+                return undefined;
             }
 
             return this.catalogs.races.find((item: CatalogItem) => item.id === character.raceId);
-          },
+        },
 
-          GetSelectedRaceSubrace(character: CharacterRecord | null): RaceSubrace | undefined {
+        GetSelectedRaceSubrace(character: CharacterRecord | null): RaceSubrace | undefined {
             const selectedRace = this.GetSelectedRaceCatalogItem(character);
             if (!selectedRace) {
-              return undefined;
+                return undefined;
             }
 
             return NormalizeRaceSubraces(selectedRace.raceSubraces)
-              .find((subrace) => subrace.name === (character?.subraceName ?? ''));
-          },
+                .find((subrace) => subrace.name === (character?.subraceName ?? ''));
+        },
 
-          GetAbilityScoreEditorFields(): Array<{ key: keyof CharacterRecord['abilityScores']; label: string }> {
+        GetAbilityScoreEditorFields(): Array<{ key: keyof CharacterRecord['abilityScores']; label: string }> {
             return [
-              { key: 'strength', label: 'STR' },
-              { key: 'dexterity', label: 'DEX' },
-              { key: 'constitution', label: 'CON' },
-              { key: 'intelligence', label: 'INT' },
-              { key: 'wisdom', label: 'WIS' },
-              { key: 'charisma', label: 'CHA' }
+                { key: 'strength', label: 'STR' },
+                { key: 'dexterity', label: 'DEX' },
+                { key: 'constitution', label: 'CON' },
+                { key: 'intelligence', label: 'INT' },
+                { key: 'wisdom', label: 'WIS' },
+                { key: 'charisma', label: 'CHA' }
             ];
-          },
+        },
 
-          GetRaceAbilityScoreBonuses(character: CharacterRecord | null): RaceAbilityScores {
+        GetRaceAbilityScoreBonuses(character: CharacterRecord | null): RaceAbilityScores {
             const selectedRace = this.GetSelectedRaceCatalogItem(character);
             const selectedSubrace = this.GetSelectedRaceSubrace(character);
             const combined: RaceAbilityScores = {};
 
             for (const key of AbilityScoreKeys) {
-              const total = (selectedRace?.raceAbilityScoreBonuses?.[key] ?? 0) + (selectedSubrace?.abilityScoreBonuses?.[key] ?? 0);
-              if (total !== 0) {
-                combined[key] = total;
-              }
+                const total = (selectedRace?.raceAbilityScoreBonuses?.[key] ?? 0) + (selectedSubrace?.abilityScoreBonuses?.[key] ?? 0);
+                if (total !== 0) {
+                    combined[key] = total;
+                }
             }
 
             return combined;
-          },
+        },
 
-          GetFeatAbilityBonuses(character: CharacterRecord | null): Partial<Record<string, number>> {
+        GetFeatAbilityBonuses(character: CharacterRecord | null): Partial<Record<string, number>> {
             if (!character) {
-              return {};
+                return {};
             }
 
             const bonuses: Record<string, number> = {};
             for (const id of character.featIds ?? []) {
-              const featName = this.GetCatalogName('feats', id);
-              const feat = GetFeatByName(featName);
-              if (!feat) continue;
+                const featName = this.GetCatalogName('feats', id);
+                const feat = GetFeatByName(featName);
+                if (!feat) continue;
 
-              for (const [key, val] of Object.entries(feat.abilityScoreBonuses ?? {})) {
-                bonuses[key] = (bonuses[key] ?? 0) + (val as number);
-              }
-
-              if (feat.abilityScoreChoice) {
-                const chosen = (character.featAbilityChoices ?? {})[id];
-                if (chosen && feat.abilityScoreChoice.options.includes(chosen)) {
-                  bonuses[chosen] = (bonuses[chosen] ?? 0) + feat.abilityScoreChoice.amount;
+                for (const [key, val] of Object.entries(feat.abilityScoreBonuses ?? {})) {
+                    bonuses[key] = (bonuses[key] ?? 0) + (val as number);
                 }
-              }
+
+                if (feat.abilityScoreChoice) {
+                    const chosen = (character.featAbilityChoices ?? {})[id];
+                    if (chosen && feat.abilityScoreChoice.options.includes(chosen)) {
+                        bonuses[chosen] = (bonuses[chosen] ?? 0) + feat.abilityScoreChoice.amount;
+                    }
+                }
             }
 
             return bonuses;
-          },
+        },
 
-          GetFeatDerivedStatBonuses(character: CharacterRecord | null): { initiativeBonus: number; passivePerceptionBonus: number; speedBonus: number } {
+        GetFeatDerivedStatBonuses(character: CharacterRecord | null): { initiativeBonus: number; passivePerceptionBonus: number; speedBonus: number } {
             if (!character) {
-              return {
-                initiativeBonus: 0,
-                passivePerceptionBonus: 0,
-                speedBonus: 0
-              };
+                return {
+                    initiativeBonus: 0,
+                    passivePerceptionBonus: 0,
+                    speedBonus: 0
+                };
             }
 
             const totals = {
-              initiativeBonus: 0,
-              passivePerceptionBonus: 0,
-              speedBonus: 0
+                initiativeBonus: 0,
+                passivePerceptionBonus: 0,
+                speedBonus: 0
             };
 
             for (const id of character.featIds ?? []) {
-              const featName = this.GetCatalogName('feats', id);
-              const feat = GetFeatByName(featName);
-              if (!feat?.derivedStatBonuses) {
-                continue;
-              }
+                const featName = this.GetCatalogName('feats', id);
+                const feat = GetFeatByName(featName);
+                if (!feat?.derivedStatBonuses) {
+                    continue;
+                }
 
-              totals.initiativeBonus += feat.derivedStatBonuses.initiativeBonus ?? 0;
-              totals.passivePerceptionBonus += feat.derivedStatBonuses.passivePerceptionBonus ?? 0;
-              totals.speedBonus += feat.derivedStatBonuses.speedBonus ?? 0;
+                totals.initiativeBonus += feat.derivedStatBonuses.initiativeBonus ?? 0;
+                totals.passivePerceptionBonus += feat.derivedStatBonuses.passivePerceptionBonus ?? 0;
+                totals.speedBonus += feat.derivedStatBonuses.speedBonus ?? 0;
             }
 
             return totals;
-          },
+        },
 
-          GetFeatsWithAbilityChoices(character: CharacterRecord | null): Array<{ id: string; name: string; amount: number; options: string[] }> {
+        GetFeatsWithAbilityChoices(character: CharacterRecord | null): Array<{ id: string; name: string; amount: number; options: string[] }> {
             if (!character) {
-              return [];
+                return [];
             }
 
             return (character.featIds ?? [])
-              .map((id) => {
-                const featName = this.GetCatalogName('feats', id);
-                const feat = GetFeatByName(featName);
-                if (!feat?.abilityScoreChoice) return null;
-                return { id, name: feat.name, amount: feat.abilityScoreChoice.amount, options: feat.abilityScoreChoice.options };
-              })
-              .filter((entry): entry is { id: string; name: string; amount: number; options: string[] } => entry !== null);
-          },
+                .map((id) => {
+                    const featName = this.GetCatalogName('feats', id);
+                    const feat = GetFeatByName(featName);
+                    if (!feat?.abilityScoreChoice) return null;
+                    return { id, name: feat.name, amount: feat.abilityScoreChoice.amount, options: feat.abilityScoreChoice.options };
+                })
+                .filter((entry): entry is { id: string; name: string; amount: number; options: string[] } => entry !== null);
+        },
 
-          GetFeatAbilityChoice(character: CharacterRecord | null, featId: string): string {
+        GetFeatAbilityChoice(character: CharacterRecord | null, featId: string): string {
             return (character?.featAbilityChoices ?? {})[featId] ?? '';
-          },
+        },
 
-          SetFeatAbilityChoice(featId: string, abilityKey: string) {
+        SetFeatAbilityChoice(featId: string, abilityKey: string) {
             if (!this.editingCharacter) return;
             if (!this.editingCharacter.featAbilityChoices) {
-              this.editingCharacter.featAbilityChoices = {};
+                this.editingCharacter.featAbilityChoices = {};
             }
             if (abilityKey) {
-              this.editingCharacter.featAbilityChoices[featId] = abilityKey;
+                this.editingCharacter.featAbilityChoices[featId] = abilityKey;
             } else {
-              delete this.editingCharacter.featAbilityChoices[featId];
+                delete this.editingCharacter.featAbilityChoices[featId];
             }
             this.SaveAll();
-          },
+        },
 
-          GetEffectiveAbilityScore(character: CharacterRecord | null, key: keyof CharacterRecord['abilityScores']): number {
+        GetEffectiveAbilityScore(character: CharacterRecord | null, key: keyof CharacterRecord['abilityScores']): number {
             if (!character) {
-              return 10;
+                return 10;
             }
 
             return Math.min(20,
-              (character.abilityScores[key] ?? 10)
-              + (this.GetRaceAbilityScoreBonuses(character)[key] ?? 0)
-              + (this.GetFeatAbilityBonuses(character)[key] ?? 0));
-          },
+                (character.abilityScores[key] ?? 10)
+                + (this.GetRaceAbilityScoreBonuses(character)[key] ?? 0)
+                + (this.GetFeatAbilityBonuses(character)[key] ?? 0));
+        },
 
-          GetAbilityScoreWithBonusSummary(character: CharacterRecord | null, key: keyof CharacterRecord['abilityScores']): string {
+        GetAbilityScoreWithBonusSummary(character: CharacterRecord | null, key: keyof CharacterRecord['abilityScores']): string {
             if (!character) {
-              return '10';
+                return '10';
             }
 
             const baseScore = Math.min(20, character.abilityScores[key] ?? 10);
@@ -2592,29 +2542,29 @@ const NpcEasyApp = (): any => {
             const featBonus = this.GetFeatAbilityBonuses(character)[key] ?? 0;
             const bonus = raceBonus + featBonus;
             if (bonus === 0) {
-              return `${baseScore}`;
+                return `${baseScore}`;
             }
 
             const total = Math.min(20, baseScore + bonus);
             const bonusText = bonus > 0 ? `+${bonus}` : `${bonus}`;
             return `${baseScore} ${bonusText} = ${total}`;
-          },
+        },
 
-          GetDisplayedAncestryName(character: CharacterRecord | null): string {
+        GetDisplayedAncestryName(character: CharacterRecord | null): string {
             if (!character?.raceId) {
-              return 'Unknown';
+                return 'Unknown';
             }
 
             const subraceName = (character.subraceName ?? '').trim();
             if (subraceName.length > 0) {
-              const hasSelectedSubrace = this.GetSubraceOptions(character).some((subrace: { name: string }) => subrace.name === subraceName);
-              if (hasSelectedSubrace) {
-                return subraceName;
-              }
+                const hasSelectedSubrace = this.GetSubraceOptions(character).some((subrace: { name: string }) => subrace.name === subraceName);
+                if (hasSelectedSubrace) {
+                    return subraceName;
+                }
             }
 
             return this.GetCatalogName('races', character.raceId);
-          },
+        },
 
         GetRacialSize(character: CharacterRecord | null): string {
             if (!character?.raceId) {
@@ -2633,27 +2583,27 @@ const NpcEasyApp = (): any => {
         },
 
         GetDisplayedSpeed(character: CharacterRecord | null): number {
-          if (!character) {
-            return 0;
-          }
+            if (!character) {
+                return 0;
+            }
 
-          const speedBonus = this.GetFeatDerivedStatBonuses(character).speedBonus;
-          return Math.max(0, (character.speed ?? 0) + speedBonus);
+            const speedBonus = this.GetFeatDerivedStatBonuses(character).speedBonus;
+            return Math.max(0, (character.speed ?? 0) + speedBonus);
         },
 
         GetSpeedWithBonusSummary(character: CharacterRecord | null): string {
-          if (!character) {
-            return '0';
-          }
+            if (!character) {
+                return '0';
+            }
 
-          const baseSpeed = character.speed ?? 0;
-          const speedBonus = this.GetFeatDerivedStatBonuses(character).speedBonus;
-          if (speedBonus === 0) {
-            return `${baseSpeed}`;
-          }
+            const baseSpeed = character.speed ?? 0;
+            const speedBonus = this.GetFeatDerivedStatBonuses(character).speedBonus;
+            if (speedBonus === 0) {
+                return `${baseSpeed}`;
+            }
 
-          const bonusText = speedBonus > 0 ? `+${speedBonus}` : `${speedBonus}`;
-          return `${baseSpeed} ${bonusText} = ${Math.max(0, baseSpeed + speedBonus)}`;
+            const bonusText = speedBonus > 0 ? `+${speedBonus}` : `${speedBonus}`;
+            return `${baseSpeed} ${bonusText} = ${Math.max(0, baseSpeed + speedBonus)}`;
         },
 
         GetInitiativeBonus(character: CharacterRecord | null): number {
@@ -2661,45 +2611,39 @@ const NpcEasyApp = (): any => {
                 return 0;
             }
 
-          const dexterityModifier = this.GetAbilityModifier(this.GetEffectiveAbilityScore(character, 'dexterity'));
-          const featBonus = this.GetFeatDerivedStatBonuses(character).initiativeBonus;
-          return dexterityModifier + featBonus;
-        },
-
-        GetPassivePerceptionOtherModifiers(character: CharacterRecord | null): number {
-          const featBonus = this.GetFeatDerivedStatBonuses(character).passivePerceptionBonus;
-          // This method is a single hook for future sources such as class features or magic items.
-          return featBonus;
+            const dexterityModifier = this.GetAbilityModifier(this.GetEffectiveAbilityScore(character, 'dexterity'));
+            const featBonus = this.GetFeatDerivedStatBonuses(character).initiativeBonus;
+            return dexterityModifier + featBonus;
         },
 
         GetPassivePerception(character: CharacterRecord | null): number {
-          if (!character) {
-            return 10;
-          }
+            if (!character) {
+                return 10;
+            }
 
-          const wisdomModifier = this.GetAbilityModifier(this.GetEffectiveAbilityScore(character, 'wisdom'));
-          return 10 + wisdomModifier + this.GetPassivePerceptionOtherModifiers(character);
+            const wisdomModifier = this.GetAbilityModifier(this.GetEffectiveAbilityScore(character, 'wisdom'));
+            return 10 + wisdomModifier + this.GetFeatDerivedStatBonuses(character).passivePerceptionBonus;
         },
-          
+
         GetRacialTraits(character: CharacterRecord | null): Array<{ source: string; name: string; description: string }> {
             if (!character?.raceId) {
                 return [];
             }
 
-          const selectedRace = this.GetSelectedRaceCatalogItem(character);
+            const selectedRace = this.GetSelectedRaceCatalogItem(character);
             if (!selectedRace) {
                 return [];
             }
 
-          const selectedSubrace = this.GetSelectedRaceSubrace(character);
-          const baseTraits = NormalizeRaceTraits(selectedRace.raceTraits).map((trait) => ({
-            source: selectedRace.name,
+            const selectedSubrace = this.GetSelectedRaceSubrace(character);
+            const baseTraits = NormalizeRaceTraits(selectedRace.raceTraits).map((trait) => ({
+                source: selectedRace.name,
                 name: trait.name,
                 description: trait.description
             }));
 
-          const subraceTraits = NormalizeRaceTraits(selectedSubrace?.traits).map((trait) => ({
-            source: selectedSubrace?.name ?? selectedRace.name,
+            const subraceTraits = NormalizeRaceTraits(selectedSubrace?.traits).map((trait) => ({
+                source: selectedSubrace?.name ?? selectedRace.name,
                 name: trait.name,
                 description: trait.description
             }));
@@ -2719,14 +2663,14 @@ const NpcEasyApp = (): any => {
 
             const selectedRace = this.GetSelectedRaceCatalogItem(this.editingCharacter);
             if (!selectedRace) {
-              this.editingCharacter.languages = '';
-              return;
+                this.editingCharacter.languages = '';
+                return;
             }
 
             const selectedSubrace = this.GetSelectedRaceSubrace(this.editingCharacter);
             const combinedLanguages = NormalizeStringList([
-              ...(selectedRace.raceLanguages ?? []),
-              ...(selectedSubrace?.languages ?? [])
+                ...(selectedRace.raceLanguages ?? []),
+                ...(selectedSubrace?.languages ?? [])
             ]);
 
             this.editingCharacter.languages = combinedLanguages.join(', ');
@@ -2791,18 +2735,18 @@ const NpcEasyApp = (): any => {
         },
 
         GetAvailableSpellsForCharacter(character: CharacterRecord | null): CatalogItem[] {
-          if (this.showAllBuilderSpells) {
-            return [...this.catalogs.spells].sort((left: CatalogItem, right: CatalogItem) => {
-              const leftLevel = Number.isFinite(left.level) ? (left.level as number) : Number.MAX_SAFE_INTEGER;
-              const rightLevel = Number.isFinite(right.level) ? (right.level as number) : Number.MAX_SAFE_INTEGER;
+            if (this.showAllBuilderSpells) {
+                return [...this.catalogs.spells].sort((left: CatalogItem, right: CatalogItem) => {
+                    const leftLevel = Number.isFinite(left.level) ? (left.level as number) : Number.MAX_SAFE_INTEGER;
+                    const rightLevel = Number.isFinite(right.level) ? (right.level as number) : Number.MAX_SAFE_INTEGER;
 
-              if (leftLevel !== rightLevel) {
-                return leftLevel - rightLevel;
-              }
+                    if (leftLevel !== rightLevel) {
+                        return leftLevel - rightLevel;
+                    }
 
-              return left.name.localeCompare(right.name);
-            });
-          }
+                    return left.name.localeCompare(right.name);
+                });
+            }
 
             if (!character) {
                 return [];
@@ -3110,51 +3054,51 @@ const NpcEasyApp = (): any => {
         },
 
         AddRaceTrait(item: CatalogItem) {
-          item.raceTraits = NormalizeRaceTraits(item.raceTraits);
-          item.raceTraits.push({
-            name: 'New Trait',
-            description: ''
-          });
-          this.SaveAll();
+            item.raceTraits = NormalizeRaceTraits(item.raceTraits);
+            item.raceTraits.push({
+                name: 'New Trait',
+                description: ''
+            });
+            this.SaveAll();
         },
 
         RemoveRaceTrait(item: CatalogItem, index: number) {
-          item.raceTraits = NormalizeRaceTraits(item.raceTraits);
-          item.raceTraits.splice(index, 1);
-          this.SaveAll();
+            item.raceTraits = NormalizeRaceTraits(item.raceTraits);
+            item.raceTraits.splice(index, 1);
+            this.SaveAll();
         },
 
         AddRaceSubrace(item: CatalogItem) {
-          item.raceSubraces = NormalizeRaceSubraces(item.raceSubraces);
-          item.raceSubraces.push({
-            name: 'New Sub-race',
-            description: '',
-            abilityScoreBonuses: {},
-            languages: [],
-            traits: []
-          });
-          this.SaveAll();
+            item.raceSubraces = NormalizeRaceSubraces(item.raceSubraces);
+            item.raceSubraces.push({
+                name: 'New Sub-race',
+                description: '',
+                abilityScoreBonuses: {},
+                languages: [],
+                traits: []
+            });
+            this.SaveAll();
         },
 
         AddRaceSubraceTrait(subrace: RaceSubrace) {
-          subrace.traits = NormalizeRaceTraits(subrace.traits);
-          subrace.traits.push({
-            name: 'New Trait',
-            description: ''
-          });
-          this.SaveAll();
+            subrace.traits = NormalizeRaceTraits(subrace.traits);
+            subrace.traits.push({
+                name: 'New Trait',
+                description: ''
+            });
+            this.SaveAll();
         },
 
         RemoveRaceSubraceTrait(subrace: RaceSubrace, index: number) {
-          subrace.traits = NormalizeRaceTraits(subrace.traits);
-          subrace.traits.splice(index, 1);
-          this.SaveAll();
+            subrace.traits = NormalizeRaceTraits(subrace.traits);
+            subrace.traits.splice(index, 1);
+            this.SaveAll();
         },
 
         RemoveRaceSubrace(item: CatalogItem, index: number) {
-          item.raceSubraces = NormalizeRaceSubraces(item.raceSubraces);
-          item.raceSubraces.splice(index, 1);
-          this.SaveAll();
+            item.raceSubraces = NormalizeRaceSubraces(item.raceSubraces);
+            item.raceSubraces.splice(index, 1);
+            this.SaveAll();
         },
 
         AddClassFeature(item: CatalogItem) {
@@ -3201,68 +3145,68 @@ const NpcEasyApp = (): any => {
             this.SaveAll();
         },
 
-          GetClassHitDie(classId: string): number {
+        GetClassHitDie(classId: string): number {
             if (!classId) {
-              return 0;
+                return 0;
             }
 
             const sourceClass = AllClasses.find((entry) => entry.classType === classId);
             if (sourceClass?.hitDice) {
-              return sourceClass.hitDice;
+                return sourceClass.hitDice;
             }
 
             const catalogClass = this.catalogs.classes.find((entry: CatalogItem) => entry.name === classId);
             const hitDieMatch = (catalogClass?.description ?? '').match(/hit\s*die:\s*d(\d+)/i);
             if (!hitDieMatch) {
-              return 0;
+                return 0;
             }
 
             const parsed = Number.parseInt(hitDieMatch[1], 10);
             return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
-          },
+        },
 
-          CanRollHitPointsFromLevels(character: CharacterRecord | null): boolean {
+        CanRollHitPointsFromLevels(character: CharacterRecord | null): boolean {
             if (!character) {
-              return false;
+                return false;
             }
 
             return (character.classLevels ?? []).some((entry: ClassLevel) => {
-              if (!entry.classId || (entry.level ?? 0) <= 0) {
-                return false;
-              }
+                if (!entry.classId || (entry.level ?? 0) <= 0) {
+                    return false;
+                }
 
-              return this.GetClassHitDie(entry.classId) > 0;
+                return this.GetClassHitDie(entry.classId) > 0;
             });
-          },
+        },
 
-          RollHitPointsFromLevels() {
+        RollHitPointsFromLevels() {
             if (!this.editingCharacter || !this.CanRollHitPointsFromLevels(this.editingCharacter)) {
-              return;
+                return;
             }
 
             const totalLevels = this.GetTotalCharacterLevel(this.editingCharacter);
             if (totalLevels <= 0) {
-              return;
+                return;
             }
 
             let rolledHitPoints = 0;
             for (const entry of this.editingCharacter.classLevels) {
-              const levelCount = Math.max(0, entry.level ?? 0);
-              const hitDie = this.GetClassHitDie(entry.classId);
-              if (hitDie <= 0 || levelCount === 0) {
-                continue;
-              }
+                const levelCount = Math.max(0, entry.level ?? 0);
+                const hitDie = this.GetClassHitDie(entry.classId);
+                if (hitDie <= 0 || levelCount === 0) {
+                    continue;
+                }
 
-              for (let index = 0; index < levelCount; index += 1) {
-                rolledHitPoints += Math.floor(Math.random() * hitDie) + 1;
-              }
+                for (let index = 0; index < levelCount; index += 1) {
+                    rolledHitPoints += Math.floor(Math.random() * hitDie) + 1;
+                }
             }
 
             const constitutionModifier = this.GetAbilityModifier(this.GetEffectiveAbilityScore(this.editingCharacter, 'constitution'));
             const totalHitPoints = rolledHitPoints + (constitutionModifier * totalLevels);
             this.editingCharacter.maxHitPoints = Math.max(totalLevels, totalHitPoints);
             this.SaveAll();
-          },
+        },
 
         AddClassLevel() {
             if (!this.editingCharacter) {
@@ -3301,10 +3245,6 @@ const NpcEasyApp = (): any => {
 
             if (this.editingCharacter.weaponMagicBonuses) {
                 delete this.editingCharacter.weaponMagicBonuses[weaponId];
-            }
-
-            if (this.editingCharacter.characterWeapons) {
-                this.editingCharacter.characterWeapons = this.editingCharacter.characterWeapons.filter((entry: CharacterWeapon) => entry.weaponId !== weaponId);
             }
 
             if (this.editingCharacter.primaryWeaponId === weaponId) {
@@ -3374,25 +3314,25 @@ const NpcEasyApp = (): any => {
             }
 
             if (key === 'races') {
-              item.raceAbilityScoreBonuses = {};
-              item.raceLanguages = [];
-              item.raceTraits = [];
-              item.raceSubraces = [];
+                item.raceAbilityScoreBonuses = {};
+                item.raceLanguages = [];
+                item.raceTraits = [];
+                item.raceSubraces = [];
             }
 
             if (key === 'spells') {
                 item.level = 0;
                 item.classes = [];
-              item.effect = '';
-              item.damage = '';
-              item.scaling = '';
-              item.castingTime = '';
-              item.range = '';
-              item.duration = '';
-              item.components = '';
-              item.school = '';
-              item.ritual = false;
-              item.concentration = false;
+                item.effect = '';
+                item.damage = '';
+                item.scaling = '';
+                item.castingTime = '';
+                item.range = '';
+                item.duration = '';
+                item.components = '';
+                item.school = '';
+                item.ritual = false;
+                item.concentration = false;
             }
 
             this.catalogs[key].unshift(item);
@@ -3410,41 +3350,41 @@ const NpcEasyApp = (): any => {
         },
 
         SetRaceLanguages(item: CatalogItem, value: string) {
-          item.raceLanguages = NormalizeStringList(value.split(','));
-          this.SaveAll();
+            item.raceLanguages = NormalizeStringList(value.split(','));
+            this.SaveAll();
         },
 
         SetRaceAbilityScoreBonus(item: CatalogItem, key: keyof CharacterRecord['abilityScores'], value: string) {
-          const parsed = Number.parseInt(value, 10);
-          const bonuses = NormalizeRaceAbilityScoreBonuses(item.raceAbilityScoreBonuses);
+            const parsed = Number.parseInt(value, 10);
+            const bonuses = NormalizeRaceAbilityScoreBonuses(item.raceAbilityScoreBonuses);
 
-          if (Number.isFinite(parsed) && parsed !== 0) {
-            bonuses[key] = parsed;
-          } else {
-            delete bonuses[key];
-          }
+            if (Number.isFinite(parsed) && parsed !== 0) {
+                bonuses[key] = parsed;
+            } else {
+                delete bonuses[key];
+            }
 
-          item.raceAbilityScoreBonuses = bonuses;
-          this.SaveAll();
+            item.raceAbilityScoreBonuses = bonuses;
+            this.SaveAll();
         },
 
         SetRaceSubraceLanguages(subrace: RaceSubrace, value: string) {
-          subrace.languages = NormalizeStringList(value.split(','));
-          this.SaveAll();
+            subrace.languages = NormalizeStringList(value.split(','));
+            this.SaveAll();
         },
 
         SetRaceSubraceAbilityScoreBonus(subrace: RaceSubrace, key: keyof CharacterRecord['abilityScores'], value: string) {
-          const parsed = Number.parseInt(value, 10);
-          const bonuses = NormalizeRaceAbilityScoreBonuses(subrace.abilityScoreBonuses);
+            const parsed = Number.parseInt(value, 10);
+            const bonuses = NormalizeRaceAbilityScoreBonuses(subrace.abilityScoreBonuses);
 
-          if (Number.isFinite(parsed) && parsed !== 0) {
-            bonuses[key] = parsed;
-          } else {
-            delete bonuses[key];
-          }
+            if (Number.isFinite(parsed) && parsed !== 0) {
+                bonuses[key] = parsed;
+            } else {
+                delete bonuses[key];
+            }
 
-          subrace.abilityScoreBonuses = bonuses;
-          this.SaveAll();
+            subrace.abilityScoreBonuses = bonuses;
+            this.SaveAll();
         },
 
         RemoveCompendiumItem(key: CatalogKey, id: string) {
@@ -3468,7 +3408,7 @@ const NpcEasyApp = (): any => {
                 if (key === 'classes') {
                     const removedClassName = removedItem?.name;
                     this.editingCharacter.classLevels = this.editingCharacter.classLevels.filter((entry: ClassLevel) => entry.classId !== removedClassName);
-                  this.NormalizeSkillProficiencies();
+                    this.NormalizeSkillProficiencies();
                 }
             }
 
@@ -3487,18 +3427,6 @@ const NpcEasyApp = (): any => {
             const current = Number(character.weaponMagicBonuses[weaponId] ?? 0);
             const bonus = Number.isFinite(current) ? current : 0;
             character.weaponMagicBonuses[weaponId] = bonus;
-
-            if (!character.characterWeapons) {
-                character.characterWeapons = [];
-            }
-
-            const existing = character.characterWeapons.find((entry: CharacterWeapon) => entry.weaponId === weaponId);
-            if (existing) {
-                existing.magicalBonus = bonus;
-            } else {
-                character.characterWeapons.push({ weaponId, magicalBonus: bonus });
-            }
-
             return bonus;
         },
 
@@ -3510,18 +3438,6 @@ const NpcEasyApp = (): any => {
                 character.weaponMagicBonuses = {};
             }
             character.weaponMagicBonuses[weaponId] = safeBonus;
-
-            if (!character.characterWeapons) {
-                character.characterWeapons = [];
-            }
-
-            const existing = character.characterWeapons.find((entry: CharacterWeapon) => entry.weaponId === weaponId);
-            if (existing) {
-                existing.magicalBonus = safeBonus;
-            } else {
-                character.characterWeapons.push({ weaponId, magicalBonus: safeBonus });
-            }
-
             this.SaveAll();
         },
 
@@ -3530,141 +3446,141 @@ const NpcEasyApp = (): any => {
         },
 
         GetAvailableSkillOptions(character: CharacterRecord | null): Array<{ name: string; ability: keyof CharacterRecord['abilityScores']; abilityLabel: string }> {
-          if (!character) {
-            return [];
-          }
-
-          const availableSkills = new Set<string>();
-          for (const entry of character.classLevels ?? []) {
-            if (!entry.classId || (entry.level ?? 0) <= 0) {
-              continue;
+            if (!character) {
+                return [];
             }
 
-            const charClass = AllClasses.find((cls) => cls.classType === entry.classId);
-            for (const skill of charClass?.proficiencies.skills ?? []) {
-              availableSkills.add(skill);
-            }
-          }
+            const availableSkills = new Set<string>();
+            for (const entry of character.classLevels ?? []) {
+                if (!entry.classId || (entry.level ?? 0) <= 0) {
+                    continue;
+                }
 
-          return SkillDefinitions.filter((skill) => availableSkills.has(skill.name));
+                const charClass = AllClasses.find((cls) => cls.classType === entry.classId);
+                for (const skill of charClass?.proficiencies.skills ?? []) {
+                    availableSkills.add(skill);
+                }
+            }
+
+            return SkillDefinitions.filter((skill) => availableSkills.has(skill.name));
         },
 
         GetCharacterSkillProficiencies(character: CharacterRecord | null): string[] {
-          if (!character) {
-            return [];
-          }
+            if (!character) {
+                return [];
+            }
 
-          const normalized = [...new Set((character.skillProficiencies ?? [])
-            .map((skill) => (skill ?? '').trim())
-            .filter((skill) => skill.length > 0 && SkillDefinitions.some((def) => def.name === skill)))];
-          character.skillProficiencies = normalized;
-          return normalized;
+            const normalized = [...new Set((character.skillProficiencies ?? [])
+                .map((skill) => (skill ?? '').trim())
+                .filter((skill) => skill.length > 0 && SkillDefinitions.some((def) => def.name === skill)))];
+            character.skillProficiencies = normalized;
+            return normalized;
         },
 
         GetSkillSelectionLimit(character: CharacterRecord | null): number {
-          if (!character) {
-            return 0;
-          }
+            if (!character) {
+                return 0;
+            }
 
-          const classIds = [...new Set((character.classLevels ?? [])
-            .filter((entry) => !!entry.classId && (entry.level ?? 0) > 0)
-            .map((entry) => entry.classId))];
+            const classIds = [...new Set((character.classLevels ?? [])
+                .filter((entry) => !!entry.classId && (entry.level ?? 0) > 0)
+                .map((entry) => entry.classId))];
 
-          return classIds.reduce((total, classId) => total + (ClassSkillChoiceLimits[classId] ?? 0), 0);
+            return classIds.reduce((total, classId) => total + (ClassSkillChoiceLimits[classId] ?? 0), 0);
         },
 
         GetSelectedSkillCount(character: CharacterRecord | null): number {
-          return this.GetCharacterSkillProficiencies(character).length;
+            return this.GetCharacterSkillProficiencies(character).length;
         },
 
         IsSkillSelectionAtLimit(character: CharacterRecord | null): boolean {
-          const limit = this.GetSkillSelectionLimit(character);
-          if (limit <= 0) {
-            return true;
-          }
+            const limit = this.GetSkillSelectionLimit(character);
+            if (limit <= 0) {
+                return true;
+            }
 
-          return this.GetSelectedSkillCount(character) >= limit;
+            return this.GetSelectedSkillCount(character) >= limit;
         },
 
         CanSelectSkill(character: CharacterRecord | null, skillName: string): boolean {
-          if (!character) {
-            return false;
-          }
+            if (!character) {
+                return false;
+            }
 
-          if (this.IsSkillProficient(character, skillName)) {
-            return true;
-          }
+            if (this.IsSkillProficient(character, skillName)) {
+                return true;
+            }
 
-          return !this.IsSkillSelectionAtLimit(character);
+            return !this.IsSkillSelectionAtLimit(character);
         },
 
         NormalizeSkillProficiencies() {
-          if (!this.editingCharacter) {
-            return;
-          }
+            if (!this.editingCharacter) {
+                return;
+            }
 
-          const available = new Set(this.GetAvailableSkillOptions(this.editingCharacter).map((skill: { name: string }) => skill.name));
-          const limit = this.GetSkillSelectionLimit(this.editingCharacter);
-          this.editingCharacter.skillProficiencies = this.GetCharacterSkillProficiencies(this.editingCharacter)
-            .filter((skill: string) => available.has(skill));
+            const available = new Set(this.GetAvailableSkillOptions(this.editingCharacter).map((skill: { name: string }) => skill.name));
+            const limit = this.GetSkillSelectionLimit(this.editingCharacter);
+            this.editingCharacter.skillProficiencies = this.GetCharacterSkillProficiencies(this.editingCharacter)
+                .filter((skill: string) => available.has(skill));
 
-          if (limit > 0 && this.editingCharacter.skillProficiencies.length > limit) {
-            this.editingCharacter.skillProficiencies = this.editingCharacter.skillProficiencies.slice(0, limit);
-          }
+            if (limit > 0 && this.editingCharacter.skillProficiencies.length > limit) {
+                this.editingCharacter.skillProficiencies = this.editingCharacter.skillProficiencies.slice(0, limit);
+            }
         },
 
         IsSkillProficient(character: CharacterRecord | null, skillName: string): boolean {
-          return this.GetCharacterSkillProficiencies(character).includes(skillName);
+            return this.GetCharacterSkillProficiencies(character).includes(skillName);
         },
 
         ToggleSkillProficiency(skillName: string, isChecked: boolean) {
-          if (!this.editingCharacter) {
-            return;
-          }
+            if (!this.editingCharacter) {
+                return;
+            }
 
             const available = new Set(this.GetAvailableSkillOptions(this.editingCharacter).map((skill: { name: string }) => skill.name));
-          if (!available.has(skillName)) {
-            return;
-          }
-
-          const current = this.GetCharacterSkillProficiencies(this.editingCharacter);
-          if (isChecked) {
-            const limit = this.GetSkillSelectionLimit(this.editingCharacter);
-            if (limit > 0 && current.length >= limit) {
-              return;
+            if (!available.has(skillName)) {
+                return;
             }
 
-            if (!current.includes(skillName)) {
-              current.push(skillName);
-            }
-            this.editingCharacter.skillProficiencies = [...new Set(current)];
-          } else {
+            const current = this.GetCharacterSkillProficiencies(this.editingCharacter);
+            if (isChecked) {
+                const limit = this.GetSkillSelectionLimit(this.editingCharacter);
+                if (limit > 0 && current.length >= limit) {
+                    return;
+                }
+
+                if (!current.includes(skillName)) {
+                    current.push(skillName);
+                }
+                this.editingCharacter.skillProficiencies = [...new Set(current)];
+            } else {
                 this.editingCharacter.skillProficiencies = current.filter((skill: string) => skill !== skillName);
-          }
+            }
 
-          this.SaveAll();
+            this.SaveAll();
         },
 
         GetSkillBonuses(character: CharacterRecord | null): Array<{ name: string; value: string; proficient: boolean }> {
-          if (!character) {
-            return [];
-          }
+            if (!character) {
+                return [];
+            }
 
-          const profBonus = this.GetProficiencyBonus(this.GetTotalCharacterLevel(character));
-          const proficiencies = new Set(this.GetCharacterSkillProficiencies(character));
+            const profBonus = this.GetProficiencyBonus(this.GetTotalCharacterLevel(character));
+            const proficiencies = new Set(this.GetCharacterSkillProficiencies(character));
             const available = new Set(this.GetAvailableSkillOptions(character).map((skill: { name: string }) => skill.name));
 
-          return SkillDefinitions.map((skill) => {
-            const abilityMod = this.GetAbilityModifier(this.GetEffectiveAbilityScore(character, skill.ability));
-            const proficient = available.has(skill.name) && proficiencies.has(skill.name);
-            const total = abilityMod + (proficient ? profBonus : 0);
-            const value = total >= 0 ? `+${total}` : `${total}`;
-            return {
-              name: skill.name,
-              value,
-              proficient
-            };
-          });
+            return SkillDefinitions.map((skill) => {
+                const abilityMod = this.GetAbilityModifier(this.GetEffectiveAbilityScore(character, skill.ability));
+                const proficient = available.has(skill.name) && proficiencies.has(skill.name);
+                const total = abilityMod + (proficient ? profBonus : 0);
+                const value = total >= 0 ? `+${total}` : `${total}`;
+                return {
+                    name: skill.name,
+                    value,
+                    proficient
+                };
+            });
         },
 
         GetSavingThrows(character: CharacterRecord): { label: string; value: string; proficient: boolean }[] {
@@ -3687,7 +3603,7 @@ const NpcEasyApp = (): any => {
             ];
             return entries.map(({ key, label, abbr }) => {
                 const proficient = proficientSaves.has(label.toLowerCase());
-              const mod = this.GetAbilityModifier(this.GetEffectiveAbilityScore(character, key)) + (proficient ? profBonus : 0);
+                const mod = this.GetAbilityModifier(this.GetEffectiveAbilityScore(character, key)) + (proficient ? profBonus : 0);
                 const value = mod >= 0 ? `+${mod}` : `${mod}`;
                 return { label: abbr, value, proficient };
             });
@@ -3773,18 +3689,18 @@ const NpcEasyApp = (): any => {
                 .filter((entry) => entry.classFeatures.length > 0 || entry.subclassFeatures.length > 0);
         },
 
-            GetAttacksPerRound(character: CharacterRecord | null): number {
-              if (!character) {
+        GetAttacksPerRound(character: CharacterRecord | null): number {
+            if (!character) {
                 return 1;
-              }
+            }
 
-              const extraAttackCount = this.GetClassFeatureSummary(character)
+            const extraAttackCount = this.GetClassFeatureSummary(character)
                 .flatMap((entry: ClassFeatureSummary) => [...entry.classFeatures, ...entry.subclassFeatures])
                 .filter((feature: string) => /\bextra attack\b/i.test(feature))
                 .length;
 
-              return 1 + extraAttackCount;
-            },
+            return 1 + extraAttackCount;
+        },
 
         FormatWeaponName(character: CharacterRecord, weaponId: string): string {
             const weaponName = this.GetCatalogName('weapons', weaponId);
@@ -3805,49 +3721,49 @@ const NpcEasyApp = (): any => {
             return this.GetCatalogName('fightingStyles', character.fightingStyleId);
         },
 
-          GetArmorMagicBonus(character: CharacterRecord | null): number {
+        GetArmorMagicBonus(character: CharacterRecord | null): number {
             if (!character) {
-              return 0;
+                return 0;
             }
 
             const current = Number(character.armorMagicBonus ?? 0);
             const bonus = Number.isFinite(current) ? Math.max(0, current) : 0;
             character.armorMagicBonus = bonus;
             return bonus;
-          },
+        },
 
-          SetArmorMagicBonus(character: CharacterRecord | null, value: string) {
+        SetArmorMagicBonus(character: CharacterRecord | null, value: string) {
             if (!character) {
-              return;
+                return;
             }
 
             const parsed = Number.parseInt(value, 10);
             const safeBonus = Number.isFinite(parsed) ? Math.max(0, parsed) : 0;
             character.armorMagicBonus = safeBonus;
             this.SaveAll();
-          },
+        },
 
-          GetShieldMagicBonus(character: CharacterRecord | null): number {
+        GetShieldMagicBonus(character: CharacterRecord | null): number {
             if (!character) {
-              return 0;
+                return 0;
             }
 
             const current = Number(character.shieldMagicBonus ?? 0);
             const bonus = Number.isFinite(current) ? Math.max(0, current) : 0;
             character.shieldMagicBonus = bonus;
             return bonus;
-          },
+        },
 
-          SetShieldMagicBonus(character: CharacterRecord | null, value: string) {
+        SetShieldMagicBonus(character: CharacterRecord | null, value: string) {
             if (!character) {
-              return;
+                return;
             }
 
             const parsed = Number.parseInt(value, 10);
             const safeBonus = Number.isFinite(parsed) ? Math.max(0, parsed) : 0;
             character.shieldMagicBonus = safeBonus;
             this.SaveAll();
-          },
+        },
 
         GetEquippedArmor(character: CharacterRecord | null) {
             if (!character?.equippedArmorId) {
@@ -3860,16 +3776,16 @@ const NpcEasyApp = (): any => {
         GetEquippedArmorName(character: CharacterRecord | null): string {
             const armor = this.GetEquippedArmor(character);
             if (!armor) {
-              return 'No armor';
+                return 'No armor';
             }
 
             const bonus = this.GetArmorMagicBonus(character);
             return bonus > 0 ? `${armor.name} +${bonus}` : armor.name;
-          },
+        },
 
-          GetShieldLabel(character: CharacterRecord | null): string {
+        GetShieldLabel(character: CharacterRecord | null): string {
             if (!character?.hasShield) {
-              return 'Not equipped';
+                return 'Not equipped';
             }
 
             const bonus = this.GetShieldMagicBonus(character);
@@ -3899,7 +3815,7 @@ const NpcEasyApp = (): any => {
                 }
 
                 return [...entry.classFeatures, ...entry.subclassFeatures]
-                  .some((feature) => /\barcane ward\b/i.test(feature));
+                    .some((feature) => /\barcane ward\b/i.test(feature));
             });
 
             if (!hasArcaneWardFeature) {
@@ -3934,72 +3850,72 @@ const NpcEasyApp = (): any => {
             return weaponName;
         },
 
-    GetAutoEquipmentLines(character: CharacterRecord | null): string[] {
-      if (!character) {
-        return [];
-      }
+        GetAutoEquipmentLines(character: CharacterRecord | null): string[] {
+            if (!character) {
+                return [];
+            }
 
-      const lines = [`Armor: ${this.GetEquippedArmorName(character)}`];
-      if (character.hasShield) {
-        lines.push(`Shield: ${this.GetShieldLabel(character)}`);
-      }
+            const lines = [`Armor: ${this.GetEquippedArmorName(character)}`];
+            if (character.hasShield) {
+                lines.push(`Shield: ${this.GetShieldLabel(character)}`);
+            }
 
-      const weaponLabels = (character.weaponIds ?? [])
-        .map((weaponId) => this.GetEquippedWeaponLabel(character, weaponId, ''))
-        .filter((label) => label.trim().length > 0);
+            const weaponLabels = (character.weaponIds ?? [])
+                .map((weaponId) => this.GetEquippedWeaponLabel(character, weaponId, ''))
+                .filter((label) => label.trim().length > 0);
 
-      if (weaponLabels.length > 0) {
-        lines.push(`Weapons: ${weaponLabels.join(', ')}`);
-      } else {
-        lines.push('Weapons: None');
-      }
+            if (weaponLabels.length > 0) {
+                lines.push(`Weapons: ${weaponLabels.join(', ')}`);
+            } else {
+                lines.push('Weapons: None');
+            }
 
-      return lines;
-    },
+            return lines;
+        },
 
-    GetBuilderEquipmentValue(character: CharacterRecord | null): string {
-      if (!character) {
-        return '';
-      }
+        GetBuilderEquipmentValue(character: CharacterRecord | null): string {
+            if (!character) {
+                return '';
+            }
 
-      const autoText = this.GetAutoEquipmentLines(character).join('\n');
-      const notes = (character.equipment ?? '').trim();
-      if (notes.length === 0) {
-        return autoText;
-      }
+            const autoText = this.GetAutoEquipmentLines(character).join('\n');
+            const notes = (character.equipment ?? '').trim();
+            if (notes.length === 0) {
+                return autoText;
+            }
 
-      return `${autoText}\n\n${notes}`;
-    },
+            return `${autoText}\n\n${notes}`;
+        },
 
-    SetEquipmentNotesFromBuilder(value: string) {
-      if (!this.editingCharacter) {
-        return;
-      }
+        SetEquipmentNotesFromBuilder(value: string) {
+            if (!this.editingCharacter) {
+                return;
+            }
 
-      const normalizedValue = value.replace(/\r\n/g, '\n').trim();
-      const autoText = this.GetAutoEquipmentLines(this.editingCharacter).join('\n');
-      let notes = normalizedValue;
+            const normalizedValue = value.replace(/\r\n/g, '\n').trim();
+            const autoText = this.GetAutoEquipmentLines(this.editingCharacter).join('\n');
+            let notes = normalizedValue;
 
-      if (autoText.length > 0 && normalizedValue.startsWith(autoText)) {
-        notes = normalizedValue.slice(autoText.length).replace(/^\n+/, '');
-      }
+            if (autoText.length > 0 && normalizedValue.startsWith(autoText)) {
+                notes = normalizedValue.slice(autoText.length).replace(/^\n+/, '');
+            }
 
-      this.editingCharacter.equipment = notes.trim();
-    },
+            this.editingCharacter.equipment = notes.trim();
+        },
 
-    GetEquipmentSummary(character: CharacterRecord | null): string {
-      if (!character) {
-        return '(none specified)';
-      }
+        GetEquipmentSummary(character: CharacterRecord | null): string {
+            if (!character) {
+                return '(none specified)';
+            }
 
-      const lines = this.GetAutoEquipmentLines(character);
-      const notes = (character.equipment ?? '').trim();
-      if (notes.length > 0) {
-        lines.push(notes);
-      }
+            const lines = this.GetAutoEquipmentLines(character);
+            const notes = (character.equipment ?? '').trim();
+            if (notes.length > 0) {
+                lines.push(notes);
+            }
 
-      return lines.length > 0 ? lines.join('\n') : '(none specified)';
-    },
+            return lines.length > 0 ? lines.join('\n') : '(none specified)';
+        },
 
         GetDisplayedArmorClass(character: CharacterRecord | null): number {
             if (!character) {
@@ -4031,18 +3947,18 @@ const NpcEasyApp = (): any => {
             if (armor) {
                 notes.push(armor.description);
             } else {
-              notes.push(`No armor equipped. Using unarmored AC 10 + Dex modifier (${10 + this.GetAbilityModifier(this.GetEffectiveAbilityScore(character, 'dexterity'))}).`);
+                notes.push(`No armor equipped. Using unarmored AC 10 + Dex modifier (${10 + this.GetAbilityModifier(this.GetEffectiveAbilityScore(character, 'dexterity'))}).`);
             }
             const armorMagicBonus = armor ? this.GetArmorMagicBonus(character) : 0;
             if (armorMagicBonus > 0) {
-              notes.push(`Armor magic bonus: +${armorMagicBonus} AC.`);
+                notes.push(`Armor magic bonus: +${armorMagicBonus} AC.`);
             }
             if (character.hasShield) {
                 notes.push('Shield equipped: +2 AC.');
-              const shieldMagicBonus = this.GetShieldMagicBonus(character);
-              if (shieldMagicBonus > 0) {
-                notes.push(`Shield magic bonus: +${shieldMagicBonus} AC.`);
-              }
+                const shieldMagicBonus = this.GetShieldMagicBonus(character);
+                if (shieldMagicBonus > 0) {
+                    notes.push(`Shield magic bonus: +${shieldMagicBonus} AC.`);
+                }
             }
             if (styleName === 'Defense' && armor) {
                 notes.push('Defense fighting style: +1 AC while armored.');
@@ -4166,8 +4082,8 @@ const NpcEasyApp = (): any => {
             }
 
             return abilities.reduce((best, current) => {
-              const bestMod = this.GetAbilityModifier(this.GetEffectiveAbilityScore(character, best));
-              const currentMod = this.GetAbilityModifier(this.GetEffectiveAbilityScore(character, current));
+                const bestMod = this.GetAbilityModifier(this.GetEffectiveAbilityScore(character, best));
+                const currentMod = this.GetAbilityModifier(this.GetEffectiveAbilityScore(character, current));
                 return currentMod > bestMod ? current : best;
             });
         },
@@ -4179,7 +4095,7 @@ const NpcEasyApp = (): any => {
                     continue;
                 }
 
-            const damage = GetMergedSpellDetails(catalogSpell).damage;
+                const damage = GetMergedSpellDetails(catalogSpell).damage;
                 if (damage && damage !== 'See description') {
                     return true;
                 }
@@ -4288,8 +4204,8 @@ const NpcEasyApp = (): any => {
             return [...(character.spellIds ?? [])].sort((leftId: string, rightId: string) => {
                 const leftSpell = this.catalogs.spells.find((item: CatalogItem) => item.id === leftId);
                 const rightSpell = this.catalogs.spells.find((item: CatalogItem) => item.id === rightId);
-              const leftLevel = leftSpell ? GetMergedSpellDetails(leftSpell).level : Number.MAX_SAFE_INTEGER;
-              const rightLevel = rightSpell ? GetMergedSpellDetails(rightSpell).level : Number.MAX_SAFE_INTEGER;
+                const leftLevel = leftSpell ? GetMergedSpellDetails(leftSpell).level : Number.MAX_SAFE_INTEGER;
+                const rightLevel = rightSpell ? GetMergedSpellDetails(rightSpell).level : Number.MAX_SAFE_INTEGER;
 
                 if (leftLevel !== rightLevel) {
                     return leftLevel - rightLevel;
@@ -4299,39 +4215,6 @@ const NpcEasyApp = (): any => {
                 const rightName = rightSpell?.name ?? '';
                 return leftName.localeCompare(rightName);
             });
-        },
-
-        GetSpellFacts(spellId: string): string[] {
-            const spell = this.catalogs.spells.find((item: CatalogItem) => item.id === spellId);
-            if (!spell) {
-                return [];
-            }
-
-          const details = GetMergedSpellDetails(spell);
-          const castingTime = details.castingTime ?? 'Action';
-          const range = details.range ?? 'See description';
-          const duration = details.duration ?? 'See description';
-          const components = details.components ?? '';
-          const school = details.school ?? '';
-          const ritual = details.ritual ? ' (ritual)' : '';
-          const concentration = details.concentration ? ' ★ Concentration' : '';
-          const effect = details.effect;
-          const damage = details.damage;
-          const scaling = details.scaling;
-
-            const meta: string[] = [];
-            if (school) meta.push(school.charAt(0).toUpperCase() + school.slice(1));
-            if (components) meta.push(components);
-
-            return [
-                `Casting Time: ${castingTime}${ritual}${concentration}`,
-                `Range: ${range}`,
-                `Duration: ${duration}`,
-                ...(damage ? [`Damage: ${damage}`] : []),
-                ...(scaling ? [`Scaling: ${scaling}`] : []),
-                ...(meta.length ? [`${meta.join(' · ')}`] : []),
-                `Effects: ${effect || 'See full text'}`
-            ];
         },
 
         GetSpellSheetRow(spellId: string): { name: string; castingTime: string; range: string; duration: string; components: string; type: string; damage: string; effects: string } {
@@ -4349,28 +4232,28 @@ const NpcEasyApp = (): any => {
                 };
             }
 
-                const details = GetMergedSpellDetails(spell);
-                const school = details.school
-                  ? details.school.charAt(0).toUpperCase() + details.school.slice(1)
+            const details = GetMergedSpellDetails(spell);
+            const school = details.school
+                ? details.school.charAt(0).toUpperCase() + details.school.slice(1)
                 : 'Spell';
-                const levelPrefix = details.level === 0 ? 'C' : `${details.level}`;
+            const levelPrefix = details.level === 0 ? 'C' : `${details.level}`;
             const tags: string[] = [];
-                if (details.ritual) {
+            if (details.ritual) {
                 tags.push('Ritual');
             }
-                if (details.concentration) {
+            if (details.concentration) {
                 tags.push('Concentration');
             }
 
-                const effect = details.effect;
-                const damage = details.damage ?? 'None';
+            const effect = details.effect;
+            const damage = details.damage ?? 'None';
 
             return {
                 name: `${levelPrefix}: ${spell.name}`,
-                  castingTime: details.castingTime ?? 'Action',
-                  range: details.range ?? 'See description',
-                  duration: details.duration ?? 'See description',
-                  components: details.components ?? 'None',
+                castingTime: details.castingTime ?? 'Action',
+                range: details.range ?? 'See description',
+                duration: details.duration ?? 'See description',
+                components: details.components ?? 'None',
                 type: tags.length > 0 ? `${school} (${tags.join(', ')})` : school,
                 damage,
                 effects: effect || 'See full text.'
@@ -4396,7 +4279,7 @@ const NpcEasyApp = (): any => {
         },
 
         GetCompendiumSectionAnchor(key: CatalogKey): string {
-          return `compendium-${key}`;
+            return `compendium-${key}`;
         },
 
         GetFullFeatDescription(id: string): string {
@@ -4426,14 +4309,9 @@ const NpcEasyApp = (): any => {
                 return 0;
             }
 
-            let totalCharLvl: number = 0;
-            targetCharacter.classLevels.forEach((classLevel: ClassLevel) => {
-                if (classLevel.level < 0) {
-                    console.warn(`Character ${targetCharacter.name} has a class level entry with negative level (${classLevel.classId} Lv ${classLevel.level}). Treating it as 0 for total level calculation.`);
-                }
-                totalCharLvl += classLevel.level > 0 ? classLevel.level : 0;
-            });
-            return totalCharLvl;
+            return targetCharacter.classLevels.reduce((total: number, classLevel: ClassLevel) => {
+                return total + Math.max(0, classLevel.level);
+            }, 0);
         }
     }
 };
