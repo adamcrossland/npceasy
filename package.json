@@ -7,10 +7,16 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
+    "test:ui": "playwright test",
+    "test:ui:smoke": "playwright test tests/ui/navigation.spec.ts tests/ui/collections-builder-sheet.spec.ts",
+    "test:ui:headed": "playwright test --headed",
+    "test:ui:debug": "playwright test --debug",
+    "test:ui:report": "playwright show-report",
     "deploy": "npm run build && swa deploy --config-name npceasy --env production",
     "deploy:swa": "swa deploy --config-name npceasy --env production"
   },
   "devDependencies": {
+    "@playwright/test": "^1.54.2",
     "typescript": "~6.0.2",
     "vite": "^8.0.10"
   }

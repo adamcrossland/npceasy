@@ -85,6 +85,29 @@ Output is written to `dist/`. The contents of `dist/` can be served by any stati
 npm run preview
 ```
 
+### UI test suite (Playwright)
+
+NPC Easy includes a Playwright UI regression suite that you can run on demand before releases or after larger refactors.
+
+```bash
+# Run full UI suite headless
+npm run test:ui
+
+# Run smoke tests only (fast path)
+npm run test:ui:smoke
+
+# Run with browser visible
+npm run test:ui:headed
+
+# Open Playwright UI mode for step-by-step debugging
+npm run test:ui:debug
+
+# Open the latest HTML report
+npm run test:ui:report
+```
+
+The test runner starts the Vite dev server automatically and validates key user journeys: navigation, collections, character builder, character sheet, compendium changes, and JSON export.
+
 ---
 
 ## Forking and Deploying Your Own Instance
