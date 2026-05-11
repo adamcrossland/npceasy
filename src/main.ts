@@ -4309,14 +4309,9 @@ const NpcEasyApp = (): any => {
                 return 0;
             }
 
-            let totalCharLvl: number = 0;
-            targetCharacter.classLevels.forEach((classLevel: ClassLevel) => {
-                if (classLevel.level < 0) {
-                    console.warn(`Character ${targetCharacter.name} has a class level entry with negative level (${classLevel.classId} Lv ${classLevel.level}). Treating it as 0 for total level calculation.`);
-                }
-                totalCharLvl += classLevel.level > 0 ? classLevel.level : 0;
-            });
-            return totalCharLvl;
+            return targetCharacter.classLevels.reduce((total: number, classLevel: ClassLevel) => {
+                return total + Math.max(0, classLevel.level);
+            }, 0);
         }
     }
 };
