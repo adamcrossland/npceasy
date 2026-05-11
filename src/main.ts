@@ -74,11 +74,6 @@ type ClassLevel = {
     subclassName?: string;
 };
 
-type CharacterWeapon = {
-    weaponId: string;
-    magicalBonus: number;
-};
-
 type CharacterRecord = {
     id: string;
     name: string;
@@ -112,7 +107,6 @@ type CharacterRecord = {
     primaryWeaponId?: string;
     offhandWeaponId?: string;
     primaryWeaponGrip?: WeaponGrip;
-    characterWeapons?: CharacterWeapon[];
     weaponMagicBonuses?: Record<string, number>;
     spellIds: string[];
     alignment: string;
@@ -473,23 +467,12 @@ function NormalizeSpellCatalog(items: CatalogItem[]): CatalogItem[] {
   }
 
 function NormalizeCharacterWeaponData(character: CharacterRecord): CharacterRecord {
-    const existingBonuses = character.weaponMagicBonuses ?? {};
-    const normalizedCharacterWeapons = (character.characterWeapons ?? []).map((entry) => ({
-        weaponId: entry.weaponId,
-        magicalBonus: Number.isFinite(entry.magicalBonus) ? entry.magicalBonus : 0
-    }));
+    const mergedWeaponIds = [...new Set(character.weaponIds)];
 
-    const weaponIdsFromCharacterWeapons = normalizedCharacterWeapons.map((entry) => entry.weaponId);
-    const mergedWeaponIds = [...new Set([...character.weaponIds, ...weaponIdsFromCharacterWeapons])];
-
-    const normalizedBonuses: Record<string, number> = { ...existingBonuses };
-    for (const entry of normalizedCharacterWeapons) {
-        normalizedBonuses[entry.weaponId] = entry.magicalBonus;
-    }
+    const normalizedBonuses: Record<string, number> = {};
     for (const weaponId of mergedWeaponIds) {
-        if (!Number.isFinite(normalizedBonuses[weaponId])) {
-            normalizedBonuses[weaponId] = 0;
-        }
+        const existing = Number(character.weaponMagicBonuses?.[weaponId] ?? 0);
+        normalizedBonuses[weaponId] = Number.isFinite(existing) ? Math.max(0, existing) : 0;
     }
 
     const primaryWeaponId = mergedWeaponIds.includes(character.primaryWeaponId ?? '')
@@ -524,11 +507,7 @@ function NormalizeCharacterWeaponData(character: CharacterRecord): CharacterReco
         armorMagicBonus,
         shieldMagicBonus,
         skillProficiencies: normalizedSkillProficiencies,
-        weaponMagicBonuses: normalizedBonuses,
-        characterWeapons: mergedWeaponIds.map((weaponId) => ({
-            weaponId,
-            magicalBonus: normalizedBonuses[weaponId] ?? 0
-        }))
+        weaponMagicBonuses: normalizedBonuses
     };
 }
 
@@ -906,7 +885,6 @@ function BuildNewCharacter(raceId: string): CharacterRecord {
         primaryWeaponId: '',
         offhandWeaponId: '',
         primaryWeaponGrip: 'one-handed',
-        characterWeapons: [],
         weaponMagicBonuses: {},
         skillProficiencies: [],
         spellIds: [],
@@ -3269,10 +3247,6 @@ const NpcEasyApp = (): any => {
                 delete this.editingCharacter.weaponMagicBonuses[weaponId];
             }
 
-            if (this.editingCharacter.characterWeapons) {
-                this.editingCharacter.characterWeapons = this.editingCharacter.characterWeapons.filter((entry: CharacterWeapon) => entry.weaponId !== weaponId);
-            }
-
             if (this.editingCharacter.primaryWeaponId === weaponId) {
                 this.editingCharacter.primaryWeaponId = '';
                 this.editingCharacter.primaryWeaponGrip = 'one-handed';
@@ -3453,18 +3427,6 @@ const NpcEasyApp = (): any => {
             const current = Number(character.weaponMagicBonuses[weaponId] ?? 0);
             const bonus = Number.isFinite(current) ? current : 0;
             character.weaponMagicBonuses[weaponId] = bonus;
-
-            if (!character.characterWeapons) {
-                character.characterWeapons = [];
-            }
-
-            const existing = character.characterWeapons.find((entry: CharacterWeapon) => entry.weaponId === weaponId);
-            if (existing) {
-                existing.magicalBonus = bonus;
-            } else {
-                character.characterWeapons.push({ weaponId, magicalBonus: bonus });
-            }
-
             return bonus;
         },
 
@@ -3476,18 +3438,6 @@ const NpcEasyApp = (): any => {
                 character.weaponMagicBonuses = {};
             }
             character.weaponMagicBonuses[weaponId] = safeBonus;
-
-            if (!character.characterWeapons) {
-                character.characterWeapons = [];
-            }
-
-            const existing = character.characterWeapons.find((entry: CharacterWeapon) => entry.weaponId === weaponId);
-            if (existing) {
-                existing.magicalBonus = safeBonus;
-            } else {
-                character.characterWeapons.push({ weaponId, magicalBonus: safeBonus });
-            }
-
             this.SaveAll();
         },
 
