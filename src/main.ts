@@ -4301,39 +4301,6 @@ const NpcEasyApp = (): any => {
             });
         },
 
-        GetSpellFacts(spellId: string): string[] {
-            const spell = this.catalogs.spells.find((item: CatalogItem) => item.id === spellId);
-            if (!spell) {
-                return [];
-            }
-
-          const details = GetMergedSpellDetails(spell);
-          const castingTime = details.castingTime ?? 'Action';
-          const range = details.range ?? 'See description';
-          const duration = details.duration ?? 'See description';
-          const components = details.components ?? '';
-          const school = details.school ?? '';
-          const ritual = details.ritual ? ' (ritual)' : '';
-          const concentration = details.concentration ? ' ★ Concentration' : '';
-          const effect = details.effect;
-          const damage = details.damage;
-          const scaling = details.scaling;
-
-            const meta: string[] = [];
-            if (school) meta.push(school.charAt(0).toUpperCase() + school.slice(1));
-            if (components) meta.push(components);
-
-            return [
-                `Casting Time: ${castingTime}${ritual}${concentration}`,
-                `Range: ${range}`,
-                `Duration: ${duration}`,
-                ...(damage ? [`Damage: ${damage}`] : []),
-                ...(scaling ? [`Scaling: ${scaling}`] : []),
-                ...(meta.length ? [`${meta.join(' · ')}`] : []),
-                `Effects: ${effect || 'See full text'}`
-            ];
-        },
-
         GetSpellSheetRow(spellId: string): { name: string; castingTime: string; range: string; duration: string; components: string; type: string; damage: string; effects: string } {
             const spell = this.catalogs.spells.find((item: CatalogItem) => item.id === spellId);
             if (!spell) {
