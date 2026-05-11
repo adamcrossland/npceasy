@@ -2666,19 +2666,13 @@ const NpcEasyApp = (): any => {
           return dexterityModifier + featBonus;
         },
 
-        GetPassivePerceptionOtherModifiers(character: CharacterRecord | null): number {
-          const featBonus = this.GetFeatDerivedStatBonuses(character).passivePerceptionBonus;
-          // This method is a single hook for future sources such as class features or magic items.
-          return featBonus;
-        },
-
         GetPassivePerception(character: CharacterRecord | null): number {
           if (!character) {
             return 10;
           }
 
           const wisdomModifier = this.GetAbilityModifier(this.GetEffectiveAbilityScore(character, 'wisdom'));
-          return 10 + wisdomModifier + this.GetPassivePerceptionOtherModifiers(character);
+          return 10 + wisdomModifier + this.GetFeatDerivedStatBonuses(character).passivePerceptionBonus;
         },
           
         GetRacialTraits(character: CharacterRecord | null): Array<{ source: string; name: string; description: string }> {
