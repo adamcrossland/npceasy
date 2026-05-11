@@ -2086,39 +2086,43 @@ app.innerHTML = `
                 <p x-text="line"></p>
               </template>
             </div>
-            <div class="spell-table-wrap">
-              <table class="spell-table">
-                <thead>
-                  <tr class="spell-table-header-row">
-                    <th scope="col">Spell</th>
-                    <th scope="col">Casting Time</th>
-                    <th scope="col">Range</th>
-                    <th scope="col">Duration</th>
-                    <th scope="col">Components</th>
-                    <th scope="col">Type</th>
-                  </tr>
-                </thead>
-                <template x-for="id in GetSortedCharacterSpellIds(editingCharacter)" :key="id">
-                  <tbody>
-                      <tr class="spell-table-meta-row">
-                        <th scope="row" class="spell-name-cell" x-text="GetSpellSheetRow(id).name"></th>
-                        <td x-text="GetSpellSheetRow(id).castingTime"></td>
-                        <td x-text="GetSpellSheetRow(id).range"></td>
-                        <td x-text="GetSpellSheetRow(id).duration"></td>
-                        <td x-text="GetSpellSheetRow(id).components"></td>
-                        <td x-text="GetSpellSheetRow(id).type"></td>
+            <div class="spell-table-columns">
+              <template x-for="(spellColumnIds, columnIndex) in GetCharacterSpellColumns(editingCharacter)" :key="'spell-column-' + columnIndex">
+                <div class="spell-table-wrap">
+                  <table class="spell-table">
+                    <thead>
+                      <tr class="spell-table-header-row">
+                        <th scope="col">Spell</th>
+                        <th scope="col">Casting Time</th>
+                        <th scope="col">Range</th>
+                        <th scope="col">Duration</th>
+                        <th scope="col">Components</th>
+                        <th scope="col">Type</th>
                       </tr>
-                      <tr class="spell-table-detail-row">
-                        <td colspan="6">
-                          <p>
-                            <span class="mr-6"><span class="font-semibold">Damage:</span> <span x-text="GetSpellSheetRow(id).damage"></span></span>
-                            <span><span class="font-semibold">Effects:</span> <span x-text="GetSpellSheetRow(id).effects"></span></span>
-                          </p>
-                        </td>
-                      </tr>
-                  </tbody>
-                </template>
-              </table>
+                    </thead>
+                    <template x-for="id in spellColumnIds" :key="id">
+                      <tbody>
+                          <tr class="spell-table-meta-row">
+                            <th scope="row" class="spell-name-cell" x-text="GetSpellSheetRow(id).name"></th>
+                            <td x-text="GetSpellSheetRow(id).castingTime"></td>
+                            <td x-text="GetSpellSheetRow(id).range"></td>
+                            <td x-text="GetSpellSheetRow(id).duration"></td>
+                            <td x-text="GetSpellSheetRow(id).components"></td>
+                            <td x-text="GetSpellSheetRow(id).type"></td>
+                          </tr>
+                          <tr class="spell-table-detail-row">
+                            <td colspan="6">
+                              <p>
+                                <span class="mr-6"><span class="font-semibold">Damage:</span> <span x-text="GetSpellSheetRow(id).damage"></span></span>
+                                <span><span class="font-semibold">Effects:</span> <span x-text="GetSpellSheetRow(id).effects"></span></span>
+                              </p>
+                            </td>
+                          </tr>
+                      </tbody>
+                    </template>
+                  </table>
+                </div>
+              </template>
             </div>
           </div>
         </section>
@@ -4216,6 +4220,19 @@ const NpcEasyApp = (): any => {
                 return leftName.localeCompare(rightName);
             });
         },
+
+            GetCharacterSpellColumns(character: CharacterRecord | null): string[][] {
+              const sortedSpellIds = this.GetSortedCharacterSpellIds(character);
+              if (sortedSpellIds.length === 0) {
+                return [];
+              }
+
+              const leftColumnCount = Math.ceil(sortedSpellIds.length / 2);
+              return [
+                sortedSpellIds.slice(0, leftColumnCount),
+                sortedSpellIds.slice(leftColumnCount)
+              ].filter((spellIds) => spellIds.length > 0);
+            },
 
         GetSpellSheetRow(spellId: string): { name: string; castingTime: string; range: string; duration: string; components: string; type: string; damage: string; effects: string } {
             const spell = this.catalogs.spells.find((item: CatalogItem) => item.id === spellId);

@@ -315,12 +315,19 @@ body {
   background: rgba(255, 254, 248, 0.92);
 }
 
+.spell-table-columns {
+  display: grid;
+  gap: 0.65rem;
+  grid-template-columns: 1fr;
+}
+
 .spell-table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 880px;
+  min-width: 0;
+  table-layout: fixed;
   color: #3e4d43;
-  font-size: 0.74rem;
+  font-size: 0.72rem;
 }
 
 .spell-table td,
@@ -340,9 +347,9 @@ body {
 }
 
 .spell-name-cell {
-  width: 19%;
-  min-width: 140px;
-  font-size: 0.79rem;
+  width: 18%;
+  min-width: 110px;
+  font-size: 0.76rem;
   color: #223127;
 }
 
@@ -351,6 +358,12 @@ body {
   color: #53665b;
   line-height: 1.35;
   border-bottom: 1px solid #dccba8;
+}
+
+@media (min-width: 1200px) {
+  .spell-table-columns {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 768px) {
@@ -364,6 +377,10 @@ body {
   .no-print,
   .no-print * {
     display: none !important;
+  }
+
+  .spell-table-columns {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .sheet-grid {
@@ -403,5 +420,11 @@ body {
 
   .sheet-card {
     margin-bottom: 0.35rem;
+  }
+}
+
+@media print and (max-width: 680px) {
+  .spell-table-columns {
+    grid-template-columns: 1fr;
   }
 }
