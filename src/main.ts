@@ -4256,12 +4256,6 @@ const NpcEasyApp = (): any => {
                 : 'Spell';
             const levelPrefix = details.level === 0 ? 'C' : `${details.level}`;
             const tags: string[] = [];
-            if (details.ritual) {
-                tags.push('Ritual');
-            }
-            if (details.concentration) {
-                tags.push('Concentration');
-            }
 
             const effect = details.effect;
             const damage = details.damage ?? 'None';
