@@ -1610,6 +1610,7 @@ app.innerHTML = `
             <div class="grid gap-3 md:grid-cols-2">
               <label class="field-label">Alignment
                 <select x-model="editingCharacter.alignment" class="input-base">
+                  <option value="" :selected="!editingCharacter?.alignment">Select Alignment</option>
                   <option value="Lawful Good">Lawful Good</option>
                   <option value="Lawful Neutral">Lawful Neutral</option>
                   <option value="Lawful Evil">Lawful Evil</option>
