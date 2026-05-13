@@ -4775,9 +4775,20 @@ const NpcEasyApp = (): any => {
             }
 
             const details = GetMergedSpellDetails(spell);
+            const schoolLabelByName: Record<string, string> = {
+              evocation: 'Evoc.',
+              conjuration: 'Conj.',
+              transmutation: 'Transm.',
+              illusion: 'Illus.',
+              abjuration: 'Abj.',
+              divination: 'Div.',
+              enchantment: 'Ench.',
+              necromancy: 'Necr.'
+            };
             const school = details.school
-                ? details.school.charAt(0).toUpperCase() + details.school.slice(1)
-                : 'Spell';
+              ? schoolLabelByName[details.school.trim().toLowerCase()]
+                ?? (details.school.charAt(0).toUpperCase() + details.school.slice(1))
+              : 'Spell';
             const levelPrefix = details.level === 0 ? 'C' : `${details.level}`;
             const tags: string[] = [];
 
