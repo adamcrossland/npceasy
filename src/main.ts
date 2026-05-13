@@ -2298,7 +2298,6 @@ app.innerHTML = `
                   <table class="spell-table">
                     <thead>
                       <tr class="spell-table-header-row">
-                        <th scope="col">Spell</th>
                         <th scope="col">Casting Time</th>
                         <th scope="col">Range</th>
                         <th scope="col">Duration</th>
@@ -2308,8 +2307,10 @@ app.innerHTML = `
                     </thead>
                     <template x-for="id in spellColumnIds" :key="id">
                       <tbody>
+                          <tr class="spell-table-title-row">
+                            <th colspan="5" class="spell-title-cell" x-text="GetSpellSheetRow(id).name"></th>
+                          </tr>
                           <tr class="spell-table-meta-row">
-                            <th scope="row" class="spell-name-cell" x-text="GetSpellSheetRow(id).name"></th>
                             <td x-text="GetSpellSheetRow(id).castingTime"></td>
                             <td x-text="GetSpellSheetRow(id).range"></td>
                             <td x-text="GetSpellSheetRow(id).duration"></td>
@@ -2317,7 +2318,7 @@ app.innerHTML = `
                             <td x-text="GetSpellSheetRow(id).type"></td>
                           </tr>
                           <tr class="spell-table-detail-row">
-                            <td colspan="6">
+                            <td colspan="5">
                               <p class="spell-table-detail-grid">
                                 <span class="spell-damage-block"><span class="font-semibold">Damage:</span> <span x-text="GetSpellSheetRow(id).damage"></span></span>
                                 <span class="spell-effects-block"><span class="font-semibold">Effects:</span> <span x-text="GetSpellSheetRow(id).effects"></span></span>
@@ -4774,9 +4775,20 @@ const NpcEasyApp = (): any => {
             }
 
             const details = GetMergedSpellDetails(spell);
+            const schoolLabelByName: Record<string, string> = {
+              evocation: 'Evoc.',
+              conjuration: 'Conj.',
+              transmutation: 'Transm.',
+              illusion: 'Illus.',
+              abjuration: 'Abj.',
+              divination: 'Div.',
+              enchantment: 'Ench.',
+              necromancy: 'Necr.'
+            };
             const school = details.school
-                ? details.school.charAt(0).toUpperCase() + details.school.slice(1)
-                : 'Spell';
+              ? schoolLabelByName[details.school.trim().toLowerCase()]
+                ?? (details.school.charAt(0).toUpperCase() + details.school.slice(1))
+              : 'Spell';
             const levelPrefix = details.level === 0 ? 'C' : `${details.level}`;
             const tags: string[] = [];
 

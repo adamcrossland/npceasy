@@ -348,10 +348,21 @@ body {
   background: rgba(255, 252, 244, 0.9);
 }
 
-.spell-name-cell {
-  width: 18%;
-  min-width: 110px;
-  font-size: 0.76rem;
+.spell-table-title-row th {
+  background: rgba(255, 251, 240, 0.95);
+  border-top: 1px solid #e3d4b4;
+  border-bottom: 1px solid #dccba8;
+}
+
+.spell-title-cell {
+  width: 100%;
+  font-size: 0.8rem;
+  color: #223127;
+  letter-spacing: 0.02em;
+}
+
+.spell-table-meta-row td {
+  font-size: 0.7rem;
   color: #223127;
 }
 
@@ -449,6 +460,54 @@ body {
 
   .spell-table {
     min-width: 0;
+  }
+
+  .spell-table tbody {
+    break-inside: avoid-page;
+    page-break-inside: avoid;
+    break-inside: avoid;
+    display: table-row-group;
+  }
+
+  .spell-table-title-row,
+  .spell-table-meta-row,
+  .spell-table-detail-row {
+    break-inside: avoid-page;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  .spell-table tbody + tbody .spell-table-title-row th {
+    border-top: 1px solid #cdb78d;
+    padding-top: 0.42rem;
+  }
+
+  .spell-table tbody .spell-table-title-row th {
+    border: 1px solid #d7c39a;
+    border-bottom: 0;
+    background: #fffdf6;
+  }
+
+  .spell-table tbody .spell-table-meta-row td {
+    border-top: 0;
+    border-bottom: 0;
+    background: #fffef9;
+  }
+
+  .spell-table tbody .spell-table-meta-row td:first-child {
+    border-left: 1px solid #d7c39a;
+  }
+
+  .spell-table tbody .spell-table-meta-row td:last-child {
+    border-right: 1px solid #d7c39a;
+  }
+
+  .spell-table-detail-row td {
+    border-left: 1px solid #d7c39a;
+    border-right: 1px solid #d7c39a;
+    border-bottom: 1px solid #d7c39a;
+    background: #fffef9;
+    padding-bottom: 0.5rem;
   }
 
   .sheet {
