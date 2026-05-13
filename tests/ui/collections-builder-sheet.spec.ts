@@ -53,3 +53,44 @@ test('updates sheet when class and loadout change', async ({ page }) => {
   await expect(page.locator('li', { hasText: 'Primary:' }).first()).toContainText('Longsword');
   await expect(page.locator('li', { hasText: 'Shield:' }).first()).toBeVisible();
 });
+
+test('applies equipped magic item bonuses to AC and weapon attacks on sheet', async ({ page }) => {
+  await OpenFreshApp(page);
+  await CreateCollectionAndOpenBuilder(page, 'Aegis Trials');
+  await CreateCharacter(page, 'Rook Halden');
+
+  const editor = GetCharacterEditor(page);
+
+  await page.getByRole('button', { name: 'Add Class' }).click();
+  const classSelect = editor.locator('select.input-base').filter({
+    has: page.locator('option', { hasText: 'Choose class' })
+  }).first();
+  await classSelect.selectOption({ label: 'Fighter' });
+
+  await editor.locator('label', { hasText: 'Longsword' }).locator('input[type="checkbox"]').check();
+  await editor.locator('label:has-text("Primary Weapon") select').first().selectOption({ label: 'Longsword' });
+
+  const cloakRow = editor.locator('label', { hasText: 'Cloak of Protection' })
+    .first()
+    .locator('xpath=ancestor::div[contains(@class, "rounded-lg")][1]');
+  await cloakRow.locator('input[type="checkbox"]').first().check();
+  await cloakRow.locator('input[type="checkbox"]').nth(1).check();
+
+  const weaponRow = editor.locator('label', { hasText: 'Weapon, +1' })
+    .first()
+    .locator('xpath=ancestor::div[contains(@class, "rounded-lg")][1]');
+  await weaponRow.locator('input[type="checkbox"]').first().check();
+  await weaponRow.locator('input[type="checkbox"]').nth(1).check();
+
+  await page.getByRole('button', { name: 'Character Sheet', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Rook Halden' })).toBeVisible();
+
+  const armorClassBadge = page.locator('.sheet-badges span', { hasText: 'AC' }).first();
+  await expect(armorClassBadge).toContainText('11');
+  await expect(armorClassBadge).toHaveAttribute('title', /Magic item AC bonus:\s*Cloak of Protection:\s*\+1 AC\./);
+
+  const longswordEntry = page.locator('li', { hasText: 'Longsword' }).first();
+  await expect(longswordEntry).toContainText('+3 to hit');
+  await expect(longswordEntry).toContainText('1d8+1 slashing');
+  await expect(longswordEntry).toContainText('Weapon, +1: +1');
+});
