@@ -348,10 +348,21 @@ body {
   background: rgba(255, 252, 244, 0.9);
 }
 
-.spell-name-cell {
-  width: 18%;
-  min-width: 110px;
-  font-size: 0.76rem;
+.spell-table-title-row th {
+  background: rgba(255, 251, 240, 0.95);
+  border-top: 1px solid #e3d4b4;
+  border-bottom: 1px solid #dccba8;
+}
+
+.spell-title-cell {
+  width: 100%;
+  font-size: 0.8rem;
+  color: #223127;
+  letter-spacing: 0.02em;
+}
+
+.spell-table-meta-row td {
+  font-size: 0.7rem;
   color: #223127;
 }
 
