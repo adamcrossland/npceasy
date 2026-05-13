@@ -4,12 +4,13 @@ import { Backgrounds } from './backgrounds';
 import { AllClasses } from './classes';
 import { Feats, GetFeatByName } from './feats';
 import { FightingStyles } from './fightingStyles';
+import { SrdMagicItems } from './magicItems';
 import { Races, type RaceAbilityScores, type RaceTraits } from './races';
 import { Spells, GetSpellByName } from './spells';
 import { SrdWeapons } from './weapons';
 
 type Screen = 'Help' | 'Collections' | 'CharacterBuilder' | 'Compendium' | 'CharacterSheet';
-type CatalogKey = 'classes' | 'feats' | 'weapons' | 'spells' | 'races' | 'fightingStyles' | 'backgrounds';
+type CatalogKey = 'classes' | 'feats' | 'weapons' | 'spells' | 'races' | 'fightingStyles' | 'backgrounds' | 'magicItems';
 type WeaponGrip = 'one-handed' | 'two-handed';
 
 type ClassFeatureRecord = {
@@ -66,6 +67,17 @@ type CatalogItem = {
     weaponDamage?: string;
     weaponDamageType?: string;
     weaponProperties?: string[];
+    magicItemCategory?: string;
+    magicItemRequiresAttunement?: boolean;
+    magicItemAttackBonusScope?: 'all-attacks' | 'weapon-attacks' | 'melee-weapon-attacks' | 'ranged-weapon-attacks' | 'spell-attacks';
+    magicItemDamageBonusScope?: 'all-damage' | 'weapon-damage' | 'melee-weapon-damage' | 'ranged-weapon-damage' | 'spell-damage';
+    magicItemAbilityScoreBonuses?: Partial<Record<keyof CharacterRecord['abilityScores'], number>>;
+    magicItemAbilityScoreMinimums?: Partial<Record<keyof CharacterRecord['abilityScores'], number>>;
+    magicItemSavingThrowBonus?: number;
+    magicItemArmorClassBonus?: number;
+    magicItemToHitBonus?: number;
+    magicItemDamageBonus?: number;
+    magicItemResistances?: string[];
 };
 
 type ClassLevel = {
@@ -108,6 +120,8 @@ type CharacterRecord = {
     offhandWeaponId?: string;
     primaryWeaponGrip?: WeaponGrip;
     weaponMagicBonuses?: Record<string, number>;
+    magicItemIds: string[];
+    equippedMagicItemIds?: string[];
     spellIds: string[];
     alignment: string;
     backgroundId: string;
@@ -136,6 +150,7 @@ type AppState = {
         races: CatalogItem[];
         fightingStyles: CatalogItem[];
         backgrounds: CatalogItem[];
+        magicItems: CatalogItem[];
     };
 };
 
@@ -227,6 +242,23 @@ const DEFAULT_BACKGROUNDS: CatalogItem[] = Backgrounds.map((item) => ({
     id: `background-${item.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
     name: item.name,
     description: item.description
+}));
+
+const DEFAULT_MAGIC_ITEMS: CatalogItem[] = SrdMagicItems.map((item) => ({
+    id: `magic-item-${item.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
+    name: item.name,
+    description: item.description,
+    magicItemCategory: item.category,
+    magicItemRequiresAttunement: item.requiresAttunement ?? false,
+    magicItemAttackBonusScope: item.attackBonusScope,
+    magicItemDamageBonusScope: item.damageBonusScope,
+    magicItemAbilityScoreBonuses: item.abilityScoreBonuses,
+    magicItemAbilityScoreMinimums: item.abilityScoreMinimums,
+    magicItemSavingThrowBonus: item.savingThrowBonus,
+    magicItemArmorClassBonus: item.armorClassBonus,
+    magicItemToHitBonus: item.toHitBonus,
+    magicItemDamageBonus: item.damageBonus,
+    magicItemResistances: item.resistances
 }));
 
 const AbilityScoreKeys: Array<keyof CharacterRecord['abilityScores']> = [
@@ -495,6 +527,9 @@ function NormalizeCharacterWeaponData(character: CharacterRecord): CharacterReco
     const normalizedSkillProficiencies = [...new Set((character.skillProficiencies ?? [])
         .map((skill) => (skill ?? '').trim())
         .filter((skill) => SkillDefinitions.some((def) => def.name === skill)))];
+    const mergedMagicItemIds = [...new Set((character.magicItemIds ?? []))];
+    const equippedMagicItemIds = [...new Set((character.equippedMagicItemIds ?? mergedMagicItemIds))]
+      .filter((magicItemId) => mergedMagicItemIds.includes(magicItemId));
 
     return {
         ...character,
@@ -506,6 +541,8 @@ function NormalizeCharacterWeaponData(character: CharacterRecord): CharacterReco
         hasShield: Boolean(character.hasShield),
         armorMagicBonus,
         shieldMagicBonus,
+        magicItemIds: mergedMagicItemIds,
+        equippedMagicItemIds,
         skillProficiencies: normalizedSkillProficiencies,
         weaponMagicBonuses: normalizedBonuses
     };
@@ -848,7 +885,8 @@ function BuildDefaultState(): AppState {
                     traits: NormalizeRaceTraits(subrace.traits)
                 }))
             })),
-            fightingStyles: DEFAULT_FIGHTING_STYLES
+            fightingStyles: DEFAULT_FIGHTING_STYLES,
+            magicItems: DEFAULT_MAGIC_ITEMS
         }
     };
 }
@@ -887,6 +925,8 @@ function BuildNewCharacter(raceId: string): CharacterRecord {
         offhandWeaponId: '',
         primaryWeaponGrip: 'one-handed',
         weaponMagicBonuses: {},
+        magicItemIds: [],
+        equippedMagicItemIds: [],
         skillProficiencies: [],
         spellIds: [],
         alignment: '',
@@ -974,7 +1014,8 @@ function LoadState(): AppState {
                 weapons: isLegacyWeaponCatalog ? DEFAULT_WEAPONS : (parsed.catalogs?.weapons ?? freshCatalogs.weapons),
                 spells: MergeSpellCatalog(isLegacySpellCatalog ? DEFAULT_SPELLS : parsed.catalogs?.spells, freshCatalogs.spells),
                 fightingStyles: parsed.catalogs?.fightingStyles ?? freshCatalogs.fightingStyles,
-                backgrounds: parsed.catalogs?.backgrounds ?? freshCatalogs.backgrounds
+                backgrounds: parsed.catalogs?.backgrounds ?? freshCatalogs.backgrounds,
+                magicItems: parsed.catalogs?.magicItems ?? freshCatalogs.magicItems
             }
         };
 
@@ -1363,7 +1404,7 @@ app.innerHTML = `
               <p class="mt-2 text-sm text-ink-soft" x-show="editingCharacter?.fightingStyleId" x-text="GetCatalogDescription('fightingStyles', editingCharacter?.fightingStyleId || '')"></p>
             </div>
 
-            <div class="grid gap-4 md:grid-cols-3">
+            <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
               <div>
                 <p class="field-label">Feats</p>
                 <div class="input-base min-h-[180px] max-h-[260px] space-y-2 overflow-y-auto">
@@ -1433,6 +1474,34 @@ app.innerHTML = `
                       />
                       <span x-text="GetSpellBuilderLabel(entry)"></span>
                     </label>
+                  </template>
+                </div>
+              </div>
+
+              <div>
+                <p class="field-label">Magic Items</p>
+                <div class="input-base min-h-[180px] max-h-[260px] space-y-2 overflow-y-auto">
+                  <template x-for="entry in catalogs.magicItems" :key="entry.id">
+                    <div class="rounded-lg border border-amber-100 p-2">
+                      <label class="flex items-center gap-2 text-sm text-ink">
+                        <input
+                          type="checkbox"
+                          class="h-4 w-4"
+                          :checked="editingCharacter?.magicItemIds?.includes(entry.id)"
+                          @change="ToggleMagicItemOwned(entry.id, $event.target.checked)"
+                        />
+                        <span x-text="entry.name"></span>
+                      </label>
+                      <label class="mt-1 flex items-center gap-2 pl-6 text-xs text-ink-soft" x-show="editingCharacter?.magicItemIds?.includes(entry.id)" x-cloak>
+                        <input
+                          type="checkbox"
+                          class="h-3.5 w-3.5"
+                          :checked="editingCharacter?.equippedMagicItemIds?.includes(entry.id)"
+                          @change="ToggleMagicItemEquipped(entry.id, $event.target.checked)"
+                        />
+                        <span>Equipped</span>
+                      </label>
+                    </div>
                   </template>
                 </div>
               </div>
@@ -1599,7 +1668,7 @@ app.innerHTML = `
     <section x-show="screen === 'Compendium'" class="space-y-5" x-cloak>
       <div class="panel" id="compendium-top">
         <h2 class="panel-title">Editable Compendium</h2>
-        <p class="panel-subtitle">Add, remove, or update classes, feats, weapons, spells, and races. Changes are used everywhere in the app. You can also export or import all app data here.</p>
+        <p class="panel-subtitle">Add, remove, or update classes, feats, weapons, spells, races, and magic items. Changes are used everywhere in the app. You can also export or import all app data here.</p>
         <div class="mt-3 flex flex-wrap items-center gap-2">
           <button class="btn-secondary px-3 py-2 text-xs" @click="ExportData()">Export Data</button>
           <button class="btn-secondary px-3 py-2 text-xs" @click="$refs.importDataInput.click()">Import Data</button>
@@ -1643,10 +1712,17 @@ app.innerHTML = `
 
                 <div
                   class="grid gap-2"
-                  :class="group.key === 'spells' ? 'md:grid-cols-[180px_1fr_90px_260px_auto]' : 'rounded-xl border border-amber-200 p-3 md:grid-cols-[220px_1fr_auto]'"
+                  :class="group.key === 'spells' ? 'md:grid-cols-[180px_1fr_90px_260px_auto]' : (group.key === 'magicItems' ? 'rounded-xl border border-amber-200 p-3 md:grid-cols-[220px_1fr_160px_auto]' : 'rounded-xl border border-amber-200 p-3 md:grid-cols-[220px_1fr_auto]')"
                 >
                   <input x-model="item.name" type="text" class="input-base" placeholder="Name" />
                   <input x-model="item.description" type="text" class="input-base" placeholder="Description" />
+                  <input
+                    x-show="group.key === 'magicItems'"
+                    x-model="item.magicItemCategory"
+                    type="text"
+                    class="input-base"
+                    placeholder="Category"
+                  />
                   <input
                     x-show="group.key === 'spells'"
                     x-model.number="item.level"
@@ -1706,6 +1782,76 @@ app.innerHTML = `
                     <label class="inline-flex items-center gap-2 text-sm font-medium text-ink">
                       <input x-model="item.concentration" type="checkbox" class="h-4 w-4 rounded border-amber-300 text-amber-700 focus:ring-amber-500" />
                       Concentration
+                    </label>
+                  </div>
+                </div>
+
+                <div x-show="group.key === 'magicItems'" class="space-y-3" x-cloak>
+                  <div class="grid gap-2 md:grid-cols-2 xl:grid-cols-4">
+                    <label class="field-label !mb-0">Save Bonus
+                      <input x-model.number="item.magicItemSavingThrowBonus" type="number" class="input-base" />
+                    </label>
+                    <label class="field-label !mb-0">AC Bonus
+                      <input x-model.number="item.magicItemArmorClassBonus" type="number" class="input-base" />
+                    </label>
+                    <label class="field-label !mb-0">To-Hit Bonus
+                      <input x-model.number="item.magicItemToHitBonus" type="number" class="input-base" />
+                    </label>
+                    <label class="field-label !mb-0">To-Hit Scope
+                      <select class="input-base" :value="item.magicItemAttackBonusScope ?? 'all-attacks'" @change="SetMagicItemAttackBonusScope(item, $event.target.value)">
+                        <option value="all-attacks">All attacks</option>
+                        <option value="weapon-attacks">Weapon attacks</option>
+                        <option value="melee-weapon-attacks">Melee weapon attacks</option>
+                        <option value="ranged-weapon-attacks">Ranged weapon attacks</option>
+                        <option value="spell-attacks">Spell attacks</option>
+                      </select>
+                    </label>
+                    <label class="field-label !mb-0">Damage Bonus
+                      <input x-model.number="item.magicItemDamageBonus" type="number" class="input-base" />
+                    </label>
+                    <label class="field-label !mb-0">Damage Scope
+                      <select class="input-base" :value="item.magicItemDamageBonusScope ?? 'all-damage'" @change="SetMagicItemDamageBonusScope(item, $event.target.value)">
+                        <option value="all-damage">All damage</option>
+                        <option value="weapon-damage">Weapon damage</option>
+                        <option value="melee-weapon-damage">Melee weapon damage</option>
+                        <option value="ranged-weapon-damage">Ranged weapon damage</option>
+                        <option value="spell-damage">Spell damage</option>
+                      </select>
+                    </label>
+                    <label class="field-label !mb-0">Resistances
+                      <input :value="(item.magicItemResistances ?? []).join(', ')" @input="SetMagicItemResistances(item, $event.target.value)" type="text" class="input-base" placeholder="fire, cold" />
+                    </label>
+                  </div>
+                  <div class="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+                    <template x-for="ability in GetAbilityScoreEditorFields()" :key="'magic-item-bonus-' + ability.key + '-' + item.id">
+                      <label class="field-label !mb-0">
+                        <span x-text="ability.label + ' Bonus'"></span>
+                        <input
+                          :value="item.magicItemAbilityScoreBonuses?.[ability.key] ?? ''"
+                          @input="SetMagicItemAbilityScoreBonus(item, ability.key, $event.target.value)"
+                          type="number"
+                          class="input-base"
+                        />
+                      </label>
+                    </template>
+                  </div>
+                  <div class="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+                    <template x-for="ability in GetAbilityScoreEditorFields()" :key="'magic-item-min-' + ability.key + '-' + item.id">
+                      <label class="field-label !mb-0">
+                        <span x-text="ability.label + ' Minimum'"></span>
+                        <input
+                          :value="item.magicItemAbilityScoreMinimums?.[ability.key] ?? ''"
+                          @input="SetMagicItemAbilityScoreMinimum(item, ability.key, $event.target.value)"
+                          type="number"
+                          class="input-base"
+                        />
+                      </label>
+                    </template>
+                  </div>
+                  <div class="flex flex-wrap gap-4">
+                    <label class="inline-flex items-center gap-2 text-sm font-medium text-ink">
+                      <input x-model="item.magicItemRequiresAttunement" type="checkbox" class="h-4 w-4 rounded border-amber-300 text-amber-700 focus:ring-amber-500" />
+                      Requires Attunement
                     </label>
                   </div>
                 </div>
@@ -1919,12 +2065,12 @@ app.innerHTML = `
           <div class="sheet-card">
             <h4>Ability Scores</h4>
             <dl class="score-grid score-grid-compact">
-              <div><dt>STR</dt><dd x-text="FormatAbilityScore(GetEffectiveAbilityScore(editingCharacter, 'strength'))"></dd></div>
-              <div><dt>DEX</dt><dd x-text="FormatAbilityScore(GetEffectiveAbilityScore(editingCharacter, 'dexterity'))"></dd></div>
-              <div><dt>CON</dt><dd x-text="FormatAbilityScore(GetEffectiveAbilityScore(editingCharacter, 'constitution'))"></dd></div>
-              <div><dt>INT</dt><dd x-text="FormatAbilityScore(GetEffectiveAbilityScore(editingCharacter, 'intelligence'))"></dd></div>
-              <div><dt>WIS</dt><dd x-text="FormatAbilityScore(GetEffectiveAbilityScore(editingCharacter, 'wisdom'))"></dd></div>
-              <div><dt>CHA</dt><dd x-text="FormatAbilityScore(GetEffectiveAbilityScore(editingCharacter, 'charisma'))"></dd></div>
+              <div><dt>STR</dt><dd x-text="FormatAbilityScore(GetEffectiveAbilityScore(editingCharacter, 'strength'))" :title="GetMagicItemStatBreakdown(editingCharacter, 'strength').join(' | ')"></dd></div>
+              <div><dt>DEX</dt><dd x-text="FormatAbilityScore(GetEffectiveAbilityScore(editingCharacter, 'dexterity'))" :title="GetMagicItemStatBreakdown(editingCharacter, 'dexterity').join(' | ')"></dd></div>
+              <div><dt>CON</dt><dd x-text="FormatAbilityScore(GetEffectiveAbilityScore(editingCharacter, 'constitution'))" :title="GetMagicItemStatBreakdown(editingCharacter, 'constitution').join(' | ')"></dd></div>
+              <div><dt>INT</dt><dd x-text="FormatAbilityScore(GetEffectiveAbilityScore(editingCharacter, 'intelligence'))" :title="GetMagicItemStatBreakdown(editingCharacter, 'intelligence').join(' | ')"></dd></div>
+              <div><dt>WIS</dt><dd x-text="FormatAbilityScore(GetEffectiveAbilityScore(editingCharacter, 'wisdom'))" :title="GetMagicItemStatBreakdown(editingCharacter, 'wisdom').join(' | ')"></dd></div>
+              <div><dt>CHA</dt><dd x-text="FormatAbilityScore(GetEffectiveAbilityScore(editingCharacter, 'charisma'))" :title="GetMagicItemStatBreakdown(editingCharacter, 'charisma').join(' | ')"></dd></div>
             </dl>
             <h4>Saving Throws</h4>
             <dl class="score-grid score-grid-compact">
@@ -1935,6 +2081,14 @@ app.innerHTML = `
                 </div>
               </template>
             </dl>
+            <div class="mt-2" x-show="GetMagicItemSaveBreakdown(editingCharacter).length > 0" x-cloak>
+              <p class="text-xs font-semibold uppercase tracking-wide text-ink-soft">Magic Item Save Bonuses</p>
+              <ul class="mt-1 list-base text-[11px] text-ink-soft">
+                <template x-for="entry in GetMagicItemSaveBreakdown(editingCharacter)" :key="'save-breakdown-' + entry">
+                  <li x-text="entry"></li>
+                </template>
+              </ul>
+            </div>
             <h4>Skills</h4>
             <ul class="list-base space-y-0.5 text-[11px] leading-tight">
               <template x-for="skill in GetSkillBonuses(editingCharacter)" :key="'sheet-skill-' + skill.name">
@@ -1962,12 +2116,27 @@ app.innerHTML = `
                 <li>
                   <span class="font-semibold" x-text="FormatWeaponName(editingCharacter, id)"></span>
                   <span class="block text-xs text-ink-soft" x-text="FormatWeaponAttack(editingCharacter, id)"></span>
+                  <span class="block text-[11px] text-ink-soft" x-show="GetMagicItemAttackBreakdown(editingCharacter, GetWeaponAttackKind(id)).length > 0" x-cloak>
+                    <template x-for="entry in GetMagicItemAttackBreakdown(editingCharacter, GetWeaponAttackKind(id))" :key="'attack-breakdown-' + id + '-' + entry">
+                      <span class="block" x-text="entry"></span>
+                    </template>
+                  </span>
+                  <span class="block text-[11px] text-ink-soft" x-show="GetMagicItemDamageBreakdown(editingCharacter, GetWeaponAttackKind(id)).length > 0" x-cloak>
+                    <template x-for="entry in GetMagicItemDamageBreakdown(editingCharacter, GetWeaponAttackKind(id))" :key="'damage-breakdown-' + id + '-' + entry">
+                      <span class="block" x-text="entry"></span>
+                    </template>
+                  </span>
                 </li>
               </template>
               <template x-if="editingCharacter && ShouldShowSpellAttack(editingCharacter)">
                 <li>
                   <span class="font-semibold">Attack Spell</span>
                   <span class="block text-xs text-ink-soft" x-text="FormatSpellAttack(editingCharacter)"></span>
+                  <span class="block text-[11px] text-ink-soft" x-show="GetMagicItemAttackBreakdown(editingCharacter, 'spell').length > 0" x-cloak>
+                    <template x-for="entry in GetMagicItemAttackBreakdown(editingCharacter, 'spell')" :key="'spell-attack-breakdown-' + entry">
+                      <span class="block" x-text="entry"></span>
+                    </template>
+                  </span>
                 </li>
               </template>
             </ul>
@@ -1996,6 +2165,20 @@ app.innerHTML = `
               <li><span class="font-semibold">Primary:</span> <span x-text="GetEquippedWeaponLabel(editingCharacter, editingCharacter?.primaryWeaponId || '', 'None')"></span></li>
               <li><span class="font-semibold">Off-Hand:</span> <span x-text="GetEquippedWeaponLabel(editingCharacter, editingCharacter?.offhandWeaponId || '', 'None')"></span></li>
             </ul>
+
+            <div x-show="GetEquippedMagicItemSummaries(editingCharacter).length > 0" x-cloak>
+              <h4 class="mt-3">Magic Items</h4>
+              <ul class="list-base text-sm">
+                <template x-for="itemSummary in GetEquippedMagicItemSummaries(editingCharacter)" :key="'sheet-magic-item-' + itemSummary">
+                  <li x-text="itemSummary"></li>
+                </template>
+              </ul>
+            </div>
+
+            <p class="mt-2 text-sm text-ink-soft" x-show="GetMagicItemResistances(editingCharacter).length > 0" x-cloak>
+              <span class="font-semibold text-ink">Resistances:</span>
+              <span x-text="GetMagicItemResistances(editingCharacter).join(', ')"></span>
+            </p>
 
             <div x-show="GetHasMagicalProtection(editingCharacter)" x-cloak>
                 <h4>Magical Protection</h4>
@@ -2156,7 +2339,8 @@ const NpcEasyApp = (): any => {
             { key: 'weapons', label: 'Weapons' },
             { key: 'spells', label: 'Spells' },
             { key: 'races', label: 'Races' },
-            { key: 'fightingStyles', label: 'Fighting Styles' }
+          { key: 'fightingStyles', label: 'Fighting Styles' },
+          { key: 'magicItems', label: 'Magic Items' }
         ] as { key: CatalogKey; label: string }[],
 
         get activeCollection(): Collection | undefined {
@@ -2531,10 +2715,12 @@ const NpcEasyApp = (): any => {
                 return 10;
             }
 
-            return Math.min(20,
+          const base = Math.min(20,
                 (character.abilityScores[key] ?? 10)
                 + (this.GetRaceAbilityScoreBonuses(character)[key] ?? 0)
-                + (this.GetFeatAbilityBonuses(character)[key] ?? 0));
+            + (this.GetFeatAbilityBonuses(character)[key] ?? 0)
+            + (this.GetMagicItemAbilityScoreBonuses(character)[key] ?? 0));
+          return Math.max(base, this.GetMagicItemAbilityScoreMinimum(character, key));
         },
 
         GetAbilityScoreWithBonusSummary(character: CharacterRecord | null, key: keyof CharacterRecord['abilityScores']): string {
@@ -2545,12 +2731,13 @@ const NpcEasyApp = (): any => {
             const baseScore = Math.min(20, character.abilityScores[key] ?? 10);
             const raceBonus = this.GetRaceAbilityScoreBonuses(character)[key] ?? 0;
             const featBonus = this.GetFeatAbilityBonuses(character)[key] ?? 0;
-            const bonus = raceBonus + featBonus;
-            if (bonus === 0) {
-                return `${baseScore}`;
+            const magicBonus = this.GetMagicItemAbilityScoreBonuses(character)[key] ?? 0;
+            const bonus = raceBonus + featBonus + magicBonus;
+            const total = Math.max(Math.min(20, baseScore + bonus), this.GetMagicItemAbilityScoreMinimum(character, key));
+            if (bonus === 0 && total === baseScore) {
+              return `${baseScore}`;
             }
 
-            const total = Math.min(20, baseScore + bonus);
             const bonusText = bonus > 0 ? `+${bonus}` : `${bonus}`;
             return `${baseScore} ${bonusText} = ${total}`;
         },
@@ -3265,6 +3452,15 @@ const NpcEasyApp = (): any => {
             this.SaveAll();
         },
 
+          GetWeaponAttackKind(weaponId: string): 'weapon' | 'melee-weapon' | 'ranged-weapon' {
+            const weapon = this.GetWeaponCatalogItem(weaponId);
+            if (!weapon) {
+              return 'melee-weapon';
+            }
+
+            return this.IsRangedWeapon(weapon) ? 'ranged-weapon' : 'melee-weapon';
+          },
+
         ToggleCharacterListSelection(listKey: 'featIds' | 'spellIds', id: string, isChecked: boolean) {
             if (!this.editingCharacter) {
                 return;
@@ -3306,10 +3502,65 @@ const NpcEasyApp = (): any => {
             this.RemoveWeaponFromCharacter(weaponId);
         },
 
+          ToggleMagicItemOwned(magicItemId: string, isChecked: boolean) {
+            if (!this.editingCharacter) {
+              return;
+            }
+
+            const owned: string[] = [...new Set<string>(this.editingCharacter.magicItemIds ?? [])];
+            if (isChecked) {
+              if (!owned.includes(magicItemId)) {
+                owned.push(magicItemId);
+              }
+            } else {
+              this.editingCharacter.equippedMagicItemIds = (this.editingCharacter.equippedMagicItemIds ?? [])
+                .filter((id: string) => id !== magicItemId);
+              this.editingCharacter.magicItemIds = owned.filter((id: string) => id !== magicItemId);
+              this.SaveAll();
+              return;
+            }
+
+            this.editingCharacter.magicItemIds = owned;
+            this.editingCharacter.equippedMagicItemIds = [...new Set<string>(this.editingCharacter.equippedMagicItemIds ?? [])]
+              .filter((id: string) => owned.includes(id));
+            this.SaveAll();
+          },
+
+          ToggleMagicItemEquipped(magicItemId: string, isChecked: boolean) {
+            if (!this.editingCharacter) {
+              return;
+            }
+
+            const owned = new Set<string>(this.editingCharacter.magicItemIds ?? []);
+            if (!owned.has(magicItemId)) {
+              return;
+            }
+
+            const equipped: string[] = [...new Set<string>(this.editingCharacter.equippedMagicItemIds ?? [])]
+              .filter((id: string) => owned.has(id));
+
+            if (isChecked) {
+              if (!equipped.includes(magicItemId)) {
+                equipped.push(magicItemId);
+              }
+            } else {
+              this.editingCharacter.equippedMagicItemIds = equipped.filter((id: string) => id !== magicItemId);
+              this.SaveAll();
+              return;
+            }
+
+            this.editingCharacter.equippedMagicItemIds = equipped;
+            this.SaveAll();
+          },
+
         AddCompendiumItem(key: CatalogKey) {
-            const singularLabel = key === 'fightingStyles' ? 'Fighting Style' : key.slice(0, -1);
+          const singularLabel = key === 'fightingStyles'
+            ? 'Fighting Style'
+            : key === 'magicItems'
+              ? 'Magic Item'
+              : key.slice(0, -1);
             const item: CatalogItem = {
-                id: NewId(key.slice(0, -1)),
+              id: NewId(key === 'magicItems' ? 'magic-item' : key.slice(0, -1)),
                 name: `New ${singularLabel}`,
                 description: ''
             };
@@ -3339,6 +3590,20 @@ const NpcEasyApp = (): any => {
                 item.ritual = false;
                 item.concentration = false;
             }
+
+              if (key === 'magicItems') {
+                item.magicItemCategory = 'Wondrous item';
+                item.magicItemRequiresAttunement = false;
+                item.magicItemAttackBonusScope = 'all-attacks';
+                item.magicItemDamageBonusScope = 'all-damage';
+                item.magicItemAbilityScoreBonuses = {};
+                item.magicItemAbilityScoreMinimums = {};
+                item.magicItemSavingThrowBonus = 0;
+                item.magicItemArmorClassBonus = 0;
+                item.magicItemToHitBonus = 0;
+                item.magicItemDamageBonus = 0;
+                item.magicItemResistances = [];
+              }
 
             this.catalogs[key].unshift(item);
 
@@ -3392,6 +3657,49 @@ const NpcEasyApp = (): any => {
             this.SaveAll();
         },
 
+          SetMagicItemResistances(item: CatalogItem, value: string) {
+            item.magicItemResistances = NormalizeStringList(value.split(','));
+            this.SaveAll();
+          },
+
+          SetMagicItemAbilityScoreBonus(item: CatalogItem, key: keyof CharacterRecord['abilityScores'], value: string) {
+            const parsed = Number.parseInt(value, 10);
+            const bonuses = { ...(item.magicItemAbilityScoreBonuses ?? {}) };
+
+            if (Number.isFinite(parsed) && parsed !== 0) {
+              bonuses[key] = parsed;
+            } else {
+              delete bonuses[key];
+            }
+
+            item.magicItemAbilityScoreBonuses = bonuses;
+            this.SaveAll();
+          },
+
+          SetMagicItemAbilityScoreMinimum(item: CatalogItem, key: keyof CharacterRecord['abilityScores'], value: string) {
+            const parsed = Number.parseInt(value, 10);
+            const minimums = { ...(item.magicItemAbilityScoreMinimums ?? {}) };
+
+            if (Number.isFinite(parsed) && parsed > 0) {
+              minimums[key] = parsed;
+            } else {
+              delete minimums[key];
+            }
+
+            item.magicItemAbilityScoreMinimums = minimums;
+            this.SaveAll();
+          },
+
+          SetMagicItemAttackBonusScope(item: CatalogItem, value: string) {
+            item.magicItemAttackBonusScope = value as CatalogItem['magicItemAttackBonusScope'];
+            this.SaveAll();
+          },
+
+          SetMagicItemDamageBonusScope(item: CatalogItem, value: string) {
+            item.magicItemDamageBonusScope = value as CatalogItem['magicItemDamageBonusScope'];
+            this.SaveAll();
+          },
+
         RemoveCompendiumItem(key: CatalogKey, id: string) {
             const removedItem = this.catalogs[key].find((item: CatalogItem) => item.id === id);
             this.catalogs[key] = this.catalogs[key].filter((item: CatalogItem) => item.id !== id);
@@ -3414,6 +3722,10 @@ const NpcEasyApp = (): any => {
                     const removedClassName = removedItem?.name;
                     this.editingCharacter.classLevels = this.editingCharacter.classLevels.filter((entry: ClassLevel) => entry.classId !== removedClassName);
                     this.NormalizeSkillProficiencies();
+                }
+                if (key === 'magicItems') {
+                  this.editingCharacter.magicItemIds = (this.editingCharacter.magicItemIds ?? []).filter((value: string) => value !== id);
+                  this.editingCharacter.equippedMagicItemIds = (this.editingCharacter.equippedMagicItemIds ?? []).filter((value: string) => value !== id);
                 }
             }
 
@@ -3444,6 +3756,150 @@ const NpcEasyApp = (): any => {
             }
             character.weaponMagicBonuses[weaponId] = safeBonus;
             this.SaveAll();
+        },
+
+        GetOwnedMagicItems(character: CharacterRecord | null): CatalogItem[] {
+            if (!character) {
+                return [];
+            }
+
+            return (character.magicItemIds ?? [])
+                .map((magicItemId) => this.catalogs.magicItems.find((item: CatalogItem) => item.id === magicItemId))
+                .filter((item): item is CatalogItem => Boolean(item));
+        },
+
+        GetEquippedMagicItems(character: CharacterRecord | null): CatalogItem[] {
+            if (!character) {
+                return [];
+            }
+
+            const equippedIds = new Set<string>(character.equippedMagicItemIds ?? []);
+            return this.GetOwnedMagicItems(character).filter((item: CatalogItem) => equippedIds.has(item.id));
+        },
+
+        IsMagicItemEquippedForAttack(
+            item: CatalogItem,
+            attackKind: 'weapon' | 'melee-weapon' | 'ranged-weapon' | 'spell'
+        ): boolean {
+            const scope = item.magicItemAttackBonusScope ?? 'all-attacks';
+            return scope === 'all-attacks'
+            || (scope === 'weapon-attacks' && attackKind !== 'spell')
+                || (scope === 'melee-weapon-attacks' && attackKind === 'melee-weapon')
+                || (scope === 'ranged-weapon-attacks' && attackKind === 'ranged-weapon')
+                || (scope === 'spell-attacks' && attackKind === 'spell');
+        },
+
+        IsMagicItemEquippedForDamage(
+            item: CatalogItem,
+            damageKind: 'weapon' | 'melee-weapon' | 'ranged-weapon' | 'spell'
+        ): boolean {
+            const scope = item.magicItemDamageBonusScope ?? 'all-damage';
+            return scope === 'all-damage'
+            || (scope === 'weapon-damage' && damageKind !== 'spell')
+                || (scope === 'melee-weapon-damage' && damageKind === 'melee-weapon')
+                || (scope === 'ranged-weapon-damage' && damageKind === 'ranged-weapon')
+                || (scope === 'spell-damage' && damageKind === 'spell');
+        },
+
+        GetMagicItemAbilityScoreBonuses(character: CharacterRecord | null): Partial<Record<keyof CharacterRecord['abilityScores'], number>> {
+            const bonuses: Partial<Record<keyof CharacterRecord['abilityScores'], number>> = {};
+            for (const item of this.GetEquippedMagicItems(character)) {
+                for (const key of AbilityScoreKeys) {
+                    const bonus = Number(item.magicItemAbilityScoreBonuses?.[key] ?? 0);
+                    if (Number.isFinite(bonus) && bonus !== 0) {
+                        bonuses[key] = (bonuses[key] ?? 0) + bonus;
+                    }
+                }
+            }
+
+            return bonuses;
+        },
+
+        GetMagicItemAbilityScoreMinimum(character: CharacterRecord | null, key: keyof CharacterRecord['abilityScores']): number {
+            let minimum = 0;
+            for (const item of this.GetEquippedMagicItems(character)) {
+                const value = Number(item.magicItemAbilityScoreMinimums?.[key] ?? 0);
+                if (Number.isFinite(value)) {
+                    minimum = Math.max(minimum, value);
+                }
+            }
+
+            return minimum;
+        },
+
+        GetMagicItemSavingThrowBonus(character: CharacterRecord | null): number {
+            return this.GetEquippedMagicItems(character)
+                .reduce((total: number, item: CatalogItem) => total + (Number(item.magicItemSavingThrowBonus ?? 0) || 0), 0);
+        },
+
+        GetMagicItemArmorClassBonus(character: CharacterRecord | null): number {
+          return this.GetEquippedMagicItems(character)
+            .reduce((total: number, item: CatalogItem) => total + (Number(item.magicItemArmorClassBonus ?? 0) || 0), 0);
+        },
+
+        GetMagicItemAttackBonus(character: CharacterRecord | null, attackKind: 'weapon' | 'melee-weapon' | 'ranged-weapon' | 'spell'): number {
+            return this.GetEquippedMagicItems(character)
+                .filter((item: CatalogItem) => this.IsMagicItemEquippedForAttack(item, attackKind))
+                .reduce((total: number, item: CatalogItem) => total + (Number(item.magicItemToHitBonus ?? 0) || 0), 0);
+        },
+
+        GetMagicItemDamageBonus(character: CharacterRecord | null, damageKind: 'weapon' | 'melee-weapon' | 'ranged-weapon' | 'spell'): number {
+            return this.GetEquippedMagicItems(character)
+                .filter((item: CatalogItem) => this.IsMagicItemEquippedForDamage(item, damageKind))
+                .reduce((total: number, item: CatalogItem) => total + (Number(item.magicItemDamageBonus ?? 0) || 0), 0);
+        },
+
+        GetMagicItemResistances(character: CharacterRecord | null): string[] {
+            const values: string[] = this.GetEquippedMagicItems(character)
+                .flatMap((item: CatalogItem) => item.magicItemResistances ?? [])
+                .map((value: string) => value.trim().toLowerCase())
+                .filter((value: string) => value.length > 0);
+
+            return [...new Set<string>(values)];
+        },
+
+        GetEquippedMagicItemSummaries(character: CharacterRecord | null): string[] {
+            return this.GetEquippedMagicItems(character).map((item: CatalogItem) => item.name);
+        },
+
+        GetMagicItemStatBreakdown(character: CharacterRecord | null, key: keyof CharacterRecord['abilityScores']): string[] {
+            return this.GetEquippedMagicItems(character)
+                .map((item: CatalogItem) => {
+                    const bonus = Number(item.magicItemAbilityScoreBonuses?.[key] ?? 0);
+                    const minimum = Number(item.magicItemAbilityScoreMinimums?.[key] ?? 0);
+                    if (Number.isFinite(bonus) && bonus !== 0) {
+                        return `${item.name}: ${bonus > 0 ? '+' : ''}${bonus}`;
+                    }
+                    if (Number.isFinite(minimum) && minimum > 0) {
+                        return `${item.name}: min ${minimum}`;
+                    }
+                    return '';
+                })
+                .filter((value: string) => value.length > 0);
+        },
+
+        GetMagicItemSaveBreakdown(character: CharacterRecord | null): string[] {
+            return this.GetEquippedMagicItems(character)
+                .filter((item: CatalogItem) => Number(item.magicItemSavingThrowBonus ?? 0) !== 0)
+                .map((item: CatalogItem) => `${item.name}: ${Number(item.magicItemSavingThrowBonus ?? 0) > 0 ? '+' : ''}${Number(item.magicItemSavingThrowBonus ?? 0)}`);
+        },
+
+        GetMagicItemArmorClassBreakdown(character: CharacterRecord | null): string[] {
+          return this.GetEquippedMagicItems(character)
+            .filter((item: CatalogItem) => Number(item.magicItemArmorClassBonus ?? 0) !== 0)
+            .map((item: CatalogItem) => `${item.name}: ${Number(item.magicItemArmorClassBonus ?? 0) > 0 ? '+' : ''}${Number(item.magicItemArmorClassBonus ?? 0)} AC`);
+        },
+
+        GetMagicItemAttackBreakdown(character: CharacterRecord | null, attackKind: 'weapon' | 'melee-weapon' | 'ranged-weapon' | 'spell'): string[] {
+            return this.GetEquippedMagicItems(character)
+                .filter((item: CatalogItem) => this.IsMagicItemEquippedForAttack(item, attackKind) && Number(item.magicItemToHitBonus ?? 0) !== 0)
+                .map((item: CatalogItem) => `${item.name}: ${Number(item.magicItemToHitBonus ?? 0) > 0 ? '+' : ''}${Number(item.magicItemToHitBonus ?? 0)}`);
+        },
+
+        GetMagicItemDamageBreakdown(character: CharacterRecord | null, damageKind: 'weapon' | 'melee-weapon' | 'ranged-weapon' | 'spell'): string[] {
+            return this.GetEquippedMagicItems(character)
+                .filter((item: CatalogItem) => this.IsMagicItemEquippedForDamage(item, damageKind) && Number(item.magicItemDamageBonus ?? 0) !== 0)
+                .map((item: CatalogItem) => `${item.name}: ${Number(item.magicItemDamageBonus ?? 0) > 0 ? '+' : ''}${Number(item.magicItemDamageBonus ?? 0)}`);
         },
 
         GetProficiencyBonus(level: number): number {
@@ -3598,6 +4054,7 @@ const NpcEasyApp = (): any => {
                 }
             }
             const profBonus = this.GetProficiencyBonus(this.GetTotalCharacterLevel(character));
+            const magicItemSaveBonus = this.GetMagicItemSavingThrowBonus(character);
             const entries: { key: keyof CharacterRecord['abilityScores']; label: string; abbr: string }[] = [
                 { key: 'strength', label: 'Strength', abbr: 'STR' },
                 { key: 'dexterity', label: 'Dexterity', abbr: 'DEX' },
@@ -3608,7 +4065,7 @@ const NpcEasyApp = (): any => {
             ];
             return entries.map(({ key, label, abbr }) => {
                 const proficient = proficientSaves.has(label.toLowerCase());
-                const mod = this.GetAbilityModifier(this.GetEffectiveAbilityScore(character, key)) + (proficient ? profBonus : 0);
+                const mod = this.GetAbilityModifier(this.GetEffectiveAbilityScore(character, key)) + (proficient ? profBonus : 0) + magicItemSaveBonus;
                 const value = mod >= 0 ? `+${mod}` : `${mod}`;
                 return { label: abbr, value, proficient };
             });
@@ -3875,6 +4332,21 @@ const NpcEasyApp = (): any => {
                 lines.push('Weapons: None');
             }
 
+            const equippedMagicItems = this.GetEquippedMagicItemSummaries(character);
+            if (equippedMagicItems.length > 0) {
+              lines.push(`Magic Items: ${equippedMagicItems.join(', ')}`);
+            }
+
+            const magicItemArmorClassBonus = this.GetMagicItemArmorClassBonus(character);
+            if (magicItemArmorClassBonus > 0) {
+              lines.push(`Magic Item AC Bonus: ${this.GetMagicItemArmorClassBreakdown(character).join(', ')}`);
+            }
+
+            const resistances = this.GetMagicItemResistances(character);
+            if (resistances.length > 0) {
+              lines.push(`Resistances: ${resistances.join(', ')}`);
+            }
+
             return lines;
         },
 
@@ -3935,9 +4407,10 @@ const NpcEasyApp = (): any => {
                 : 10 + dexterityModifier;
             const armorMagicBonus = armor ? this.GetArmorMagicBonus(character) : 0;
             const shieldBonus = character.hasShield ? 2 + this.GetShieldMagicBonus(character) : 0;
+            const magicItemBonus = this.GetMagicItemArmorClassBonus(character);
             const defenseBonus = styleName === 'Defense' && armor ? 1 : 0;
 
-            return armorBase + armorMagicBonus + shieldBonus + defenseBonus;
+            return armorBase + armorMagicBonus + shieldBonus + defenseBonus + magicItemBonus;
         },
 
         GetArmorClassNote(character: CharacterRecord | null): string {
@@ -3957,6 +4430,10 @@ const NpcEasyApp = (): any => {
             const armorMagicBonus = armor ? this.GetArmorMagicBonus(character) : 0;
             if (armorMagicBonus > 0) {
                 notes.push(`Armor magic bonus: +${armorMagicBonus} AC.`);
+            }
+            const magicItemArmorClassBonus = this.GetMagicItemArmorClassBonus(character);
+            if (magicItemArmorClassBonus > 0) {
+              notes.push(`Magic item AC bonus: ${this.GetMagicItemArmorClassBreakdown(character).join('; ')}.`);
             }
             if (character.hasShield) {
                 notes.push('Shield equipped: +2 AC.');
@@ -4012,7 +4489,8 @@ const NpcEasyApp = (): any => {
                 && !character.offhandWeaponId
                 ? 2
                 : 0;
-            const toHit = abilityMod + profBonus + magicBonus + archeryBonus;
+            const magicItemAttackBonus = this.GetMagicItemAttackBonus(character, isRanged ? 'ranged-weapon' : 'melee-weapon');
+            const toHit = abilityMod + profBonus + magicBonus + archeryBonus + magicItemAttackBonus;
             const toHitText = toHit >= 0 ? `+${toHit}` : `${toHit}`;
             const styleNotes: string[] = [];
 
@@ -4041,7 +4519,8 @@ const NpcEasyApp = (): any => {
             }
 
             const offhandAbilityBonus = isOffhandWeapon && styleName !== 'Two-Weapon Fighting' ? 0 : abilityMod;
-            const totalDamageBonus = offhandAbilityBonus + magicBonus + duelingBonus;
+            const magicItemDamageBonus = this.GetMagicItemDamageBonus(character, isRanged ? 'ranged-weapon' : 'melee-weapon');
+            const totalDamageBonus = offhandAbilityBonus + magicBonus + duelingBonus + magicItemDamageBonus;
             const dmgBonus = totalDamageBonus !== 0 ? (totalDamageBonus > 0 ? `+${totalDamageBonus}` : `${totalDamageBonus}`) : '';
             const attackSummary = `${toHitText} to hit | ${weapon.weaponDamage}${dmgBonus} ${weapon.weaponDamageType}${propertySummary}`;
             return styleNotes.length > 0
@@ -4132,7 +4611,7 @@ const NpcEasyApp = (): any => {
             const abilityKey = ability as keyof CharacterRecord['abilityScores'];
             const abilityMod = this.GetAbilityModifier(this.GetEffectiveAbilityScore(character, abilityKey));
             const profBonus = this.GetProficiencyBonus(this.GetTotalCharacterLevel(character));
-            const toHit = profBonus + abilityMod;
+          const toHit = profBonus + abilityMod + this.GetMagicItemAttackBonus(character, 'spell');
             const toHitText = toHit >= 0 ? `+${toHit}` : `${toHit}`;
             return `${toHitText} to hit | spell attack`;
         },
