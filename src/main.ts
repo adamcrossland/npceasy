@@ -3382,6 +3382,7 @@ const NpcEasyApp = (): any => {
             }
 
             let rolledHitPoints = 0;
+            let firstLevelUsesMaximum = true;
             for (const entry of this.editingCharacter.classLevels) {
                 const levelCount = Math.max(0, entry.level ?? 0);
                 const hitDie = this.GetClassHitDie(entry.classId);
@@ -3390,7 +3391,12 @@ const NpcEasyApp = (): any => {
                 }
 
                 for (let index = 0; index < levelCount; index += 1) {
-                    rolledHitPoints += Math.floor(Math.random() * hitDie) + 1;
+                    if (firstLevelUsesMaximum) {
+                        rolledHitPoints += hitDie;
+                        firstLevelUsesMaximum = false;
+                    } else {
+                        rolledHitPoints += Math.floor(Math.random() * hitDie) + 1;
+                    }
                 }
             }
 
