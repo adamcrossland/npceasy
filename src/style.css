@@ -462,6 +462,54 @@ body {
     min-width: 0;
   }
 
+  .spell-table tbody {
+    break-inside: avoid-page;
+    page-break-inside: avoid;
+    break-inside: avoid;
+    display: table-row-group;
+  }
+
+  .spell-table-title-row,
+  .spell-table-meta-row,
+  .spell-table-detail-row {
+    break-inside: avoid-page;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  .spell-table tbody + tbody .spell-table-title-row th {
+    border-top: 1px solid #cdb78d;
+    padding-top: 0.42rem;
+  }
+
+  .spell-table tbody .spell-table-title-row th {
+    border: 1px solid #d7c39a;
+    border-bottom: 0;
+    background: #fffdf6;
+  }
+
+  .spell-table tbody .spell-table-meta-row td {
+    border-top: 0;
+    border-bottom: 0;
+    background: #fffef9;
+  }
+
+  .spell-table tbody .spell-table-meta-row td:first-child {
+    border-left: 1px solid #d7c39a;
+  }
+
+  .spell-table tbody .spell-table-meta-row td:last-child {
+    border-right: 1px solid #d7c39a;
+  }
+
+  .spell-table-detail-row td {
+    border-left: 1px solid #d7c39a;
+    border-right: 1px solid #d7c39a;
+    border-bottom: 1px solid #d7c39a;
+    background: #fffef9;
+    padding-bottom: 0.5rem;
+  }
+
   .sheet {
     border: 0;
     border-radius: 0;
