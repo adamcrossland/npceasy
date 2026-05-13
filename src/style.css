@@ -209,6 +209,7 @@ body {
   display: flex;
   flex-wrap: wrap;
   gap: 0.45rem;
+  padding-top: 0.25rem;
 }
 
 .sheet-badges span {
@@ -218,6 +219,7 @@ body {
   padding: 0.35rem 0.75rem;
   color: #324238;
   font-weight: 600;
+  font-size: 0.85rem;
 }
 
 .sheet-grid {
@@ -403,6 +405,30 @@ body {
   .no-print,
   .no-print * {
     display: none !important;
+  }
+
+  .sheet-header {
+    flex-wrap: nowrap;
+    align-items: flex-start;
+    break-after: avoid;
+  }
+
+  .sheet-header-info {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  .sheet-name {
+    font-size: 1.4rem;
+  }
+
+  .sheet-badges {
+    flex-shrink: 0;
+  }
+
+  .sheet-badges span {
+    font-size: 0.72rem;
+    padding: 0.2rem 0.5rem;
   }
 
   .spell-table-columns {

@@ -2038,7 +2038,7 @@ app.innerHTML = `
 
       <article x-show="editingCharacter" class="sheet" x-cloak>
         <header class="sheet-header">
-          <div>
+          <div style="float: left; width: 100%">
             <p class="sheet-eyebrow">Character</p>
             <h3 class="sheet-name" x-text="editingCharacter?.name || 'Unnamed Character'"></h3>
             <p class="sheet-subline">
@@ -2051,15 +2051,15 @@ app.innerHTML = `
               <span class="font-semibold">Classes:</span>
               <span x-text="(editingCharacter?.classLevels ?? []).map(entry => entry.subclassName ? (entry.classId + ' (' + entry.subclassName + ') Lv ' + entry.level) : (entry.classId + ' Lv ' + entry.level)).join(', ')"></span>
             </p>
-          </div>
-          <div class="sheet-badges">
-            <span>Max HP <strong x-text="editingCharacter?.maxHitPoints ?? 0"></strong></span>
-            <span :title="GetArmorClassNote(editingCharacter)">AC <strong x-text="GetDisplayedArmorClass(editingCharacter)"></strong></span>
-            <span>Speed <strong x-text="GetDisplayedSpeed(editingCharacter)"></strong> ft</span>
-            <span>Initiative <strong x-text="FormatSignedValue(GetInitiativeBonus(editingCharacter))"></strong></span>
-            <span>Passive Perception <strong x-text="GetPassivePerception(editingCharacter)"></strong></span>
-            <span>Prof Bonus <strong x-text="'+' + GetProficiencyBonus(GetTotalCharacterLevel(editingCharacter))"></strong></span>
-            <span>Hero Points <strong x-text="GetHeroPoints(editingCharacter)"></strong></span>
+            <p class="sheet-badges">
+                <span>Max HP <strong x-text="editingCharacter?.maxHitPoints ?? 0"></strong></span>
+                <span :title="GetArmorClassNote(editingCharacter)">AC <strong x-text="GetDisplayedArmorClass(editingCharacter)"></strong></span>
+                <span>Speed <strong x-text="GetDisplayedSpeed(editingCharacter)"></strong> ft</span>
+                <span>Initiative <strong x-text="FormatSignedValue(GetInitiativeBonus(editingCharacter))"></strong></span>
+                <span>Passive Perception <strong x-text="GetPassivePerception(editingCharacter)"></strong></span>
+                <span>Prof Bonus <strong x-text="'+' + GetProficiencyBonus(GetTotalCharacterLevel(editingCharacter))"></strong></span>
+                <span>Hero Points <strong x-text="GetHeroPoints(editingCharacter)"></strong></span>
+            </p>
           </div>
         </header>
 
