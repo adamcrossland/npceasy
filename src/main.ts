@@ -125,6 +125,13 @@ type CharacterRecord = {
     spellIds: string[];
     mirrorImageImagesLive?: number;
     alignment: string;
+    wealth: {
+      platinum: number;
+      gold: number;
+      electrum: number;
+      silver: number;
+      copper: number;
+    };
     backgroundId: string;
     personality: string;
     ideals: string;
@@ -531,6 +538,17 @@ function NormalizeCharacterWeaponData(character: CharacterRecord): CharacterReco
     const mergedMagicItemIds = [...new Set((character.magicItemIds ?? []))];
     const equippedMagicItemIds = [...new Set((character.equippedMagicItemIds ?? mergedMagicItemIds))]
       .filter((magicItemId) => mergedMagicItemIds.includes(magicItemId));
+    const normalizeWealthValue = (value: unknown): number => {
+      const numeric = Number(value);
+      return Number.isFinite(numeric) ? Math.max(0, Math.floor(numeric)) : 0;
+    };
+    const normalizedWealth = {
+      platinum: normalizeWealthValue(character.wealth?.platinum),
+      gold: normalizeWealthValue(character.wealth?.gold),
+      electrum: normalizeWealthValue(character.wealth?.electrum),
+      silver: normalizeWealthValue(character.wealth?.silver),
+      copper: normalizeWealthValue(character.wealth?.copper)
+    };
 
     return {
         ...character,
@@ -544,6 +562,7 @@ function NormalizeCharacterWeaponData(character: CharacterRecord): CharacterReco
         shieldMagicBonus,
         magicItemIds: mergedMagicItemIds,
         equippedMagicItemIds,
+        wealth: normalizedWealth,
         skillProficiencies: normalizedSkillProficiencies,
         weaponMagicBonuses: normalizedBonuses
     };
@@ -932,6 +951,13 @@ function BuildNewCharacter(raceId: string): CharacterRecord {
         spellIds: [],
         mirrorImageImagesLive: 3,
         alignment: '',
+        wealth: {
+          platinum: 0,
+          gold: 0,
+          electrum: 0,
+          silver: 0,
+          copper: 0
+        },
         backgroundId: '',
         personality: '',
         ideals: '',
@@ -1630,6 +1656,30 @@ app.innerHTML = `
                   </template>
                 </select>
               </label>
+            </div>
+
+            <div>
+              <p class="field-heading">Wealth</p>
+              <div class="grid gap-3 sm:grid-cols-5">
+                <label class="field-label">Platinum (PP)
+                  <input x-model.number="editingCharacter.wealth.platinum" type="number" min="0" step="1" class="input-base" />
+                </label>
+                <label class="field-label">Gold (GP)
+                  <input x-model.number="editingCharacter.wealth.gold" type="number" min="0" step="1" class="input-base" />
+                </label>
+                <label class="field-label">Electrum (EP)
+                  <input x-model.number="editingCharacter.wealth.electrum" type="number" min="0" step="1" class="input-base" />
+                </label>
+                <label class="field-label">Silver (SP)
+                  <input x-model.number="editingCharacter.wealth.silver" type="number" min="0" step="1" class="input-base" />
+                </label>
+                <label class="field-label">Copper (CP)
+                  <input x-model.number="editingCharacter.wealth.copper" type="number" min="0" step="1" class="input-base" />
+                </label>
+              </div>
+            </div>
+
+            <div class="grid gap-3 md:grid-cols-2">
               <label class="field-label">Proficiencies (comma-separated)
                 <textarea x-model="editingCharacter.proficiencies" class="input-base min-h-[90px]"></textarea>
               </label>
@@ -2276,6 +2326,13 @@ app.innerHTML = `
             <p><strong>Ideals:</strong> <span x-text="editingCharacter?.ideals"></span></p>
             <p><strong>Bonds:</strong> <span x-text="editingCharacter?.bonds"></span></p>
             <p><strong>Flaws:</strong> <span x-text="editingCharacter?.flaws"></span></p>
+            <div class="mt-2">
+              <p><strong>Platinum (PP):</strong> <span x-text="editingCharacter?.wealth?.platinum ?? 0"></span></p>
+              <p><strong>Gold (GP):</strong> <span x-text="editingCharacter?.wealth?.gold ?? 0"></span></p>
+              <p><strong>Electrum (EP):</strong> <span x-text="editingCharacter?.wealth?.electrum ?? 0"></span></p>
+              <p><strong>Silver (SP):</strong> <span x-text="editingCharacter?.wealth?.silver ?? 0"></span></p>
+              <p><strong>Copper (CP):</strong> <span x-text="editingCharacter?.wealth?.copper ?? 0"></span></p>
+            </div>
           </div>
 
         <div class="sheet-card">
