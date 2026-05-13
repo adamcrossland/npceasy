@@ -123,6 +123,7 @@ type CharacterRecord = {
     magicItemIds: string[];
     equippedMagicItemIds?: string[];
     spellIds: string[];
+    mirrorImageImagesLive?: number;
     alignment: string;
     backgroundId: string;
     personality: string;
@@ -929,6 +930,7 @@ function BuildNewCharacter(raceId: string): CharacterRecord {
         equippedMagicItemIds: [],
         skillProficiencies: [],
         spellIds: [],
+        mirrorImageImagesLive: 3,
         alignment: '',
         backgroundId: '',
         personality: '',
@@ -2185,6 +2187,26 @@ app.innerHTML = `
                 <ul class="list-base text-sm">
                 <li x-show="GetArcaneWardValue(editingCharacter) !== null" x-cloak><span class="font-semibold">Arcane Ward:</span> <span x-text="GetArcaneWardValue(editingCharacter)"></span></li>
                 </ul>
+            </div>
+
+            <div class="mt-3 rounded border border-ink-muted bg-surface/70 p-3" x-show="CharacterHasSpell(editingCharacter, 'Mirror Image')" x-init="if (editingCharacter && editingCharacter.mirrorImageImagesLive == null) editingCharacter.mirrorImageImagesLive = 3" x-cloak>
+              <div class="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p class="text-xs font-semibold uppercase tracking-wide text-ink-soft">Mirror Image</p>
+                  <p class="text-xs text-ink-soft">Track the three illusory duplicates.</p>
+                </div>
+                <div class="flex items-center gap-2">
+                  <template x-for="index in [0, 1, 2]" :key="'mirror-image-circle-' + index">
+                    <button
+                      type="button"
+                      @click="editingCharacter.mirrorImageImagesLive = (editingCharacter.mirrorImageImagesLive ?? 3) >= (index + 1) ? index : (index + 1); SaveAll();"
+                      :class="(editingCharacter.mirrorImageImagesLive ?? 3) >= (index + 1) ? 'bg-emerald-500 border-emerald-600' : 'bg-white border-ink-muted'"
+                      class="h-6 w-6 rounded-full border-2 transition-colors hover:border-emerald-500"
+                      :title="'Image ' + (index + 1)"
+                    ></button>
+                  </template>
+                </div>
+              </div>
             </div>
 
             <ul class="mt-2 list-base text-sm text-red-700" x-show="GetLoadoutWarnings(editingCharacter).length > 0" x-cloak>
@@ -4592,6 +4614,22 @@ const NpcEasyApp = (): any => {
             }
 
             return false;
+        },
+
+        CharacterHasSpell(character: CharacterRecord | null, spellName: string): boolean {
+            if (!character || !spellName) {
+                return false;
+            }
+
+            const normalizedSpellName = spellName.trim().toLowerCase();
+            if (!normalizedSpellName) {
+                return false;
+            }
+
+            return (character.spellIds ?? []).some((spellId: string) => {
+                const catalogSpell = this.catalogs.spells.find((item: CatalogItem) => item.id === spellId);
+                return (catalogSpell?.name ?? '').trim().toLowerCase() === normalizedSpellName;
+            });
         },
 
         GetSpellSaveDC(character: CharacterRecord): number {
