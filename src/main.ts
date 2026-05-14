@@ -2316,6 +2316,19 @@ app.innerHTML = `
                 <div class="rounded-lg border border-amber-100">
                   <p class="text-sm font-semibold text-ink" x-text="GetCatalogName('feats', id)"></p>
                   <p class="mt-1 text-xs text-ink-soft" x-text="GetFullFeatDescription(id)"></p>
+                  <div class="mt-3 rounded border border-ink-muted bg-surface/70 p-3" x-show="GetCatalogName('feats', id).toLowerCase() === 'lucky'" x-cloak>
+                    <div class="flex flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <p class="text-xs font-semibold uppercase tracking-wide text-ink-soft">Lucky</p>
+                        <p class="text-xs text-ink-soft">Track your three luck points.</p>
+                      </div>
+                      <div class="flex items-center gap-2" aria-label="Lucky feat tracker">
+                        <template x-for="index in [0, 1, 2]" :key="'lucky-circle-' + index">
+                          <span class="h-6 w-6 rounded-full border-2 border-ink-muted bg-white" :title="'Luck point ' + (index + 1)"></span>
+                        </template>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </template>
             </div>
