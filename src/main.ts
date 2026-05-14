@@ -120,6 +120,7 @@ type CharacterRecord = {
     offhandWeaponId?: string;
     primaryWeaponGrip?: WeaponGrip;
     weaponMagicBonuses?: Record<string, number>;
+    ammunitionCounts?: Record<string, number>;
     magicItemIds: string[];
     equippedMagicItemIds?: string[];
     spellIds: string[];
@@ -211,6 +212,22 @@ const WarlockPactSlotsByLevel: Array<{ slots: number; slotLevel: number }> = [
     { slots: 4, slotLevel: 5 },
     { slots: 4, slotLevel: 5 },
     { slots: 4, slotLevel: 5 }
+];
+
+type AmmunitionMapping = {
+    weaponName: string;
+    ammunitionType: string;
+    defaultCount: number;
+};
+
+const AMMUNITION_MAPPINGS: AmmunitionMapping[] = [
+    { weaponName: 'Light Crossbow', ammunitionType: 'Crossbow Bolts', defaultCount: 20 },
+    { weaponName: 'Heavy Crossbow', ammunitionType: 'Crossbow Bolts', defaultCount: 20 },
+    { weaponName: 'Hand Crossbow', ammunitionType: 'Crossbow Bolts', defaultCount: 20 },
+    { weaponName: 'Shortbow', ammunitionType: 'Arrows', defaultCount: 20 },
+    { weaponName: 'Longbow', ammunitionType: 'Arrows', defaultCount: 20 },
+    { weaponName: 'Sling', ammunitionType: 'Sling Bullets', defaultCount: 20 },
+    { weaponName: 'Blowgun', ammunitionType: 'Blowgun Needles', defaultCount: 50 },
 ];
 
 const DEFAULT_WEAPONS: CatalogItem[] = SrdWeapons.map((item) => ({
@@ -945,6 +962,7 @@ function BuildNewCharacter(raceId: string): CharacterRecord {
         offhandWeaponId: '',
         primaryWeaponGrip: 'one-handed',
         weaponMagicBonuses: {},
+        ammunitionCounts: {},
         magicItemIds: [],
         equippedMagicItemIds: [],
         skillProficiencies: [],
@@ -1608,6 +1626,30 @@ app.innerHTML = `
                   <li x-text="warning"></li>
                 </template>
               </ul>
+            </div>
+
+            <div x-show="GetCharacterAmmunitionTypes(editingCharacter).length > 0" x-cloak>
+              <p class="field-heading">Ammunition</p>
+              <p class="text-sm text-ink-soft">Ammunition for equipped weapons is automatically included in your inventory.</p>
+              <div class="mt-2 space-y-2">
+                <template x-for="ammo in GetCharacterAmmunitionTypes(editingCharacter)" :key="ammo.type">
+                  <div class="rounded-xl border border-amber-200 p-3">
+                    <div class="flex items-center justify-between gap-3">
+                      <div class="flex-1">
+                        <p class="text-sm font-semibold text-ink" x-text="ammo.type"></p>
+                        <p class="text-xs text-ink-soft">Possessed items</p>
+                      </div>
+                      <input
+                        type="number"
+                        min="0"
+                        class="input-base w-24"
+                        :value="GetAmmunitionCount(editingCharacter, ammo.type)"
+                        @input="SetAmmunitionCount(editingCharacter, ammo.type, parseInt($event.target.value) || 0)"
+                      />
+                    </div>
+                  </div>
+                </template>
+              </div>
             </div>
 
             <div>
@@ -2638,6 +2680,70 @@ const NpcEasyApp = (): any => {
 
         GetWeaponCatalogItem(weaponId: string): CatalogItem | undefined {
             return this.catalogs.weapons.find((item: CatalogItem) => item.id === weaponId);
+        },
+
+        GetWeaponAmmunitionType(weaponName: string): AmmunitionMapping | undefined {
+            return AMMUNITION_MAPPINGS.find((mapping) => mapping.weaponName === weaponName);
+        },
+
+        GetCharacterAmmunitionTypes(character: CharacterRecord | null): Array<{ type: string; count: number }> {
+            if (!character) {
+                return [];
+            }
+
+            const ammunitionMap = new Map<string, number>();
+
+            for (const weaponId of character.weaponIds ?? []) {
+                const weapon = this.GetWeaponCatalogItem(weaponId);
+                if (weapon && weapon.weaponProperties?.includes('ammunition')) {
+                    const ammo = this.GetWeaponAmmunitionType(weapon.name);
+                    if (ammo) {
+                        if (!ammunitionMap.has(ammo.ammunitionType)) {
+                            // Check if there's a stored count for this ammunition type
+                            const storedCount = character.ammunitionCounts?.[ammo.ammunitionType];
+                            const count = storedCount !== undefined ? storedCount : ammo.defaultCount;
+                            ammunitionMap.set(ammo.ammunitionType, count);
+                        } else {
+                            const current = ammunitionMap.get(ammo.ammunitionType) ?? 0;
+                            // Use stored count if available, otherwise use the higher of current and default
+                            const storedCount = character.ammunitionCounts?.[ammo.ammunitionType];
+                            const count = storedCount !== undefined ? storedCount : Math.max(current, ammo.defaultCount);
+                            ammunitionMap.set(ammo.ammunitionType, count);
+                        }
+                    }
+                }
+            }
+
+            // Convert Map to array for Alpine.js compatibility
+            return Array.from(ammunitionMap.entries()).map(([type, count]) => ({ type, count }));
+        },
+
+        GetAmmunitionCount(character: CharacterRecord | null, ammunitionType: string): number {
+            if (!character) {
+                return 0;
+            }
+
+            const storedCount = character.ammunitionCounts?.[ammunitionType];
+            if (storedCount !== undefined) {
+                return storedCount;
+            }
+
+            // Return the default count for this ammunition type
+            const mapping = AMMUNITION_MAPPINGS.find((m) => m.ammunitionType === ammunitionType);
+            return mapping?.defaultCount ?? 0;
+        },
+
+        SetAmmunitionCount(character: CharacterRecord | null, ammunitionType: string, count: number) {
+            if (!character) {
+                return;
+            }
+
+            if (!character.ammunitionCounts) {
+                character.ammunitionCounts = {};
+            }
+
+            character.ammunitionCounts[ammunitionType] = count;
+            this.SaveAll();
         },
 
         GetSubraceOptions(character: CharacterRecord | null): Array<{ name: string }> {
@@ -4432,6 +4538,15 @@ const NpcEasyApp = (): any => {
             const resistances = this.GetMagicItemResistances(character);
             if (resistances.length > 0) {
               lines.push(`Resistances: ${resistances.join(', ')}`);
+            }
+
+            const ammunitionTypes = this.GetCharacterAmmunitionTypes(character);
+            if (ammunitionTypes.length > 0) {
+                const ammoLines: string[] = [];
+                for (const ammo of ammunitionTypes) {
+                    ammoLines.push(`${ammo.type}: ${ammo.count}`);
+                }
+                lines.push(`Ammunition: ${ammoLines.join(', ')}`);
             }
 
             return lines;
