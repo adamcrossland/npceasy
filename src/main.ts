@@ -1500,8 +1500,27 @@ app.innerHTML = `
                         </label>
                       </template>
                     </div>
-                    <p class="mt-2 text-xs text-ink-soft" x-text="'Selected ' + GetSelectedFeatCount(editingCharacter) + ' of ' + GetFeatSelectionSlots(editingCharacter) + ' feat choices'" x-cloak></p>
-                    <p class="mt-1 text-xs text-ink-soft" x-text="GetFeatSelectionHelpText(editingCharacter)" x-cloak></p>
+                    <p
+                      class="mt-2 text-xs"
+                      :class="CanSelectAdditionalFeat(editingCharacter) ? 'font-semibold text-emerald-800' : 'text-ink-soft'"
+                      x-text="'Selected ' + GetSelectedFeatCount(editingCharacter) + ' of ' + GetFeatSelectionSlots(editingCharacter) + ' feat choices'"
+                      x-cloak
+                    ></p>
+                    <p
+                      class="mt-1 inline-flex items-center rounded-full border px-2 py-1 text-[10px] font-bold uppercase tracking-wide"
+                      :class="CanSelectAdditionalFeat(editingCharacter)
+                        ? 'border-emerald-300 bg-emerald-100 text-emerald-900'
+                        : 'hidden'"
+                      x-cloak
+                    >Feat available now</p>
+                    <p
+                      class="mt-1 text-xs"
+                      :class="CanSelectAdditionalFeat(editingCharacter)
+                        ? 'rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 font-semibold text-emerald-800 shadow-sm'
+                        : 'text-ink-soft'"
+                      x-text="GetFeatSelectionHelpText(editingCharacter)"
+                      x-cloak
+                    ></p>
                   </div>
                   <div class="space-y-3">
                     <div class="space-y-2" x-show="GetSelectedStandardFeatSummaries(editingCharacter).length > 0" x-cloak>
