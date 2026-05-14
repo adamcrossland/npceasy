@@ -115,6 +115,8 @@ type CharacterRecord = {
     equipment: string;
     featIds: string[];
     featAbilityChoices?: Record<string, string>;
+    featAbilityChoiceSets?: Record<string, string[]>;
+    featAbilityChoiceModes?: Record<string, 'one' | 'two'>;
     weaponIds: string[];
     primaryWeaponId?: string;
     offhandWeaponId?: string;
@@ -294,6 +296,8 @@ const AbilityScoreKeys: Array<keyof CharacterRecord['abilityScores']> = [
     'wisdom',
     'charisma'
 ];
+  const AbilityScoreImprovementFeatName = 'Ability Score Improvement';
+  const RepeatableFeatSeparator = '::';
 const SpellSchools = [
     'Abjuration',
     'Conjuration',
@@ -552,6 +556,28 @@ function NormalizeCharacterWeaponData(character: CharacterRecord): CharacterReco
     const normalizedSkillProficiencies = [...new Set((character.skillProficiencies ?? [])
         .map((skill) => (skill ?? '').trim())
         .filter((skill) => SkillDefinitions.some((def) => def.name === skill)))];
+    const normalizedFeatAbilityChoices = Object.fromEntries(
+      Object.entries(character.featAbilityChoices ?? {})
+        .filter(([, value]) => typeof value === 'string' && value.trim().length > 0)
+        .map(([featId, value]) => [featId, value.trim()])
+    ) as Record<string, string>;
+    const normalizedFeatAbilityChoiceSets = Object.fromEntries(
+      Object.entries(character.featAbilityChoiceSets ?? {})
+        .map(([featId, values]) => {
+          const sanitized = Array.isArray(values)
+            ? values
+              .map((value) => (typeof value === 'string' ? value.trim() : ''))
+              .filter((value) => value.length > 0)
+              .slice(0, 2)
+            : [];
+          return [featId, sanitized];
+        })
+        .filter(([, values]) => values.length > 0)
+    ) as Record<string, string[]>;
+    const normalizedFeatAbilityChoiceModes = Object.fromEntries(
+      Object.entries(character.featAbilityChoiceModes ?? {})
+        .filter(([, value]) => value === 'one' || value === 'two')
+    ) as Record<string, 'one' | 'two'>;
     const mergedMagicItemIds = [...new Set((character.magicItemIds ?? []))];
     const equippedMagicItemIds = [...new Set((character.equippedMagicItemIds ?? mergedMagicItemIds))]
       .filter((magicItemId) => mergedMagicItemIds.includes(magicItemId));
@@ -581,6 +607,9 @@ function NormalizeCharacterWeaponData(character: CharacterRecord): CharacterReco
         equippedMagicItemIds,
         wealth: normalizedWealth,
         skillProficiencies: normalizedSkillProficiencies,
+        featAbilityChoices: normalizedFeatAbilityChoices,
+        featAbilityChoiceSets: normalizedFeatAbilityChoiceSets,
+        featAbilityChoiceModes: normalizedFeatAbilityChoiceModes,
         weaponMagicBonuses: normalizedBonuses
     };
 }
@@ -957,6 +986,8 @@ function BuildNewCharacter(raceId: string): CharacterRecord {
         equipment: '',
         featIds: [],
         featAbilityChoices: {},
+        featAbilityChoiceSets: {},
+        featAbilityChoiceModes: {},
         weaponIds: [],
         primaryWeaponId: '',
         offhandWeaponId: '',
@@ -1450,39 +1481,137 @@ app.innerHTML = `
               <p class="mt-2 text-sm text-ink-soft" x-show="editingCharacter?.fightingStyleId" x-text="GetCatalogDescription('fightingStyles', editingCharacter?.fightingStyleId || '')"></p>
             </div>
 
-            <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <div class="space-y-4">
               <div>
                 <p class="field-label">Feats</p>
-                <div class="input-base min-h-[180px] max-h-[260px] space-y-2 overflow-y-auto">
-                  <template x-for="entry in catalogs.feats" :key="entry.id">
-                    <label class="flex items-center gap-2 text-sm text-ink">
-                      <input
-                        type="checkbox"
-                        class="h-4 w-4"
-                        :checked="editingCharacter?.featIds?.includes(entry.id)"
-                        @change="ToggleCharacterListSelection('featIds', entry.id, $event.target.checked)"
-                      />
-                      <span x-text="entry.name"></span>
-                    </label>
-                  </template>
-                </div>
-                <div class="mt-3 space-y-2" x-show="GetFeatsWithAbilityChoices(editingCharacter).length > 0" x-cloak>
-                  <p class="text-xs font-semibold uppercase tracking-wide text-ink-soft">Feat Ability Choices</p>
-                  <template x-for="fc in GetFeatsWithAbilityChoices(editingCharacter)" :key="'feat-choice-' + fc.id">
-                    <label class="field-label text-xs">
-                      <span x-text="fc.name + ': +' + fc.amount"></span>
-                      <select class="input-base"
-                        :value="GetFeatAbilityChoice(editingCharacter, fc.id)"
-                        @change="SetFeatAbilityChoice(fc.id, $event.target.value)">
-                        <option value="">Choose ability score</option>
-                        <template x-for="opt in fc.options" :key="'fc-opt-' + fc.id + '-' + opt">
-                          <option :value="opt" :selected="GetFeatAbilityChoice(editingCharacter, fc.id) === opt" x-text="opt.charAt(0).toUpperCase() + opt.slice(1)"></option>
+                <div class="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)] xl:items-start">
+                  <div>
+                    <div class="input-base min-h-[180px] max-h-[260px] space-y-2 overflow-y-auto">
+                      <template x-for="entry in GetStandardFeatEntries()" :key="entry.id">
+                        <label class="flex items-center gap-2 text-sm text-ink">
+                          <input
+                            type="checkbox"
+                            class="h-4 w-4"
+                            :checked="editingCharacter?.featIds?.includes(entry.id)"
+                            :disabled="!CanToggleFeatSelection(editingCharacter, entry.id)"
+                            @change="ToggleCharacterListSelection('featIds', entry.id, $event.target.checked)"
+                          />
+                          <span x-text="entry.name"></span>
+                        </label>
+                      </template>
+                    </div>
+                    <p
+                      class="mt-2 text-xs"
+                      :class="CanSelectAdditionalFeat(editingCharacter) ? 'font-semibold text-emerald-800' : 'text-ink-soft'"
+                      x-text="'Selected ' + GetSelectedFeatCount(editingCharacter) + ' of ' + GetFeatSelectionSlots(editingCharacter) + ' feat choices'"
+                      x-cloak
+                    ></p>
+                    <p
+                      class="mt-1 inline-flex items-center rounded-full border px-2 py-1 text-[10px] font-bold uppercase tracking-wide"
+                      :class="CanSelectAdditionalFeat(editingCharacter)
+                        ? 'border-emerald-300 bg-emerald-100 text-emerald-900'
+                        : 'hidden'"
+                      x-cloak
+                    >Feat available now</p>
+                    <p
+                      class="mt-1 text-xs"
+                      :class="CanSelectAdditionalFeat(editingCharacter)
+                        ? 'rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 font-semibold text-emerald-800 shadow-sm'
+                        : 'text-ink-soft'"
+                      x-text="GetFeatSelectionHelpText(editingCharacter)"
+                      x-cloak
+                    ></p>
+                  </div>
+                  <div class="space-y-3">
+                    <div class="space-y-2" x-show="GetSelectedStandardFeatSummaries(editingCharacter).length > 0" x-cloak>
+                      <p class="text-xs font-semibold uppercase tracking-wide text-ink-soft">Selected Feats</p>
+                      <template x-for="feat in GetSelectedStandardFeatSummaries(editingCharacter)" :key="'feat-summary-' + feat.id">
+                        <div class="rounded-lg border border-amber-200/80 bg-amber-50/40 p-3">
+                          <p class="text-sm font-semibold text-ink" x-text="feat.name"></p>
+                          <p class="mt-1 text-xs text-ink-soft" x-text="feat.description"></p>
+                        </div>
+                      </template>
+                    </div>
+                    <div class="rounded-lg border border-amber-200/80 bg-amber-50/40 p-3" x-show="ShouldShowAbilityScoreImprovementArea(editingCharacter)" x-cloak>
+                      <div class="flex items-center justify-between gap-2">
+                        <p class="text-xs font-semibold uppercase tracking-wide text-ink-soft" x-text="AbilityScoreImprovementFeatName"></p>
+                        <button
+                          type="button"
+                          class="btn-secondary px-2 py-1 text-xs"
+                          :title="GetFeatSelectionHelpText(editingCharacter)"
+                          x-show="CanSelectAdditionalFeat(editingCharacter)"
+                          x-cloak
+                          @click="AddAbilityScoreImprovementSelection()"
+                        >Add</button>
+                      </div>
+                      <p class="text-xs text-ink-soft">Choose one ability score to increase by 2, or choose two different ability scores to increase by 1 each.</p>
+                      <div class="mt-3 space-y-2">
+                        <template x-for="(asi, asiIndex) in GetAbilityScoreImprovementSelections(editingCharacter)" :key="'asi-selection-' + asi.id">
+                          <div class="rounded-md border border-amber-200 bg-surface/70 p-3">
+                            <div class="mb-3 flex items-center justify-between gap-2">
+                              <p class="text-xs font-semibold text-ink" x-text="asi.name"></p>
+                              <button type="button" class="btn-danger px-2 py-1 text-xs" @click="RemoveAbilityScoreImprovementSelection(asi.id)">Remove</button>
+                            </div>
+                            <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                              <label class="field-label text-xs !mb-0">
+                                <span>Improvement type</span>
+                                <select class="input-base"
+                                  :value="GetAbilityScoreImprovementMode(editingCharacter, asi.id)"
+                                  @change="SetAbilityScoreImprovementMode(asi.id, $event.target.value)">
+                                  <option value="one">One score (+2)</option>
+                                  <option value="two">Two scores (+1 each)</option>
+                                </select>
+                              </label>
+                              <label class="field-label text-xs !mb-0">
+                                <span>Ability #1</span>
+                                <select class="input-base"
+                                  :value="GetAbilityScoreImprovementChoice(editingCharacter, asi.id, 0)"
+                                  @change="SetAbilityScoreImprovementChoice(asi.id, 0, $event.target.value)">
+                                  <option value="">Choose ability score</option>
+                                  <template x-for="opt in GetAbilityScoreKeys()" :key="'asi-primary-' + asi.id + '-' + opt">
+                                    <option :value="opt" :selected="GetAbilityScoreImprovementChoice(editingCharacter, asi.id, 0) === opt" x-text="opt.charAt(0).toUpperCase() + opt.slice(1)"></option>
+                                  </template>
+                                </select>
+                              </label>
+                              <label class="field-label text-xs !mb-0" x-show="GetAbilityScoreImprovementMode(editingCharacter, asi.id) === 'two'" x-cloak>
+                                <span>Ability #2</span>
+                                <select class="input-base"
+                                  :value="GetAbilityScoreImprovementChoice(editingCharacter, asi.id, 1)"
+                                  @change="SetAbilityScoreImprovementChoice(asi.id, 1, $event.target.value)">
+                                  <option value="">Choose ability score</option>
+                                  <template x-for="opt in GetAbilityScoreKeys()" :key="'asi-secondary-' + asi.id + '-' + opt">
+                                    <option :value="opt" :selected="GetAbilityScoreImprovementChoice(editingCharacter, asi.id, 1) === opt" x-text="opt.charAt(0).toUpperCase() + opt.slice(1)"></option>
+                                  </template>
+                                </select>
+                              </label>
+                            </div>
+                          </div>
                         </template>
-                      </select>
-                    </label>
-                  </template>
+                      </div>
+                    </div>
+                    <div class="space-y-2" x-show="GetFeatsWithAbilityChoices(editingCharacter).length > 0" x-cloak>
+                      <p class="text-xs font-semibold uppercase tracking-wide text-ink-soft">Feat Ability Choices</p>
+                      <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                        <template x-for="fc in GetFeatsWithAbilityChoices(editingCharacter)" :key="'feat-choice-' + fc.id">
+                          <label class="field-label text-xs !mb-0">
+                            <span x-text="fc.name + ': +' + fc.amount"></span>
+                            <select class="input-base"
+                              :value="GetFeatAbilityChoice(editingCharacter, fc.id)"
+                              @change="SetFeatAbilityChoice(fc.id, $event.target.value)">
+                              <option value="">Choose ability score</option>
+                              <template x-for="opt in fc.options" :key="'fc-opt-' + fc.id + '-' + opt">
+                                <option :value="opt" :selected="GetFeatAbilityChoice(editingCharacter, fc.id) === opt" x-text="opt.charAt(0).toUpperCase() + opt.slice(1)"></option>
+                              </template>
+                            </select>
+                          </label>
+                        </template>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
+
+            <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
 
               <div>
                 <p class="field-label">Weapons</p>
@@ -2465,6 +2594,7 @@ const NpcEasyApp = (): any => {
         ...state,
         armors: Armors,
         spellSchools: SpellSchools,
+        AbilityScoreImprovementFeatName,
         showAllBuilderSpells: false,
         newCollectionName: '',
         dataTransferStatus: '',
@@ -2822,6 +2952,282 @@ const NpcEasyApp = (): any => {
             return combined;
         },
 
+          GetAbilityScoreKeys(): string[] {
+            return [...AbilityScoreKeys];
+          },
+
+          GetFeatBaseId(featId: string): string {
+            return (featId ?? '').split(RepeatableFeatSeparator)[0] ?? featId;
+          },
+
+          GetFeatCatalogItemBySelectionId(featId: string): CatalogItem | undefined {
+            const baseId = this.GetFeatBaseId(featId);
+            return this.catalogs.feats.find((item: CatalogItem) => item.id === baseId);
+          },
+
+          IsAbilityScoreImprovementSelection(featId: string): boolean {
+            return this.GetFeatCatalogItemBySelectionId(featId)?.name === AbilityScoreImprovementFeatName;
+          },
+
+          GetAbilityScoreImprovementCatalogItem(): CatalogItem | undefined {
+            return this.catalogs.feats.find((item: CatalogItem) => item.name === AbilityScoreImprovementFeatName);
+          },
+
+          GetSelectedStandardFeatSummaries(character: CharacterRecord | null): Array<{ id: string; name: string; description: string }> {
+            if (!character) {
+              return [];
+            }
+
+            return (character.featIds ?? [])
+              .filter((id) => !this.IsAbilityScoreImprovementSelection(id))
+              .map((id) => ({
+                id,
+                name: this.GetCatalogName('feats', id),
+                description: this.GetFullFeatDescription(id)
+              }));
+          },
+
+          ShouldShowAbilityScoreImprovementArea(character: CharacterRecord | null): boolean {
+            if (!this.GetAbilityScoreImprovementCatalogItem()) {
+              return false;
+            }
+
+            return this.CanSelectAdditionalFeat(character)
+              || this.GetAbilityScoreImprovementSelections(character).length > 0;
+          },
+
+          GetStandardFeatEntries(): CatalogItem[] {
+            return this.catalogs.feats.filter((item: CatalogItem) => item.name !== AbilityScoreImprovementFeatName);
+          },
+
+          GetFeatSelectionSlots(character: CharacterRecord | null): number {
+            if (!character) {
+              return 0;
+            }
+
+            return Math.floor(this.GetTotalCharacterLevel(character) / 4);
+          },
+
+          GetSelectedFeatCount(character: CharacterRecord | null): number {
+            return character?.featIds?.length ?? 0;
+          },
+
+          CanSelectAdditionalFeat(character: CharacterRecord | null): boolean {
+            return this.GetSelectedFeatCount(character) < this.GetFeatSelectionSlots(character);
+          },
+
+          GetFeatSelectionHelpText(character: CharacterRecord | null): string {
+            if (!character) {
+              return 'Feat choices unlock every 4 total levels.';
+            }
+
+            const totalLevel = this.GetTotalCharacterLevel(character);
+            const totalSlots = this.GetFeatSelectionSlots(character);
+            const selectedCount = this.GetSelectedFeatCount(character);
+            const remainingChoices = Math.max(0, totalSlots - selectedCount);
+            const nextUnlockLevel = (totalSlots + 1) * 4;
+
+            if (totalSlots === 0) {
+              return `Feat choices unlock at total level 4. Current level: ${totalLevel}.`;
+            }
+
+            if (remainingChoices > 0) {
+              return remainingChoices === 1
+                ? '1 feat choice is available now.'
+                : `${remainingChoices} feat choices are available now.`;
+            }
+
+            if (nextUnlockLevel <= 20) {
+              return `All current feat choices are used. The next choice unlocks at total level ${nextUnlockLevel}.`;
+            }
+
+            return 'All available feat choices are currently used.';
+          },
+
+          CanToggleFeatSelection(character: CharacterRecord | null, featId: string): boolean {
+            if (!character) {
+              return false;
+            }
+
+            if (character.featIds.includes(featId)) {
+              return true;
+            }
+
+            return this.CanSelectAdditionalFeat(character);
+          },
+
+          GetAbilityScoreImprovementSelections(character: CharacterRecord | null): Array<{ id: string; name: string }> {
+            if (!character) {
+              return [];
+            }
+
+            let index = 0;
+            return (character.featIds ?? [])
+              .filter((id) => this.IsAbilityScoreImprovementSelection(id))
+              .map((id) => {
+                index += 1;
+                return {
+                  id,
+                  name: `${AbilityScoreImprovementFeatName} #${index}`
+                };
+              });
+          },
+
+          AddAbilityScoreImprovementSelection() {
+            if (!this.editingCharacter || !this.CanSelectAdditionalFeat(this.editingCharacter)) {
+              return;
+            }
+
+            const asiCatalogItem = this.GetAbilityScoreImprovementCatalogItem();
+            if (!asiCatalogItem) {
+              return;
+            }
+
+            const repeatableId = `${asiCatalogItem.id}${RepeatableFeatSeparator}${crypto.randomUUID()}`;
+            this.editingCharacter.featIds.push(repeatableId);
+            if (!this.editingCharacter.featAbilityChoiceSets) {
+              this.editingCharacter.featAbilityChoiceSets = {};
+            }
+            if (!this.editingCharacter.featAbilityChoiceModes) {
+              this.editingCharacter.featAbilityChoiceModes = {};
+            }
+            this.editingCharacter.featAbilityChoiceSets[repeatableId] = [];
+            this.editingCharacter.featAbilityChoiceModes[repeatableId] = 'one';
+            this.SaveAll();
+          },
+
+          RemoveAbilityScoreImprovementSelection(featId: string) {
+            if (!this.editingCharacter) {
+              return;
+            }
+
+            this.editingCharacter.featIds = (this.editingCharacter.featIds ?? []).filter((id: string) => id !== featId);
+            if (this.editingCharacter.featAbilityChoiceSets) {
+              delete this.editingCharacter.featAbilityChoiceSets[featId];
+            }
+            if (this.editingCharacter.featAbilityChoiceModes) {
+              delete this.editingCharacter.featAbilityChoiceModes[featId];
+            }
+            if (this.editingCharacter.featAbilityChoices) {
+              delete this.editingCharacter.featAbilityChoices[featId];
+            }
+            this.SaveAll();
+          },
+
+          GetAbilityScoreImprovementChoiceSet(character: CharacterRecord | null, featId: string): string[] {
+            const choices = (character?.featAbilityChoiceSets ?? {})[featId] ?? [];
+            return choices
+              .filter((value) => AbilityScoreKeys.includes(value as keyof CharacterRecord['abilityScores']))
+              .slice(0, 2);
+          },
+
+          GetAbilityScoreImprovementMode(character: CharacterRecord | null, featId: string): 'one' | 'two' {
+            const storedMode = character?.featAbilityChoiceModes?.[featId];
+            if (storedMode === 'one' || storedMode === 'two') {
+              return storedMode;
+            }
+
+            const [firstChoice, secondChoice] = this.GetAbilityScoreImprovementChoiceSet(character, featId);
+            if (firstChoice && secondChoice && firstChoice !== secondChoice) {
+              return 'two';
+            }
+
+            return 'one';
+          },
+
+          GetAbilityScoreImprovementChoice(character: CharacterRecord | null, featId: string, index: number): string {
+            const mode = this.GetAbilityScoreImprovementMode(character, featId);
+            const [firstChoice, secondChoice] = this.GetAbilityScoreImprovementChoiceSet(character, featId);
+
+            if (index === 0) {
+              return firstChoice ?? '';
+            }
+
+            if (mode === 'one') {
+              return firstChoice ?? '';
+            }
+
+            return secondChoice ?? '';
+          },
+
+          SetAbilityScoreImprovementMode(featId: string, mode: string) {
+            if (!this.editingCharacter) {
+              return;
+            }
+
+            if (!this.editingCharacter.featAbilityChoiceSets) {
+              this.editingCharacter.featAbilityChoiceSets = {};
+            }
+            if (!this.editingCharacter.featAbilityChoiceModes) {
+              this.editingCharacter.featAbilityChoiceModes = {};
+            }
+
+            const nextMode: 'one' | 'two' = mode === 'two' ? 'two' : 'one';
+            this.editingCharacter.featAbilityChoiceModes[featId] = nextMode;
+
+            const [firstChoice, secondChoice] = this.GetAbilityScoreImprovementChoiceSet(this.editingCharacter, featId);
+            if (nextMode === 'two') {
+              this.editingCharacter.featAbilityChoiceSets[featId] = [firstChoice ?? '', secondChoice && secondChoice !== firstChoice ? secondChoice : '']
+                .filter((value) => value.length > 0);
+            } else if (firstChoice) {
+              this.editingCharacter.featAbilityChoiceSets[featId] = [firstChoice, firstChoice];
+            } else {
+              this.editingCharacter.featAbilityChoiceSets[featId] = [];
+            }
+
+            this.SaveAll();
+          },
+
+          SetAbilityScoreImprovementChoice(featId: string, index: number, abilityKey: string) {
+            if (!this.editingCharacter) {
+              return;
+            }
+
+            if (!this.editingCharacter.featAbilityChoiceSets) {
+              this.editingCharacter.featAbilityChoiceSets = {};
+            }
+            if (!this.editingCharacter.featAbilityChoiceModes) {
+              this.editingCharacter.featAbilityChoiceModes = {};
+            }
+
+            const currentMode = this.GetAbilityScoreImprovementMode(this.editingCharacter, featId);
+            this.editingCharacter.featAbilityChoiceModes[featId] = currentMode;
+            const [firstChoice, secondChoice] = this.GetAbilityScoreImprovementChoiceSet(this.editingCharacter, featId);
+
+            const nextFirst = index === 0 ? abilityKey : firstChoice;
+            const nextSecond = index === 1 ? abilityKey : secondChoice;
+
+            if (currentMode === 'one') {
+              this.editingCharacter.featAbilityChoiceSets[featId] = nextFirst ? [nextFirst, nextFirst] : [];
+            } else {
+              const nextChoices = [nextFirst ?? '', nextSecond ?? '']
+                .map((value) => value.trim())
+                .filter((value) => value.length > 0)
+                .slice(0, 2);
+              this.editingCharacter.featAbilityChoiceSets[featId] = nextChoices;
+            }
+
+            this.SaveAll();
+          },
+
+          GetAppliedAbilityScoreImprovementChoices(character: CharacterRecord | null, featId: string): string[] {
+            const mode = this.GetAbilityScoreImprovementMode(character, featId);
+            const [firstChoice, secondChoice] = this.GetAbilityScoreImprovementChoiceSet(character, featId);
+            if (!firstChoice) {
+              return [];
+            }
+
+            if (mode === 'one') {
+              return [firstChoice, firstChoice];
+            }
+
+            if (!secondChoice || firstChoice === secondChoice) {
+              return [];
+            }
+
+            return [firstChoice, secondChoice];
+          },
+
         GetFeatAbilityBonuses(character: CharacterRecord | null): Partial<Record<string, number>> {
             if (!character) {
                 return {};
@@ -2829,9 +3235,16 @@ const NpcEasyApp = (): any => {
 
             const bonuses: Record<string, number> = {};
             for (const id of character.featIds ?? []) {
-                const featName = this.GetCatalogName('feats', id);
+              const featName = this.GetFeatCatalogItemBySelectionId(id)?.name ?? this.GetCatalogName('feats', id);
                 const feat = GetFeatByName(featName);
                 if (!feat) continue;
+
+              if (this.IsAbilityScoreImprovementSelection(id)) {
+                for (const abilityKey of this.GetAppliedAbilityScoreImprovementChoices(character, id)) {
+                  bonuses[abilityKey] = (bonuses[abilityKey] ?? 0) + 1;
+                }
+                continue;
+              }
 
                 for (const [key, val] of Object.entries(feat.abilityScoreBonuses ?? {})) {
                     bonuses[key] = (bonuses[key] ?? 0) + (val as number);
@@ -2864,7 +3277,7 @@ const NpcEasyApp = (): any => {
             };
 
             for (const id of character.featIds ?? []) {
-                const featName = this.GetCatalogName('feats', id);
+              const featName = this.GetFeatCatalogItemBySelectionId(id)?.name ?? this.GetCatalogName('feats', id);
                 const feat = GetFeatByName(featName);
                 if (!feat?.derivedStatBonuses) {
                     continue;
@@ -2885,7 +3298,10 @@ const NpcEasyApp = (): any => {
 
             return (character.featIds ?? [])
                 .map((id) => {
-                    const featName = this.GetCatalogName('feats', id);
+                if (this.IsAbilityScoreImprovementSelection(id)) {
+                  return null;
+                }
+                const featName = this.GetFeatCatalogItemBySelectionId(id)?.name ?? this.GetCatalogName('feats', id);
                     const feat = GetFeatByName(featName);
                     if (!feat?.abilityScoreChoice) return null;
                     return { id, name: feat.name, amount: feat.abilityScoreChoice.amount, options: feat.abilityScoreChoice.options };
@@ -3672,9 +4088,19 @@ const NpcEasyApp = (): any => {
                 return;
             }
 
+          if (listKey === 'featIds' && this.IsAbilityScoreImprovementSelection(id)) {
+            if (isChecked) {
+              this.AddAbilityScoreImprovementSelection();
+            }
+            return;
+          }
+
             const existing = this.editingCharacter[listKey] ?? [];
 
             if (isChecked) {
+            if (listKey === 'featIds' && !existing.includes(id) && !this.CanSelectAdditionalFeat(this.editingCharacter)) {
+              return;
+            }
                 if (!existing.includes(id)) {
                     existing.push(id);
                 }
@@ -3682,6 +4108,12 @@ const NpcEasyApp = (): any => {
                 this.editingCharacter[listKey] = existing.filter((value: string) => value !== id);
                 if (listKey === 'featIds' && this.editingCharacter.featAbilityChoices) {
                     delete this.editingCharacter.featAbilityChoices[id];
+                }
+            if (listKey === 'featIds' && this.editingCharacter.featAbilityChoiceSets) {
+              delete this.editingCharacter.featAbilityChoiceSets[id];
+            }
+                if (listKey === 'featIds' && this.editingCharacter.featAbilityChoiceModes) {
+                  delete this.editingCharacter.featAbilityChoiceModes[id];
                 }
             }
 
@@ -3912,7 +4344,28 @@ const NpcEasyApp = (): any => {
 
             if (this.editingCharacter) {
                 if (key === 'feats') {
-                    this.editingCharacter.featIds = this.editingCharacter.featIds.filter((value: string) => value !== id);
+              this.editingCharacter.featIds = this.editingCharacter.featIds.filter((value: string) => this.GetFeatBaseId(value) !== id);
+              if (this.editingCharacter.featAbilityChoices) {
+                for (const featId of Object.keys(this.editingCharacter.featAbilityChoices)) {
+                  if (this.GetFeatBaseId(featId) === id) {
+                    delete this.editingCharacter.featAbilityChoices[featId];
+                  }
+                }
+              }
+              if (this.editingCharacter.featAbilityChoiceSets) {
+                for (const featId of Object.keys(this.editingCharacter.featAbilityChoiceSets)) {
+                  if (this.GetFeatBaseId(featId) === id) {
+                    delete this.editingCharacter.featAbilityChoiceSets[featId];
+                  }
+                }
+              }
+              if (this.editingCharacter.featAbilityChoiceModes) {
+                for (const featId of Object.keys(this.editingCharacter.featAbilityChoiceModes)) {
+                  if (this.GetFeatBaseId(featId) === id) {
+                    delete this.editingCharacter.featAbilityChoiceModes[featId];
+                  }
+                }
+              }
                 }
                 if (key === 'weapons') {
                     this.RemoveWeaponFromCharacter(id);
@@ -5004,11 +5457,13 @@ const NpcEasyApp = (): any => {
         },
 
         GetCatalogName(key: CatalogKey, id: string): string {
-            return this.catalogs[key].find((item: CatalogItem) => item.id === id)?.name ?? 'Unknown';
+          const lookupId = key === 'feats' ? this.GetFeatBaseId(id) : id;
+          return this.catalogs[key].find((item: CatalogItem) => item.id === lookupId)?.name ?? 'Unknown';
         },
 
         GetCatalogDescription(key: CatalogKey, id: string): string {
-            return this.catalogs[key].find((item: CatalogItem) => item.id === id)?.description ?? '';
+          const lookupId = key === 'feats' ? this.GetFeatBaseId(id) : id;
+          return this.catalogs[key].find((item: CatalogItem) => item.id === lookupId)?.description ?? '';
         },
 
         GetCompendiumSectionAnchor(key: CatalogKey): string {
@@ -5016,7 +5471,7 @@ const NpcEasyApp = (): any => {
         },
 
         GetFullFeatDescription(id: string): string {
-            const featFromCatalog = this.catalogs.feats.find((item: CatalogItem) => item.id === id);
+          const featFromCatalog = this.GetFeatCatalogItemBySelectionId(id);
             if (!featFromCatalog) {
                 return 'No description available.';
             }

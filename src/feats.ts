@@ -16,6 +16,10 @@ export interface Feat {
 
 export const Feats: Feat[] = [
     {
+        name: 'Ability Score Improvement',
+        description: 'Increase one ability score by 2, or increase two ability scores by 1 each. You can\'t increase an ability score above 20 using this feature.',
+    },
+    {
         name: 'Alert',
         description: '+5 to initiative, cannot be surprised while conscious; hidden creatures get no advantage on attack rolls.',
         derivedStatBonuses: { initiativeBonus: 5 },
