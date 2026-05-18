@@ -2,7 +2,7 @@
 
 A free, offline-first web app for building and managing NPC and player character stat blocks for **Dungeons & Dragons 5th Edition**. All data is stored locally in your browser — no account, no server, no internet connection required.
 
-**Live app:** [https://npceasy.crossland.dev](https://npceasy.com)
+**Live app:** [https://npceasy.com](https://npceasy.com)
 
 ---
 
